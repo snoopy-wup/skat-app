@@ -1,0 +1,1823 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#17382a">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Skat-LOGGER">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<title>Skat-LOGGER</title>
+<style>
+:root{--c1:#2a78d6;--c2:#eb6834;--c3:#1baf7a;--c4:#eda100;--c5:#e87ba4;--c6:#008300;--c7:#6250d6;--c8:#e34948;--pl1:#184f95;--pl2:#2a78d6;--pl3:#6da7ec;--pl4:#b7d3f6;--grid:#e1e0d9;--zebra:#e6e1d2;--sec:#d3dccf;--bg:#f4f1ea;--card:#fff;--ink:#1d2a24;--mute:#6b766f;--line:#ddd8cb;--accent:#1f6b4a;--accent-ink:#fff;--bad:#b3322b;--good:#1f6b4a;--warn:#b7791f;--chip:#ece8dc}
+@media (prefers-color-scheme:dark){:root{--c1:#3987e5;--c2:#d95926;--c3:#199e70;--c4:#c98500;--c5:#d55181;--c6:#008300;--c7:#9085e9;--c8:#e66767;--pl1:#b7d3f6;--pl2:#6da7ec;--pl3:#2a78d6;--pl4:#184f95;--grid:#2c2c2a;--zebra:#26392f;--sec:#34513f;--bg:#14201a;--card:#1d2d25;--ink:#e8efe9;--mute:#9aaba1;--line:#2f4439;--accent:#3fae7c;--accent-ink:#062014;--bad:#ef7b72;--good:#5fd09b;--warn:#e3b04f;--chip:#27392f}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.4 system-ui,Segoe UI,sans-serif;padding-bottom:90px}
+.wrap{max-width:980px;margin:0 auto;padding:0 16px}
+h1{font-size:20px;margin:16px 0}
+button,select,input{font:inherit;color:inherit}
+button{cursor:pointer}
+.btn{background:var(--accent);color:var(--accent-ink);border:0;border-radius:10px;padding:10px 16px;font-weight:600}
+.btn.sec{background:var(--chip);color:var(--ink)}
+.btn.bad{background:var(--bad);color:#fff}
+input[type=text],input[type=number],select{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:8px 10px;width:100%}
+label{display:block;font-size:13px;color:var(--mute);margin:10px 0 4px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin:12px 0}
+.top{position:sticky;top:0;background:var(--bg);padding:10px 0;z-index:5;border-bottom:1px solid var(--line)}
+.pl{display:grid;gap:8px}
+.p{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:8px 6px;text-align:center;min-width:0}
+.p.deal{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent) inset}
+.p .nm{font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.p .tot{font-size:28px;font-weight:800;line-height:1.1}
+.p .tag{font-size:11px;color:var(--mute);min-height:15px}
+.banner{border-radius:10px;padding:8px 12px;margin:10px 0;font-size:14px;background:var(--chip)}
+.banner.bock{border-left:5px solid var(--warn)}
+.banner.mal{border-left:5px solid var(--accent)}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{padding:7px 6px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+td.num,th.num{text-align:right;white-space:nowrap}
+#app table th,#app table td{border-left:1px solid var(--line)}
+#app table th:first-child,#app table td:first-child{border-left:0}
+tr.row{cursor:pointer}
+.lost{color:var(--bad);font-weight:700}
+.won{color:var(--good)}
+.chip{display:inline-block;background:var(--chip);border-radius:6px;padding:0 6px;font-size:12px;margin-right:3px}
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+.seg button{border:1px solid var(--line);background:var(--card);border-radius:8px;padding:8px 12px}
+.seg button.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.seg button:disabled{opacity:.35;cursor:not-allowed}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.fab{position:fixed;right:16px;bottom:16px;box-shadow:0 4px 14px #0004;padding:14px 20px;font-size:17px}
+.modal{position:fixed;inset:0;background:#0007;display:flex;align-items:flex-end;justify-content:center;z-index:20}
+.sheet{background:var(--bg);width:100%;max-width:620px;max-height:94vh;overflow:auto;border-radius:18px 18px 0 0;padding:16px}
+@media(min-width:700px){.modal{align-items:center}.sheet{border-radius:18px}}
+.prev{background:var(--chip);border-radius:10px;padding:10px 12px;margin:12px 0;font-weight:600}
+.chk{display:flex;align-items:center;gap:8px;margin:6px 0;color:var(--ink);font-size:15px}
+.chk input{width:20px;height:20px}
+.muted{color:var(--mute);font-size:13px}
+.scroll{overflow-x:auto}
+.pc{text-align:center}
+#app tr.cyc td{border-bottom:4px solid var(--ink)}
+.sheet.wide{max-width:980px}
+.btn.sm{padding:4px 10px;font-size:13px}
+.rk{font-size:12px;border-radius:5px;padding:0 5px;background:var(--chip)}
+.rk.r1{background:#e8b923;color:#2a1a00}
+.sheet table th.pc,.sheet table td.pc{min-width:70px}
+tr.sec th{background:var(--sec);text-align:left;font-size:13px}
+.sheet table th,.sheet table td{border-left:1px solid var(--line)}
+.sheet table th:first-child,.sheet table td:first-child{border-left:0}
+.statwrap{overflow:auto;max-height:60vh;border:1px solid var(--line);border-radius:8px;margin-top:10px}
+.statwrap table{border-collapse:separate;border-spacing:0;min-width:100%}
+.statwrap th,.statwrap td{border-bottom:1px solid var(--line)}
+.statwrap thead th{position:sticky;top:0;z-index:3;background:var(--card)}
+.statwrap td:first-child,.statwrap th:first-child{position:sticky;left:0;z-index:2;min-width:170px;text-align:left}
+.statwrap thead th:first-child{z-index:4}
+.statwrap tbody td{background:var(--card)}
+.statwrap tbody tr.z td{background:var(--zebra)}
+.statwrap tr.sec th{position:sticky;left:0}
+.tot2{font-size:18px}
+tr.h1 th,tr.h2 th{position:sticky;background:var(--card);z-index:4}
+tr.h1 th{top:var(--topH,0px)}
+tr.h2 th{top:calc(var(--topH,0px) + var(--h1H,0px));font-size:20px;font-weight:800;border-bottom:2px solid var(--accent)}
+tr.h2 th:nth-child(2){font-size:13px;font-weight:600;color:var(--mute)}
+tr.h1 th.deal{box-shadow:inset 0 -3px 0 var(--accent)}
+th .nm{font-weight:700}
+th .tag{font-size:11px;font-weight:400;color:var(--mute)}
+th.gone{opacity:.7}
+.top .banner{margin:6px 0 0}
+.banner.orange{background:#f6ad3c;color:#2a1a00;border-left:0}
+.p.gone{opacity:.65;background:var(--chip)}
+.gls{display:flex;justify-content:center;gap:4px;margin-bottom:3px}
+.gl{font-size:12px;font-weight:800;width:20px;height:20px;line-height:20px;border-radius:5px;color:#fff}
+.opn{color:#b7791f;font-weight:700}
+.hit{padding:8px 10px;border:1px solid var(--line);border-radius:8px;margin:6px 0;cursor:pointer;background:var(--card);font-size:14px}
+.hit:hover{border-color:var(--accent)}
+.help h3{margin:16px 0 4px;font-size:16px}
+.help ul{padding-left:20px;margin:6px 0}.help li{margin:4px 0}
+.help table{font-size:14px;margin:6px 0}
+.sheet h3{margin:14px 0 4px;font-size:15px}
+.toast{position:fixed;left:50%;bottom:84px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;z-index:50;max-width:90vw;box-shadow:0 4px 14px #0005}
+.mlabel{font-size:9px;font-weight:800;letter-spacing:.03em;color:var(--mute);align-self:center}
+.gls{flex-wrap:wrap;align-items:center}
+@media(min-width:640px){.gls{flex-wrap:nowrap}#app tr.h1 th.pc{min-width:132px}}
+.gl.green{background:#1f9d55}
+.gl.red{background-color:#c0392b;color:#ffd0cb;background-image:linear-gradient(to top right,transparent calc(50% - 1.5px),#fff calc(50% - 1.5px),#fff calc(50% + 1.5px),transparent calc(50% + 1.5px)),linear-gradient(to bottom right,transparent calc(50% - 1.5px),#fff calc(50% - 1.5px),#fff calc(50% + 1.5px),transparent calc(50% + 1.5px))}
+.statwrap.ov thead tr:first-child th{height:38px;white-space:nowrap}
+.statwrap.ov thead tr:nth-child(2) th{top:38px}
+/* Diagramme der Statistik */
+.charts{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:12px;margin-top:10px}
+.chartcard{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px;min-width:0}
+.chartcard h3{margin:0 0 2px;font-size:15px}
+.chartcard .muted{margin:0 0 6px}
+.chartcard.wide{grid-column:1/-1}
+.legend{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:13px;margin-top:6px}
+.legend span.it{display:inline-flex;align-items:center;gap:6px}
+.sw{width:11px;height:11px;border-radius:3px;display:inline-block;flex:none}
+.donut{display:block;width:100%;max-width:230px;margin:0 auto}
+.donut path{stroke:var(--card);stroke-width:2}
+.donut path:hover,.hb i:hover{opacity:.8}
+.donut text{fill:var(--ink);font-family:inherit}
+.hrow{display:grid;grid-template-columns:78px 1fr;gap:8px;align-items:center;margin:7px 0;font-size:13px}
+.hrow .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hb{display:flex;gap:2px;height:20px;background:transparent}
+.hb i{display:block;min-width:0;border-radius:0 4px 4px 0;height:100%}
+.hb i:first-child{border-radius:0 4px 4px 0}
+.hv{font-size:12px;color:var(--mute);margin-top:1px}
+.linechart{display:block;width:100%;height:auto}
+.linechart text{fill:var(--mute);font-size:11px;font-family:inherit}
+.dsk{display:contents}
+.menu-btn,.rn{display:none}
+.selrow{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:8px}
+.selrow select{margin-bottom:8px}
+.menu-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.menu-item{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 12px;min-height:56px;font-size:16px;font-weight:600;text-align:left}
+.menu-item span{font-size:22px}
+body{padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inset-right)}
+.sheet{padding-bottom:calc(16px + env(safe-area-inset-bottom,0px))}
+.appt{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin:8px 0}.appt.past{opacity:.75}.appt .at{font-size:17px;font-weight:700;margin:2px 0}.appt .arow{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.appt .arow .btn{padding:8px 10px}
+.chip.hol{background:#f3d3d0;color:#8a1f18}
+textarea,input[type=time]{background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:8px 10px;width:100%;font:inherit}
+.datelab{align-self:center;font-weight:600}
+.cal{margin:8px 0;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:8px}.calnav{display:flex;align-items:center;justify-content:space-between;gap:4px;margin-bottom:6px}.calnav .btn{padding:4px 12px;min-width:40px}
+.calgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}.calgrid .cw{text-align:center;font-size:12px;color:var(--mute);font-weight:700}.calgrid .cw.sat{color:var(--c1)}.calgrid .cw.sun{color:var(--bad)}
+.cd{aspect-ratio:1/1;min-height:36px;border:1px solid transparent;border-radius:8px;background:var(--chip);color:var(--ink);font-weight:600;position:relative;padding:0}.cd.empty{background:none}
+.cd.sat{background:#cfe0f7;color:#12457f}.cd.sun,.cd.hol{background:#f3c9c5;color:#8a1f18}.cd.hol.reg{background:#f8e0dd}
+.cd.today{border-color:var(--ink)}.cd.sel{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}.cd.has::after{content:'';position:absolute;bottom:3px;left:50%;margin-left:-3px;width:6px;height:6px;border-radius:50%;background:var(--warn)}
+.callegend{display:flex;gap:10px;flex-wrap:wrap;align-items:center;font-size:12px;color:var(--mute);margin-top:6px}.callegend .btn{padding:4px 10px;margin-left:auto}.lg{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:4px;vertical-align:-1px}.lg.sat{background:#cfe0f7}.lg.sun,.lg.hol{background:#f3c9c5}.lg.has{background:var(--warn);border-radius:50%}
+.calhol{margin-top:4px}.whobox{display:flex;flex-wrap:wrap;gap:2px 14px}
+.logrow{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--c1);border-radius:8px;padding:8px 10px;margin:8px 0;font-size:14px}.logrow.verschoben{border-left-color:var(--c2)}.logrow.gelöscht{border-left-color:var(--bad)}.logrow.geändert{border-left-color:var(--c4)}.logrow .chg{margin-top:2px}
+.wapre{white-space:pre-wrap;background:var(--chip);padding:10px;border-radius:8px;font-family:inherit;font-size:13px;line-height:1.4;margin:4px 0}
+.nextappt{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin:0 0 10px;cursor:pointer;font-size:14px}
+@media (prefers-color-scheme:dark){.chip.hol{background:#5a2724;color:#ffd5d1}.cd.sat{background:#27425f;color:#bcd8fb}.cd.sun,.cd.hol{background:#5d2c29;color:#ffd5d1}.cd.hol.reg{background:#442523}}
+.home{max-width:520px;margin:0 auto;padding:8px 0 24px}.homelogo{display:flex;justify-content:center;cursor:pointer;margin:6px 0 8px}.homelogo svg{width:min(240px,60vw,36vh);height:auto}.hometitle{text-align:center;margin:0 0 2px}.homemain{margin-bottom:10px}.homemain .menu-item{width:100%;justify-content:center;font-size:18px;min-height:64px}.menu-item.prim{background:var(--accent,#17382a);color:#fff;border-color:transparent}.homebar{margin-top:12px}
+.mlabel{font-size:10px}
+/* Handy und kleine Tablets: Menü statt vieler Knöpfe, Spielzeilen als Karten mit Zahlenreihe */
+@media(max-width:900px){
+  #app tr.h1 th.pc{min-width:0!important}
+  .wrap{padding:0 10px}
+  .dsk{display:none}
+  .menu-btn{display:inline-block}
+  .top{padding:6px 0}
+  .top .banner{font-size:13px;padding:6px 10px;margin:4px 0 0}
+  .card{padding:6px;margin:8px 0}
+  table.gt,table.gt thead,table.gt tbody{display:block}
+  table.gt{font-size:13px}
+  table.gt thead{position:sticky;top:var(--topH,0px);z-index:4;background:var(--card)}
+  table.gt tr{display:grid;grid-template-columns:repeat(var(--np),minmax(0,1fr)) 68px}
+  table.gt tr.h1 th:nth-child(-n+2),table.gt tr.h2 th:nth-child(-n+2){display:none}
+  table.gt tr.h1 th,table.gt tr.h2 th{position:static;padding:4px 2px;overflow:hidden}
+  table.gt tr.h2 th{font-size:17px}
+  table.gt tr.h2 th:last-child{font-size:13px}
+  table.gt tr.h1 th.deal{box-shadow:inset 0 -3px 0 var(--accent)}
+  table.gt th .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  table.gt td,table.gt th{border-left:1px solid var(--line)}
+  table.gt tr.row td:nth-child(1){display:none}
+  table.gt tr.row td:nth-child(2){grid-column:1/-1;border-left:0;border-bottom:0;padding:8px 6px 4px}
+  table.gt tr.row td:nth-child(n+3){padding:4px 2px;text-align:center;font-size:15px;border-bottom:1px solid var(--line);border-top:1px dashed var(--line)}
+  table.gt tr.row td:nth-child(3){border-left:0}
+  table.gt tr.row{border-bottom:0}
+  #app tr.cyc td:nth-child(n+3){border-bottom:4px solid var(--ink)}
+  #app tr.cyc td:nth-child(2){border-bottom:0}
+  .rn{display:inline;font-weight:800;color:var(--mute)}
+  .statwrap table{font-size:12.5px}
+  .statwrap th,.statwrap td{padding:6px 3px}
+  .statwrap td:first-child,.statwrap th:first-child{min-width:92px;padding-left:6px}
+  .sheet table th.pc,.sheet table td.pc{min-width:50px}
+  .fab{right:12px;bottom:12px;padding:12px 16px;font-size:16px}
+  .seg button{padding:10px 12px;min-height:40px}
+  .btn{min-height:40px}
+  .btn.sm{min-height:34px}
+  .chk input{width:24px;height:24px}
+  input[type=text],input[type=number],input[type=time],select{padding:10px;min-height:42px;font-size:16px}textarea{font-size:16px}
+  .statwrap{max-height:62vh}
+}
+/* niedrige Bildschirme (Querformat am Handy): Kopf nicht festkleben, nur Namen und Summen */
+@media(max-height:520px){
+  .top{position:static}
+  table.gt thead,tr.h1 th,tr.h2 th{top:0!important}
+  tr.h2 th{top:var(--h1H,0px)!important}
+  table.gt thead{top:0!important}
+  th .tag{display:none}
+  .sheet{max-height:96vh;padding:10px 14px}
+  .sheet h1{margin:4px 0 8px;font-size:18px}
+  input[type=text],input[type=number],select{min-height:38px;padding:6px 10px}
+  .statwrap{max-height:70vh}
+  .fab{padding:10px 14px}
+  body{padding-bottom:70px}
+}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<div id="modal"></div>
+<script>
+/* ---------- Daten ---------- */
+const TYPES={karo:{n:'Karo',b:9},herz:{n:'Herz',b:10},pik:{n:'Pik',b:11},kreuz:{n:'Kreuz',b:12},grand:{n:'Grand',b:24},null:{n:'Null'},ramsch:{n:'Ramsch'}};
+const groupOf=t=>t==='grand'?'grand':t==='ramsch'?'ramsch':['karo','herz','pik','kreuz'].includes(t)?'farbe':null;
+const GROUPN={grand:'Grand',ramsch:'Ramsch',farbe:'Farbspiel'};
+const LEVELN=['','Bock','Hirsch','Geweih'];
+const OUTN={W:'Gewonnen',WS:'Gewonnen, Schneider',WSW:'Gewonnen, Schwarz',L:'Verloren',LS:'Verloren, Schneider',LSW:'Verloren, Schwarz'};
+const REIZ=(()=>{const s=new Set([23,35,46,59]);[9,10,11,12,24].forEach(b=>{for(let k=2;k<=13;k++)s.add(b*k)});return [...s].filter(v=>v>=18&&v<=264).sort((a,b)=>a-b)})();
+const DEF={bock:2,hirsch:4,geweih:8,lossFactor:2,contraPays:true,startBock:true,malenko:true,durchmarsch:'andere',jungfrau:2,round10:true,spitze:false};
+const FIX={bock:2,hirsch:4,geweih:8,lossFactor:2,jungfrau:2,durchmarsch:'andere'}; // feste Faktoren, nicht einstellbar
+const r10=v=>Math.round(v/10)*10;
+const KEY='skat-schreiber-v1';
+const NAMES=['Guido','Karsten','Martin','Peter']; // Auswahlmenü für Namen, weitere Namen sind frei eingebbar
+let S=load()||{started:false,n:4,players:[...NAMES],startDealer:0,hands:[],events:[],settings:{...DEF}};
+S.nameList=S.nameList||[...NAMES];
+S.settings={...DEF,...S.settings,...FIX};
+S.events=S.events||[];
+const padPlayers=()=>{for(let i=S.players.length;i<4;i++)S.players.push(NAMES[i])};
+padPlayers();
+let F=null,editIdx=null;
+
+function load(){try{return JSON.parse(localStorage.getItem(KEY))}catch(e){return null}}
+// Rückgängig: jede gespeicherte Änderung merkt sich den vorherigen Stand
+let lastSnap=null,undoStack=[];
+function save(){
+  const cur=JSON.stringify(S);
+  if(lastSnap!==null&&cur!==lastSnap){undoStack.push(lastSnap);if(undoStack.length>80)undoStack.shift()}
+  lastSnap=cur;
+  try{localStorage.setItem(KEY,cur)}catch(e){}
+}
+function undo(){
+  if(!undoStack.length)return;
+  const prev=undoStack.pop();
+  S=JSON.parse(prev);
+  S.settings={...DEF,...S.settings,...FIX};S.events=S.events||[];S.days=S.days||[];S.stake=S.stake||{base:25,per100:0.5};
+  S.season=S.season||{id:1,name:'Saison 1',start:new Date().toISOString()};S.pastSeasons=S.pastSeasons||[];S.nameList=S.nameList||[...NAMES];
+  apptEnsure();lastSnap=prev;
+  try{localStorage.setItem(KEY,prev)}catch(e){}
+  closeModal();render();
+}
+const undoBtn=()=>`<button class="btn sec" ${undoStack.length?'':'disabled'} onclick="undo()" title="Letzte Änderung zurücknehmen">↶ Rückgängig${undoStack.length?' ('+undoStack.length+')':''}</button>`;
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const nm=i=>esc(S.players[i]||('Spieler '+(i+1)));
+const nextSeat=(seat,from)=>{const x=seat.find(v=>v>from);return x===undefined?seat[0]:x};
+const levelF=lv=>lv>0?S.settings.bock:1;
+const STAGEN=['','Kontra','Re','Hirsch','Geweih'];
+const STAGEF=[1,2,4,8,16];
+const stageOf=h=>{if(!h.contra||!h.contra.length)return 0;return h.stage!=null?h.stage:(h.re?2:1)};
+
+/* ---------- Berechnung ---------- */
+function calc(h,level,active,seat){
+  seat=seat||active;
+  const st=S.settings,lf=levelF(level),pts={};
+  if(h.type==='ramsch'&&h.open)return {kind:'ramsch',open:true,value:null,won:null,pts,text:'Ramsch läuft – Augen folgen',contraWon:false,mult:null};
+  if(h.type==='ramsch'){
+    const a=h.augen||{};
+    let text='',jf=false,rvOut=null;
+    if(h.durchmarsch!=null&&h.durchmarsch!==''){
+      const m=+h.durchmarsch;
+      if(st.durchmarsch==='gut'){pts[m]=-120*lf;text=S.players[m]+' Durchmarsch (−120)'}
+      else{active.filter(i=>i!==m).forEach(i=>pts[i]=120*lf);text=S.players[m]+' Durchmarsch (andere je 120)'}
+    }else{
+      const vals=active.map(i=>+a[i]||0),mx=Math.max(...vals);
+      const rv=st.round10?r10(mx):mx;
+      // Jungfrau (×2) nur, wenn sie angesagt/gewählt wurde; möglich ist das nur, wenn ein Spieler 0 Augen hat
+      jf=!!h.jungfrau&&active.some(i=>(+a[i]||0)===0);
+      const jfF=jf?st.jungfrau:1;
+      active.forEach(i=>{if((+a[i]||0)===mx)pts[i]=rv*jfF*lf});
+      text='Verlierer: '+active.filter(i=>(+a[i]||0)===mx).map(i=>S.players[i]).join(', ')+' ('+mx+' Augen'+(rv!==mx?' → '+rv:'')+(jf?' × Jungfrau '+st.jungfrau:'')+')';
+      rvOut=rv;
+    }
+    return {kind:'ramsch',value:null,won:null,pts,text,contraWon:false,mult:null,jf,rv:rvOut,lf};
+  }
+  const t=TYPES[h.type];let base,mult=null,value;
+  let won=h.outcome[0]==='W';
+  if(h.type==='null'){
+    base=h.ouvert&&h.hand?59:h.ouvert?46:h.hand?35:23;value=base;
+  }else{
+    base=t.b*(h.spitze&&st.spitze?2:1); // Spitze: umgekehrte Rangfolge, Sieben Trumpf -> Wert verdoppelt
+    const stage=h.outcome.endsWith('SW')?2:h.outcome.endsWith('S')?1:0;
+    const fo=h.ouvert&&!h.ouvertFree; // alte Spiele: Ouvert schließt Hand/Schneider/Schwarz automatisch ein
+    const hand=h.hand||fo,swA=h.schwarzAng||fo,snA=h.schnAng||swA;
+    if(snA&&!(won&&stage>=1))won=false;
+    if(swA&&!(won&&stage===2))won=false;
+    mult=h.n+1+(hand?1:0)+(stage>=1?1:0)+(stage===2?1:0)+(snA?1:0)+(swA?1:0)+(h.ouvert?1:0);
+    value=base*mult;
+  }
+  let over=false;
+  if(h.reiz&&value<h.reiz&&h.type!=='null'){over=true;won=false;value=base*Math.ceil(h.reiz/base)}
+  else if(h.reiz&&value<h.reiz){over=true;won=false}
+  const cf=STAGEF[stageOf(h)]*lf;
+  if(h.open)return {kind:'game',open:true,value,won:null,over:false,mult,pts,contraWon:false,newRound:false,base,cf};
+  const contraWon=!won&&h.contra&&h.contra.length>0;
+  const sixty=!won&&h.type!=='null'&&h.augenSp!==''&&h.augenSp!=null&&+h.augenSp===60; // mit genau 60 Augen verloren (ohne Kontra)
+  if(!won)pts[h.declarer]=value*st.lossFactor*cf;
+  else if(st.contraPays)seat.forEach(i=>{if(i!==h.declarer)pts[i]=value*cf}); // Gewonnen: alle anderen Mitspieler (auch der aussetzende Geber) bekommen den Wert
+  return {kind:'game',value,won,over,mult,pts,contraWon,sixty,newRound:!!(contraWon||sixty),base,cf};
+}
+
+function replay(){
+  // Eine Bock-/Ramschrunde = N Bock-Spiele (×Bock) + N Ramsch-Spiele. Runden laufen nacheinander.
+  // Mitspieler können kommen (Start = Schnitt der Aktiven, ganz rechts) oder gehen (Ende: Schnitt der Folgepunkte kommt dazu)
+  const L=S.players.length;
+  let seat=[...Array(Math.min(S.n,L)).keys()],N=seat.length;
+  // Eine Bock-/Ramschrunde = N Bock-Spiele + N Ramsch-Spiele. Der Spieltag beginnt mit N solchen Runden (N = Spieleranzahl).
+  let rounds=S.settings.startBock?N:0,pos=0,dealer=null;
+  let done=Array.from({length:L},()=>new Set()),ptr=null,ramschLeft=0;
+  const rows=[],totals=Array(L).fill(0),info=Array.from({length:L},()=>({}));
+  const applied=new Set();
+  // Einstieg erst, wenn keine Bock-/Ramschrunde und keine Malenko-Runde angefangen ist
+  const boundaryOk=()=>(rounds===0||pos===0)&&ramschLeft===0&&done.every(s=>s.size===0);
+  const applyEvents=at=>{
+    (S.events||[]).filter(e=>!applied.has(e)&&e.at<=at).forEach(e=>{
+      if(e.type==='join'&&!seat.includes(e.p)){
+        if(!boundaryOk())return;
+        applied.add(e);
+        const avg=seat.length?Math.round(seat.reduce((s,i)=>s+totals[i],0)/seat.length):0;
+        totals[e.p]=avg;info[e.p]={joinAt:at,start:avg};seat=[...seat,e.p].sort((a,b)=>a-b);
+      }else if(e.type==='leave'&&seat.includes(e.p)){
+        applied.add(e);
+        info[e.p]={...info[e.p],leaveAt:at,leaveTotal:totals[e.p],snap:totals.slice()};
+        seat=seat.filter(x=>x!==e.p);
+      }
+    });
+    N=seat.length;
+  };
+  const pickDealer=i=>{
+    if(i===0){dealer=seat.includes(S.startDealer)?S.startDealer:seat[0];return}
+    // ein neu eingestiegener Spieler gibt zuletzt (nie sofort als Erster): er wird beim Weiterreichen übersprungen
+    let c=nextSeat(seat,dealer),g=0;
+    while(info[c].joinAt===i&&g++<seat.length)c=nextSeat(seat,c);
+    dealer=c;
+  };
+  S.hands.forEach((h,i)=>{
+    applyEvents(i);pickDealer(i);
+    const play=seat.length===4?seat.filter(x=>x!==dealer):seat.slice();
+    const forced=ramschLeft;
+    const inRamschSlot=rounds>0&&pos>=N;
+    // Veto: Spieler spielt Grand Hand statt Ramsch, das Ramschspiel wird nicht verbraucht (ein weiteres kommt dazu)
+    if(h.veto){if(h.passe)ramschLeft=N}
+    else if(h.passe)ramschLeft=N-1;else if(ramschLeft>0&&!h.open)ramschLeft--;
+    const auto=rounds>0&&pos<N?1:0;
+    const isMalH=h.malPlayer!=null&&h.malPlayer!=='';
+    const lv=isMalH?0:(h.levelOverride!=null&&h.levelOverride!==''?+h.levelOverride:auto); // im Malenko gibt es keinen Bock
+    const c=calc(h,lv,play,seat);
+    Object.entries(c.pts).forEach(([k,v])=>totals[+k]+=v);
+    rows.push({h,i,lv,c,dealer,seat:seat.slice(),play,cum:totals.slice(),forced,slot:rounds>0?(pos<N?'bock':'ramsch'):'mal'});
+    // ein noch laufendes Spiel (ohne Ergebnis) belegt seinen Platz in der Runde, die Runde ist erst mit dem Ergebnis weiter
+    if(rounds>0&&!c.open&&!(h.veto&&inRamschSlot)){pos++;if(pos>=2*N){pos=0;rounds--}}
+    if(c.newRound)rounds++;
+    if(h.malPlayer!=null&&h.malPlayer!==''){
+      done[+h.malPlayer].add(h.veto?'ramsch':groupOf(h.type));ptr=+h.malPlayer;
+      // erst wenn das letzte Malenko-Spiel beendet ist (Ergebnis eingetragen), beginnt die nächste Malenko-Runde (alles wieder grün)
+      if(seat.every(p=>done[p].size===3)&&!c.open)done=Array.from({length:L},()=>new Set());
+    }
+  });
+  applyEvents(S.hands.length);
+  // Solange das letzte Spiel läuft (Ergebnis offen), bleibt dessen Geber Geber; erst mit dem Ergebnis geht es zum nächsten Geber
+  if(rows.length&&rows[rows.length-1].c.open&&rows[rows.length-1].i===S.hands.length-1)dealer=rows[rows.length-1].dealer;
+  else pickDealer(S.hands.length);
+  const play=seat.length===4?seat.filter(x=>x!==dealer):seat.slice();
+  // Hochrechnung für ausgeschiedene Spieler: Schnitt der Punkte, die die Übrigen seitdem dazubekommen haben
+  info.forEach((inf,p)=>{
+    if(inf.leaveAt==null)return;
+    const gains=seat.map(j=>totals[j]-((info[j].joinAt!=null&&info[j].joinAt>inf.leaveAt)?info[j].start:inf.snap[j]));
+    inf.proj=gains.length?Math.round(gains.reduce((a,b)=>a+b,0)/gains.length):0;
+  });
+  const nextLevel=rounds>0&&pos<N?1:0;
+  const slot=rounds>0?(pos<N?'bock':'ramsch'):'mal';
+  const forcedRamsch=ramschLeft>0||slot==='ramsch';
+  const forcedInfo=slot==='ramsch'?`Ramschrunde: Spiel ${pos-N+1} von ${N}`+(ramschLeft>0?` (alle gepasst: noch ${ramschLeft})`:''):ramschLeft>0?`alle haben gepasst: noch ${ramschLeft} Ramsch-Spiel(e)`:'';
+  const d=dealer;
+  let mal=null;
+  if(!forcedRamsch&&rounds===0&&S.settings.malenko){
+    let c=nextSeat(seat,ptr!=null?ptr:d);
+    for(let k=0;k<seat.length;k++){
+      if(!(seat.length===4&&c===d)&&done[c].size<3){
+        mal={player:c,remaining:['grand','ramsch','farbe'].filter(g=>!done[c].has(g))};break}
+      c=nextSeat(seat,c);
+    }
+  }
+  const pending=(S.events||[]).filter(e=>e.type==='join'&&!applied.has(e)).map(e=>e.p);
+  const lastOpen=S.hands.length>0&&!!S.hands[S.hands.length-1].open;
+  const canChange=boundaryOk()&&!lastOpen; // solange ein Spiel läuft (Ergebnis offen) kein Wechsel; // Spielerwechsel nur zwischen Runden, nicht mitten in Bock-/Ramsch- oder Malenko-Runde
+  return {canChange,rows,totals,rounds,pos,slot,nextLevel,dealer:d,mal,ramschLeft,forcedRamsch,forcedInfo,done,seat,play,N,info,pending};
+}
+
+/* ---------- Anzeige ---------- */
+let HOME=true; // beim Start der App zuerst der Startbildschirm
+function goHome(){closeModal();HOME=true;render();window.scrollTo(0,0)}
+function goApp(){closeModal();HOME=false;render();window.scrollTo(0,0)}
+function home(){
+  const it=(ic,t,fn,cls)=>`<button class="menu-item ${cls||''}" onclick="${fn}"><span>${ic}</span>${t}</button>`;
+  const main=S.started?it('▶','Spieltag fortsetzen ('+S.hands.length+' Spiele)','goApp()','prim'):it('＋','Neuer Spieltag','goApp()','prim');
+  const items=[...(S.started?[it('⚙','Einstellungen','openSettings()'),it('✅','Spieltag abschließen','closeDay()')]:[]),it('📋','Gesamtansicht','openOverview()'),it('📊','Statistik','openStats()'),it('🏆','Saisons','openSeasons()'),it('📅','Termine','openAppts()'),it('📤','Export / Senden','openExport()'),it('📥','Import','openImport()'),it('🔍','Suche','openSearch()'),it('❓','Hilfe','openHelp()'),it('ℹ','Info','openInfo()')];
+  return `<div class="home"><div class="homelogo" onclick="openInfo()">${logoSvg(S.logo,240)}</div><h1 class="hometitle">${APP_NAME}</h1><div class="muted" style="text-align:center;margin-bottom:14px">${APP_TAG}<br><small>Version ${APP_VERSION}</small></div><div class="homemain">${main}</div>${nextApptLine()}<div class="menu-grid">${items.join('')}</div></div>`;
+}
+function render(){
+  document.getElementById('app').innerHTML=HOME?home():S.started?board():setup();
+  fixSticky();
+}
+function fixSticky(){
+  const t=document.getElementById('topbar'),h1=document.querySelector('tr.h1'),r=document.documentElement.style;
+  r.setProperty('--topH',t?t.offsetHeight+'px':'0px');
+  r.setProperty('--h1H',h1?h1.offsetHeight+'px':'0px');
+}
+window.addEventListener('resize',fixSticky);
+// Name per Auswahlmenü (Guido, Karsten, Martin, Peter, früher benutzte Namen) oder frei eingeben
+function nameField(i){
+  const cur=S.players[i],list=S.nameList,custom=!list.includes(cur);
+  return `<div class="${custom?'row2':''}" style="margin-bottom:8px"><select onchange="pickName(${i},this.value)">${list.map(x=>`<option value="${esc(x)}" ${cur===x?'selected':''}>${esc(x)}</option>`).join('')}<option value="__new" ${custom?'selected':''}>Anderer Name …</option></select>
+  ${custom?`<input type="text" id="nm${i}" value="${esc(cur)}" placeholder="Neuer Name" oninput="S.players[${i}]=this.value.trim()" onchange="S.players[${i}]=this.value.trim()||NAMES[${i}];render()">`:''}</div>`;
+}
+function pickName(i,v){
+  if(v==='__new'){S.players[i]='';render();const el=document.getElementById('nm'+i);if(el)el.focus();return}
+  S.players[i]=v;render();
+}
+function startDay(){
+  for(let i=0;i<S.n;i++){if(!S.players[i])S.players[i]=NAMES[i]}
+  S.startDealer=0; // der 1. eingetragene Spieler gibt zuerst
+  S.players.slice(0,S.n).forEach(p=>{if(!S.nameList.includes(p))S.nameList.push(p)});
+  S.players=S.players.slice(0,S.n);S.events=[];S.started=true;HOME=false;save();render();
+}
+function setup(){
+  const n=S.n;padPlayers();
+  return `<h1 style="display:flex;align-items:center;gap:10px;cursor:pointer" onclick="goHome()" title="Startbildschirm">${logoSvg(S.logo,40)} ${APP_NAME}</h1>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px"><button class="btn sec" onclick="goHome()">🏠 Start</button>${undoBtn()}<button class="btn sec menu-btn" onclick="openMenu()">☰ Menü</button><span class="dsk"><button class="btn sec" onclick="openOverview()">📋 Gesamtansicht</button><button class="btn sec" onclick="openStats()">📊 Statistik</button><button class="btn sec" onclick="openSeasons()">🏆 Saisons</button><button class="btn sec" onclick="openExport()">📤 Export / Senden</button>${helpBtns()}<button class="btn sec" onclick="openImport()">📥 Import</button></span></div>
+  <div class="card">
+  <label>Anzahl Spieler</label>
+  <div class="seg"><button class="${n===3?'on':''}" onclick="S.n=3;render()">3 Spieler</button><button class="${n===4?'on':''}" onclick="S.n=4;render()">4 Spieler (Geber setzt aus)</button></div>
+  <label>Namen (in Sitzreihenfolge im Uhrzeigersinn)</label>
+  ${[0,1,2,3].slice(0,n).map(i=>nameField(i)).join('')}
+  <p class="muted">Der erste eingetragene Spieler ist der erste Geber.</p>
+  <div class="row2"><div><label>Grundeinsatz (€)</label><input type="number" min="0" step="0.5" value="${S.stake.base}" onchange="setStake('base',this.value)"></div>
+  <div><label>Wert von 100 Punkten (€)</label><input type="number" min="0" step="0.1" value="${S.stake.per100}" onchange="setStake('per100',this.value)"></div></div>
+  <p class="muted">Der Spieltag beginnt mit ${n} Bock-/Ramschrunden. Jede Runde besteht aus ${n} Bock-Spielen (doppelte Wertung) und ${n} Ramsch-Spielen. Ein mit Kontra (oder höher) verlorenes Spiel und ein mit genau 60 Augen verlorenes Spiel hängen je eine weitere Runde an (mit Hinweis, den du bestätigst). Sind keine Runden mehr offen, läuft Malenko.</p>
+  ${(()=>{const nms=S.players.slice(0,n).map(x=>x.trim()),dup=nms.some((x,i)=>x&&nms.indexOf(x)!==i);return `${dup?'<p class="lost">Ein Name kommt doppelt vor.</p>':''}<button class="btn" ${dup?'disabled':''} onclick="startDay()">Spiel starten</button>`})()}
+  </div>`;
+}
+function board(){
+  const R=replay(),n=S.players.length,nn=R.N;
+  const all=[...Array(n).keys()];
+  const hh=[],tt=[]; // Überschriften (Namen) und Gesamtsummen direkt darunter
+  all.forEach(i=>{
+    const isD=i===R.dealer,inGame=R.seat.includes(i),inf=R.info[i];
+    if(!inGame&&R.pending.includes(i)){hh.push(`<th class="pc gone"><div class="nm">${nm(i)}</div><div class="tag">steigt nach der Runde ein</div></th>`);tt.push(`<th class="pc tot gone">–</th>`);return}
+    if(!inGame){hh.push(`<th class="pc gone"><div class="nm">${nm(i)}</div><div class="tag">ging nach Spiel ${inf.leaveAt}${inf.proj!=null?' · Ende '+(R.totals[i]+inf.proj)+' ('+(inf.proj>=0?'+':'')+inf.proj+')':''}</div></th>`);tt.push(`<th class="pc tot gone">${R.totals[i]}</th>`);return}
+    const gl=R.rounds>0?'':[['grand','G','Grand'],['ramsch','R','Ramsch'],['farbe','F','Farbspiel']].map(([g,l,t])=>`<span class="gl ${R.done[i].has(g)?'red':'green'}" title="${t}: ${R.done[i].has(g)?'schon gespielt':'noch offen'}">${l}</span>`).join('');
+    hh.push(`<th class="pc ${isD?'deal':''}">${gl?`<div class="gls"><span class="mlabel">MALENKO:</span>${gl}</div>`:''}<div class="nm">${nm(i)}</div><div class="tag">${isD?(nn===4?'Geber (setzt aus)':'Geber'):(inf.start!=null?'Start '+inf.start+' (Schnitt)':'')}</div></th>`);
+    tt.push(`<th class="pc tot">${R.totals[i]}</th>`);
+  });
+  let ban='';
+  if(R.rounds>0){
+    const total=R.rounds; // offene Bock-/Ramschrunden (die laufende eingerechnet)
+    const sp=R.slot==='bock'?`Bock-Spiel ${R.pos+1} von ${nn} (×${levelF(1)})`:`Ramsch-Spiel ${R.pos-nn+1} von ${nn}`;
+    ban=`<div class="banner orange">Bock-/Ramschrunden offen: <b>${total}</b> · aktuell: ${sp}${R.canChange?'':' · 🔒 Spielerwechsel gesperrt'}</div>`;
+  }else{
+    ban='';
+  }
+  if(R.ramschLeft>0&&R.slot!=='ramsch')ban+=`<div class="banner bock"><b>Ramsch-Pflicht:</b> noch <b>${R.ramschLeft}</b> Ramsch-Spiel(e) (alle haben gepasst)${R.nextLevel>0?' · zählen mit Bock-Faktor':''}</div>`;
+  if(!R.canChange&&!R.mal&&R.rounds===0)ban+=`<div class="banner mal"><b>Malenko:</b> das letzte Spiel der Runde läuft · 🔒 Spielerwechsel erst danach möglich</div>`;
+  if(R.mal)ban+=`<div class="banner mal"><b>Malenko:</b> ${nm(R.mal.player)} muss spielen · offen: ${R.mal.remaining.map(g=>GROUPN[g]).join(' / ')}${R.canChange?'':' · 🔒 Spielerwechsel bis Ende der Malenko-Runde gesperrt'}</div>`;
+  let svSum=0;
+  const rows=R.rows.slice().reverse().map(r=>{
+    const h=r.h,c=r.c;
+    const cells=all.map(i=>{const v=c.pts[i];if(!r.seat.includes(i))return `<td class="pc muted"></td>`;return v==null?`<td class="pc muted">-</td>`:`<td class="pc ${v>0?'lost':'won'}" title="${v>0?'+':''}${v} in diesem Spiel">${r.cum[i]}</td>`}).join('');
+    let sv='-';
+    if(c.open)sv='<span class="opn">läuft</span>';
+    else if(c.kind==='game'){
+      const sf=STAGEF[stageOf(h)],bf=r.lv>0?levelF(r.lv):1,lf=c.won?1:S.settings.lossFactor;
+      const fs=[sf,lf,bf].filter(x=>x>1);
+      sv=c.value*sf*lf*bf;
+    }
+    else if(h.durchmarsch!=null&&h.durchmarsch!=='')sv=120;
+    else{sv=Math.max(...Object.values(c.pts).concat([0]))} // Ramsch: Wert inkl. Jungfrau und Bock = verlorene Punkte des Verlierers
+    if(typeof sv==='number')svSum+=sv;
+    // dicker Strich vor jedem Spiel, das der 1. Geber gibt (Beginn einer neuen Geberrunde)
+    return `<tr class="row ${r.dealer===R.rows[0].dealer?'cyc':''}" onclick="openForm(${r.i})"><td>${r.i+1}</td><td><span class="rn">${r.i+1}.</span> ${descr(r)}</td>${cells}<td class="num"><b>${sv}</b></td></tr>`}).join('');
+  return `<div class="top" id="topbar"><div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><span onclick="goHome()" style="cursor:pointer;display:inline-flex" title="Startbildschirm">${logoSvg(S.logo,34)}</span><button class="btn sec" onclick="goHome()">🏠</button>${undoBtn()}<button class="btn sec menu-btn" onclick="openMenu()">☰ Menü</button><span class="dsk"><button class="btn sec" onclick="openSettings()">⚙ Einstellungen</button><button class="btn sec" onclick="openOverview()">📋 Gesamtansicht</button><button class="btn sec" onclick="openStats()">📊 Statistik</button><button class="btn sec" onclick="openSeasons()">🏆 Saisons</button><button class="btn sec" onclick="closeDay()">✅ Spieltag abschließen</button><button class="btn sec" onclick="openExport()">📤 Export / Senden</button>${helpBtns()}</span></div>${ban}</div>
+  <div class="card"><table class="gt" style="--np:${n}"><thead><tr class="h1"><th>#</th><th>Spiel</th>${hh.join('')}<th class="num">Spielwert</th></tr>
+  <tr class="h2"><th></th><th>Summe verlorene Punkte</th>${tt.join('')}<th class="num" title="Summe aller Spielwerte">Σ ${svSum}</th></tr></thead>
+  <tbody>${rows||`<tr><td colspan="${n+3}" class="muted">Noch kein Spiel eingetragen.</td></tr>`}</tbody></table></div>
+  ${(()=>{const li=S.hands.length-1;return li>=0&&S.hands[li].open?`<button class="btn fab" onclick="openForm(${li})">Ergebnis eintragen</button>`:`<button class="btn fab" onclick="openForm(null)">+ Spiel anlegen</button>`})()}`;
+}
+function wertTxt(r){
+  const h=r.h,c=r.c;
+  const parts=c.mult?[c.base,c.mult]:[c.value];
+  const sf=STAGEF[stageOf(h)],bf=r.lv>0?levelF(r.lv):1,lf=(c.won||c.open)?1:S.settings.lossFactor;
+  if(sf>1)parts.push(sf);
+  if(lf>1)parts.push(lf);
+  if(bf>1)parts.push(bf);
+  const total=parts.length>1||!c.mult?c.value*sf*lf*bf:c.value;
+  return parts.length>1?`${total} (${parts.join(' × ')})`:`${total}`;
+}
+function descr(r){
+  const h=r.h,c=r.c;let s='';
+  const chips=[];
+  if(r.lv>0)chips.push(`Bock ×${levelF(r.lv)}`);
+  if(h.malPlayer!=null&&h.malPlayer!=='')chips.push('Malenko');
+  if(h.type==='ramsch'){
+    if(h.passe)chips.push('alle gepasst');
+    const av=r.play.map(i=>esc(S.players[i])+' '+((h.augen||{})[i]??'?')).join(' · ');
+    return `<b>Ramsch</b> ${chips.map(x=>`<span class="chip">${x}</span>`).join('')}<br><span class="muted">Augen: ${av}<br>${esc(c.text)}</span>`;
+  }
+  if(h.type!=='null'&&!c.open){chips.push((h.mo==='mit'?'mit ':'ohne ')+h.n+' gespielt '+(h.n+1))}
+  if(h.veto)chips.push('Veto im Ramsch');
+  if(h.spitze&&S.settings.spitze&&h.type!=='null')chips.push('Spitze ×2');
+  if(h.hand&&(!h.ouvert||h.ouvertFree))chips.push('Hand +1');if(h.ouvert)chips.push('Ouvert');if(h.schnAng)chips.push('Schn. ang.');if(h.schwarzAng)chips.push('Schw. ang.');
+  if(stageOf(h))chips.push(STAGEN[stageOf(h)]+' ×'+STAGEF[stageOf(h)]+' ('+h.contra.map(i=>esc(S.players[i])).join(', ')+')');
+  const lost=(c.pts[h.declarer]||0)>0;
+  const res=c.open?`<span class="opn">läuft – Ergebnis folgt</span>`:`<span class="${lost?'lost':'won'}">${lost?'verloren':'gewonnen'}${c.over?' (überreizt)':''}</span>`;
+  return `<b>${TYPES[h.type].n}</b> · ${esc(S.players[h.declarer])}${c.open&&h.type!=='null'?'':' · Wert '+wertTxt(r)}${h.reiz?` · gereizt ${h.reiz}`:''} · ${res}<br>${chips.map(x=>`<span class="chip">${x}</span>`).join('')}<span class="muted">${c.open?'':OUTN[h.outcome]}${c.open?'':h.augenSp!=null&&h.augenSp!==''?' · Augen '+h.augenSp+' : '+(120-h.augenSp):''}</span>`;
+}
+
+/* ---------- Eingabeformular ---------- */
+function newF(R){
+  const act=R.play;
+  const f={type:'kreuz',declarer:act[0],reiz:null,mo:'mit',n:1,hand:false,schnAng:false,schwarzAng:false,ouvert:false,
+    outcome:'W',contra:[],stage:1,levelOverride:null,augen:{},jungfrau:false,durchmarsch:null,malPlayer:null};
+  if(R.forcedRamsch){f.type='ramsch'}
+  else if(R.mal){f.malPlayer=R.mal.player;f.declarer=R.mal.player;f.type=R.mal.remaining.includes('farbe')?'kreuz':R.mal.remaining[0]==='grand'?'grand':'ramsch'}
+  return f;
+}
+let ctx=null;
+function openForm(i){
+  const R=replay();
+  editIdx=i;
+  if(i==null){F=newF(R);ctx={dealer:R.dealer,play:R.play,seat:R.seat,auto:R.nextLevel,mal:R.mal,free:false,ramschLeft:R.forcedRamsch?1:0,forcedInfo:R.forcedInfo}}
+  else{const r=R.rows[i];F=JSON.parse(JSON.stringify(r.h));ctx={dealer:r.dealer,play:r.play,seat:r.seat,auto:r.lv,mal:null,free:true,ramschLeft:0,wasForced:r.forced>0||r.slot==='ramsch'};
+    if(F.contra==null)F.contra=[];if(F.augen==null)F.augen={};if(!F.open)F.outcomeSet=true;
+    if(F.ouvert&&!F.ouvertFree&&F.type!=='null'){F.hand=true;F.schnAng=true;F.schwarzAng=true} // alte Ouvert-Spiele: eingeschlossene Ansagen sichtbar machen
+    F.ouvertFree=true}
+  drawForm();
+}
+function closeModal(){document.getElementById('modal').innerHTML='';F=null}
+function toggleVeto(v){
+  F.veto=v;F.passe=v?F.passe:F.passe;
+  if(v){
+    F.type='grand';F.hand=true;F.outcome='W';F.augenSp=null;
+    const mp=ctx.mal&&!ctx.free&&editIdx==null?ctx.mal.player:null;
+    // Malenko: Aufgabe des Malenko-Spielers (Ramsch) gilt als erledigt, er selbst darf kein Veto einlegen
+    F.malPlayer=mp;F.declarer=null; // der Spieler mit Grand Hand muss ausgewählt werden
+  }
+  else{F.type='ramsch';F.hand=false;if(ctx.mal&&!ctx.free){F.malPlayer=ctx.mal.player}}
+  drawForm();
+}
+function allowed(t){
+  if(editIdx!=null)return t===F.type; // Spielart ist beim Ergebnis eintragen / Bearbeiten festgelegt (nur über Rückgängig änderbar)
+  if(F&&F.veto)return t==='grand';
+  if(ctx.ramschLeft>0)return t==='ramsch';
+  if(!ctx.mal||ctx.free)return true;
+  const g=groupOf(t);return ctx.mal.remaining.includes(g);
+}
+function setF(k,v){
+  F[k]=v;
+  if(k==='outcome')F.outcomeSet=true;
+  if(k==='jungfrau'&&v)F.durchmarsch=null;           // Jungfrau und Durchmarsch schließen sich aus
+  if(k==='durchmarsch'&&v!=null)F.jungfrau=false;
+  if(k==='type'&&v!=='ramsch')F.passe=false;
+  if(k==='type'&&ctx.mal&&!ctx.free){F.malPlayer=ctx.mal.player;F.declarer=ctx.mal.player}
+  if(k==='type'&&F.type==='grand'&&F.n>4)F.n=4;
+  F.ouvertFree=true;
+  // Ouvert setzt keine weiteren Ansagen automatisch (Hand, Schneider, Schwarz wählst du selbst)
+  if(k==='schwarzAng'&&v)F.schnAng=true;
+  if(k==='schnAng'&&!v)F.schwarzAng=false;
+  if(k==='declarer'){F.contra=F.contra.filter(x=>x!==v)}
+  if(k==='type')F.outcome=(F.augenSp!==''&&F.augenSp!=null&&v!=='null'&&v!=='ramsch')?outFrom(F.augenSp,false):(F.outcome[0]==='W'?'W':'L');
+  drawForm();
+}
+function toggleContra(i){
+  const p=F.contra.indexOf(i);p<0?F.contra.push(i):F.contra.splice(p,1);
+  if(F.stage==null)F.stage=1;drawForm();
+}
+function toggleStage(s){
+  F.stage=stageOf(F)>=s?s-1:s;
+  if(F.stage<1)F.stage=1;
+  drawForm();
+}
+function freeMal(v){
+  ctx.free=v;
+  if(v){F.malPlayer=null}else if(ctx.mal){F.malPlayer=ctx.mal.player;F.declarer=ctx.mal.player;if(!allowed(F.type))F.type=ctx.mal.remaining[0]==='grand'?'grand':ctx.mal.remaining[0]==='ramsch'?'ramsch':'kreuz'}
+  drawForm();
+}
+function redrawKeep(id){
+  drawForm();
+  const el=document.getElementById(id);
+  if(el){el.focus();const v=el.value;el.value='';el.value=v} // Fokus behalten, Eingabe wird nicht unterbrochen
+}
+function augenIn(v){
+  if(v===''){F.augenSp=null;redrawKeep('augSp');return}
+  v=Math.max(0,Math.min(120,+v));if(isNaN(v))return;
+  F.augenSp=v;
+  F.outcome=outFrom(v,false);
+  redrawKeep('augSp');
+}
+function outFrom(v,sw){
+  if(v>=61)return v>=90?(sw?'WSW':'WS'):'W';
+  return v<=30?(sw?'LSW':'LS'):'L';
+}
+function setSchwarz(b){F.outcome=outFrom(F.augenSp,b);drawForm()}
+function seg(key,opts,cur){
+  return `<div class="seg">${opts.map(([v,l,dis])=>`<button class="${cur===v?'on':''}" ${dis?'disabled':''} onclick="setF('${key}',${JSON.stringify(v).replace(/"/g,'&quot;')})">${l}</button>`).join('')}</div>`;
+}
+function drawForm(){
+  const m=document.getElementById('modal');
+  const old=m.querySelector('.sheet');const top=old?old.scrollTop:0;
+  const act=ctx.play;
+  const isR=F.type==='ramsch',isN=F.type==='null';
+  // Neues oder noch offenes Spiel: erst Reizen/Ansagen eintragen, das Ergebnis folgt (am Ende der Maske)
+  const resAtEnd=editIdx==null||!!F.open;let resHTML='';
+  const resLocked=editIdx==null; // Ergebnis wird erst nach dem Spiel eingetragen: ausgegraut
+  const fsOpen=resLocked?'<fieldset disabled style="border:0;padding:0;margin:0;opacity:.4">':'<fieldset style="border:0;padding:0;margin:0">';
+  const isMalHand=F.malPlayer!=null&&F.malPlayer!==''; // Malenko: es wird nicht gereizt
+  if(isMalHand&&F.reiz)F.reiz=null;
+  let h=`<div class="modal"><div class="sheet"><h1>${editIdx==null?'Neues Spiel':'Spiel '+(editIdx+1)+' bearbeiten'}</h1>`;
+  const autoLv=ctx.auto;
+  if(editIdx==null&&ctx.mal){
+    h+=`<div class="banner mal">Malenko: <b>${nm(ctx.mal.player)}</b> muss spielen · offen: ${ctx.mal.remaining.map(g=>GROUPN[g]).join(' / ')}
+    <label class="chk"><input type="checkbox" ${ctx.free?'checked':''} onchange="freeMal(this.checked)"> Malenko-Zwang für dieses Spiel aufheben</label></div>`;
+  }
+  h+=`<label>Geber: ${nm(ctx.dealer)}</label>`;
+  if(ctx.ramschLeft>0)h+=`<div class="banner bock">Ramsch-Pflicht – ${ctx.forcedInfo}</div>`;
+  if(ctx.ramschLeft>0||F.veto||F.type==='ramsch')h+=`<label class="chk" style="${editIdx!=null?'opacity:.45':''}"><input type="checkbox" ${F.veto?'checked':''} ${editIdx!=null?'disabled':''} onchange="toggleVeto(this.checked)"> Ein Spieler sagt Grand Hand an (Veto) – sonst ist nur Ramsch erlaubt; der Spieler wird gewählt, Grand Hand wird automatisch gesetzt (${ctx.mal&&!ctx.free?'Malenko: nicht der Spieler mit der Aufgabe, seine Ramsch-Aufgabe gilt als erledigt':'Ramsch-Spiel wird nachgeholt'})</label>`;
+  h+=`<label>Spielart${editIdx!=null?' – festgelegt (nur über „Rückgängig“ änderbar)':''}</label>`;
+  h+=seg('type',Object.entries(TYPES).map(([k,v])=>[k,v.n,!allowed(k)]),F.type);
+  h+='@@BTNS@@'; // Knöpfe direkt unter der Spielauswahl
+  if(!isR){
+    h+=`<div class="row2"><div><label>Alleinspieler</label><select onchange="setF('declarer',+this.value)" ${ctx.mal&&!ctx.free&&editIdx==null&&!F.veto?'disabled':''}>${F.declarer==null?'<option value="" disabled selected>– Spieler wählen –</option>':''}${act.filter(i=>!(F.veto&&F.malPlayer!=null&&F.malPlayer!==''&&i===+F.malPlayer)).map(i=>`<option value="${i}" ${F.declarer===i?'selected':''}>${esc(S.players[i])}</option>`).join('')}</select></div>
+    ${isMalHand?'':`<div><label>Gereizt bis</label><select onchange="setF('reiz',this.value?+this.value:null)"><option value="">– nicht gereizt –</option>${REIZ.map(v=>`<option ${F.reiz===v?'selected':''}>${v}</option>`).join('')}</select></div>`}</div>`;
+    resHTML='';
+    if(isN)resHTML=`<label>Ergebnis${resAtEnd?' (jetzt oder später)':''}</label>`+seg('outcome',[['W','Gewonnen'],['L','Verloren']],F.outcomeSet?F.outcome:null);
+    else{
+      const av=F.augenSp,has=av!==''&&av!=null,won=F.outcome[0]==='W',sw=F.outcome.endsWith('SW');
+      resHTML=`<label>Augen (Kartenwerte) des Alleinspielers${resAtEnd?' – jetzt oder später, wenn das Spiel gespielt ist':''}</label><input type="number" min="0" max="120" value="${has?av:''}" placeholder="0–120" id="augSp" oninput="augenIn(this.value);">`;
+      if(has){
+        resHTML+=`<div class="prev" style="margin:8px 0">Gegner ${120-av} Augen → <span class="${won?'won':'lost'}">${OUTN[F.outcome].replace(', Schneider',' mit Schneider').replace(', Schwarz',' mit Schwarz')}</span> (ohne Ansagen)</div>`;
+        if(av>=90||av<=30)resHTML+=`<label class="chk"><input type="checkbox" ${sw?'checked':''} onchange="setSchwarz(this.checked)"> Schwarz (${av>=90?'Gegner machen keinen Stich':'Alleinspieler macht keinen Stich'})</label>`;
+      }
+    }
+    if(!isN){ // Buben und Anzahl werden erst zusammen mit dem Ergebnis abgefragt
+      const mx=F.type==='grand'?4:11;
+      resHTML+=`<div class="row2"><div><label>Buben</label><select onchange="setF('mo',this.value)"><option value="mit" ${F.mo==='mit'?'selected':''}>mit</option><option value="ohne" ${F.mo==='ohne'?'selected':''}>ohne</option></select></div>
+      <div><label>Anzahl</label><select onchange="setF('n',+this.value)">${Array.from({length:mx},(_,k)=>`<option ${F.n===k+1?'selected':''}>${k+1}</option>`).join('')}</select></div></div>`;
+    }
+    resHTML=fsOpen+resHTML+'</fieldset>';
+    if(!resAtEnd)h+=resHTML;
+    h+=`<label>Ansagen</label>${S.settings.spitze&&!isN?`<label class="chk"><input type="checkbox" ${F.spitze?'checked':''} onchange="setF('spitze',this.checked)"> Spitze (umgekehrte Rangfolge, 7 Trumpf, Wert ×2)</label>`:''}
+    <label class="chk"><input type="checkbox" ${F.hand?'checked':''} ${F.veto?'disabled':''} onchange="setF('hand',this.checked)"> Hand</label>
+    <label class="chk"><input type="checkbox" ${F.ouvert?'checked':''} onchange="setF('ouvert',this.checked)"> Ouvert</label>`;
+    if(!isN)h+=`<label class="chk"><input type="checkbox" ${F.schnAng||F.schwarzAng?'checked':''} onchange="setF('schnAng',this.checked)"> Schneider angesagt</label>
+    <label class="chk"><input type="checkbox" ${F.schwarzAng?'checked':''} onchange="setF('schwarzAng',this.checked)"> Schwarz angesagt</label>`;
+    h+=`<label>Kontra gesagt von</label><div class="seg">${act.filter(i=>i!==F.declarer).map(i=>`<button class="${F.contra.includes(i)?'on':''}" onclick="toggleContra(${i})">${esc(S.players[i])}</button>`).join('')}</div>
+    <label>Weitere Ansagen (nacheinander: Kontra ×2 → Re ×4 → Hirsch ×8 → Geweih ×16)</label>
+    <div class="seg"><button class="${stageOf(F)>=1?'on':''}" disabled>Kontra ×2 (Gegner)</button>${[[2,'Re ×4 (Alleinspieler)'],[3,'Hirsch ×8 (Gegner)'],[4,'Geweih ×16 (Alleinspieler)']].map(([s,l])=>`<button class="${stageOf(F)>=s?'on':''}" ${stageOf(F)>=s-1&&F.contra.length?'':'disabled'} onclick="toggleStage(${s})">${l}</button>`).join('')}</div>`;
+  }else{
+    const fa=ramschAugen(act);
+    const cur=fa||F.augen,isSet=i=>cur[i]!==''&&cur[i]!=null;
+    const who120=act.find(i=>isSet(i)&&+cur[i]===120);
+    const hasZero=act.some(i=>isSet(i)&&+cur[i]===0); // auch bei 120 Augen möglich: Jungfrau + ein Stich mit 0 Punkten (dann kein Durchmarsch)
+    if(!hasZero)F.jungfrau=false;
+    if(who120==null)F.durchmarsch=null;else if(F.durchmarsch!=null&&F.durchmarsch!==who120)F.durchmarsch=who120;
+    const sum=act.reduce((s,i)=>s+(+F.augen[i]||0),0);
+    const emp=act.filter(i=>F.augen[i]===''||F.augen[i]==null);
+    const forcedR=ctx.ramschLeft>0||ctx.wasForced; // Pflicht-Ramsch (auch beim späteren Ergebnis eintragen)
+    const noPass=isMalHand||forcedR; // in einem Pflicht-Ramsch kann niemand mehr passen
+    if(noPass)F.passe=false;
+    h+=`<label class="chk" style="${noPass?'opacity:.45':''}"><input type="checkbox" ${F.passe&&!noPass?'checked':''} ${noPass?'disabled':''} onchange="setF('passe',this.checked)"> Alle haben gepasst – löst ${ctx.seat.length} Ramsch-Spiele aus (dieses mitgerechnet)${isMalHand?' – im Malenko nicht möglich':forcedR?' – im Pflicht-Ramsch nicht möglich':''}</label>`;
+    h+=fsOpen+`<label>Augen (Kartenwerte) je Spieler – jeder kann verlieren (inkl. Skat, Summe 120)${resLocked?' – wird später eingetragen':''}</label><div class="row2">${act.map(i=>`<div><label>${esc(S.players[i])}</label><input type="number" min="0" max="120" id="aug${i}" value="${F.augen[i]??''}" placeholder="${emp.length===1&&emp[0]===i&&sum<=120?120-sum:''}" oninput="F.augen[${i}]=this.value===''?'':Math.min(120,+this.value);redrawKeep('aug${i}')"></div>`).join('')}</div>
+    <div class="muted">Summe: ${sum} ${sum===120?'✓':emp.length===1&&sum<=120?'(Rest '+(120-sum)+' wird beim leeren Feld eingetragen)':'(muss 120 sein)'}</div>
+    <label class="chk" style="${hasZero&&F.durchmarsch==null?'':'opacity:.45'}"><input type="checkbox" ${F.jungfrau&&hasZero?'checked':''} ${hasZero&&F.durchmarsch==null?'':'disabled'} onchange="setF('jungfrau',this.checked)"> Jungfrau (×${S.settings.jungfrau})${hasZero?' – nur wenn jemand Jungfrau ist':' – nur wählbar, wenn ein Spieler 0 Augen hat'}</label>
+    <label class="chk" style="${who120!=null&&!F.jungfrau?'':'opacity:.45'}"><input type="checkbox" ${F.durchmarsch!=null&&who120!=null?'checked':''} ${who120!=null&&!F.jungfrau?'':'disabled'} onchange="setF('durchmarsch',this.checked?${who120}:null)"> Durchmarsch${who120!=null?' ('+esc(S.players[who120])+' hat 120 Augen)':' – nur wenn ein Spieler 120 Augen hat'}</label></fieldset>`;
+  }
+  if(resAtEnd&&!isR)h+=resHTML;
+  if(isMalHand){F.levelOverride=null;F.passe=false}
+  h+=`<label style="${isMalHand?'opacity:.45':''}">Bockrunde (wirkt zusätzlich ×${S.settings.bock} auf alle Ansagen)${isMalHand?' – im Malenko gibt es keinen Bock':''}</label><select ${isMalHand?'disabled style="opacity:.45"':''} onchange="setF('levelOverride',this.value===''?null:+this.value)"><option value="">automatisch (${autoLv?'Bock ×'+levelF(1):'normal'})</option><option value="0" ${F.levelOverride===0?'selected':''}>Normal</option><option value="1" ${F.levelOverride>=1?'selected':''}>Bock ×${S.settings.bock}</option></select>`;
+  const lv=isMalHand?0:(F.levelOverride!=null?F.levelOverride:autoLv);
+  const hasAug=F.augenSp!==''&&F.augenSp!=null;
+  const hasRes=isR?!!ramschAugen(act):isN?!!F.outcomeSet:hasAug;
+  const fx={...F,open:!hasRes};
+  const c=calc(isR?{...fx,augen:ramschAugen(act)||F.augen}:fx,lv,act,ctx.seat);
+  const c0=hasRes?c:(isR?null:calc({...F,open:false},lv,act,ctx.seat));
+  const ptxt=Object.entries(c.pts).map(([k,v])=>`${esc(S.players[k])}: ${v}`).join(' · ')||'keine Punkte';
+  if(!hasRes&&!isR&&!isN){h+=`<div class="prev">Spiel wird angelegt${F.reiz?' · gereizt bis '+F.reiz:''} · Buben und Ergebnis (Augen) folgen, dann wird der Spielwert berechnet.</div>`}
+  else h+=`<div class="prev">${!isR&&c0?`Spielwert ${c0.value}${c0.mult?` (Grundwert ${c0.base} × ${c0.mult})`:''}${hasRes?(c.cf*(c.won?1:S.settings.lossFactor)>1?` × Faktor ${c.cf*(c.won?1:S.settings.lossFactor)}${c.won?'':' (verloren ×'+S.settings.lossFactor+')'} = ${c.value*c.cf*(c.won?1:S.settings.lossFactor)}`:'')+` · ${c.won?'gewonnen':'verloren'}${c.over?' (überreizt)':''}`:(c0.cf>1?` × Faktor ${c0.cf} (ohne Verlust)`:'')+(F.reiz?` · gereizt ${F.reiz}`:'')+' · läuft, Ergebnis folgt'}<br>`:''}${hasRes?`Verlorene Punkte → ${ptxt}`:'Noch keine Punkte – das Ergebnis wird später eingetragen.'}</div>`;
+  const valid=true;
+  const btns=`<div style="display:flex;gap:8px;flex-wrap:wrap;margin:12px 0"><button class="btn" ${(!isR&&F.declarer==null)||(editIdx!=null&&F.open&&!hasRes)?'disabled':''} onclick="saveHand()">${editIdx==null?'Spiel anlegen':F.open?'Spiel abschließen':'Speichern'}</button><button class="btn sec" onclick="closeModal()">Abbrechen</button>
+  ${editIdx!=null&&editIdx===S.hands.length-1?`<button class="btn bad" onclick="delHand()">Löschen</button>`:''}</div>`;
+  h=h.replace('@@BTNS@@',btns)+`</div></div>`;
+  m.innerHTML=h;
+  const ns=m.querySelector('.sheet');if(ns)ns.scrollTop=top;
+}
+function ramschAugen(act){
+  const a={};let sum=0,emp=[];
+  act.forEach(i=>{const v=F.augen[i];if(v===''||v==null)emp.push(i);else{a[i]=+v;sum+=+v}});
+  if(Object.values(a).some(v=>v===120)){act.forEach(i=>{if(a[i]==null)a[i]=0});return a} // Durchmarsch: 120 für einen, alle anderen 0
+  if(emp.length===0)return sum===120?a:null;
+  if(emp.length===1&&sum<=120){a[emp[0]]=120-sum;return a}
+  return null;
+}
+function saveHand(){
+  const h=JSON.parse(JSON.stringify(F));
+  if(h.type==='ramsch'){h.declarer=null;h.reiz=null;h.augen=ramschAugen(ctx.play);if(ctx.ramschLeft>0)h.passe=false}
+  // Bei 4 Spielern setzt der Geber aus und kann nie Alleinspieler sein
+  else if(h.declarer!=null&&!ctx.play.includes(+h.declarer)){toast('Der Geber spielt bei 4 Spielern nicht mit und kann nicht Alleinspieler sein.',5000);return}
+  // offen = Spiel angelegt (gereizt/angesagt), Ergebnis noch nicht eingetragen
+  h.open=h.type==='ramsch'?!h.augen:h.type==='null'?!h.outcomeSet:!(h.augenSp!==''&&h.augenSp!=null);
+  if(!h.open)delete h.open;
+  const idx=editIdx==null?S.hands.length:editIdx;
+  const was=editIdx!=null&&!!replay().rows[idx].c.newRound;
+  if(editIdx==null)S.hands.push(h);else S.hands[editIdx]=h;
+  const R=replay(),c=R.rows[idx]&&R.rows[idx].c;
+  save();closeModal();render();
+  if(c&&c.newRound&&!was)roundPopup(c,R);
+}
+// Hinweis: durch dieses Spiel ist eine neue Bock-/Ramschrunde entstanden - muss als gelesen bestätigt werden
+function roundPopup(c,R){
+  const why=c.contraWon?'Ein Spiel wurde mit Kontra (oder höher) gewonnen.':'Ein Spiel wurde mit genau 60 Augen verloren.';
+  document.getElementById('modal').innerHTML=`<div class="modal"><div class="sheet" id="roundPop"><h1>🔔 Neue Bock-/Ramschrunde</h1><p>${why}</p><p>Es kommt eine <b>neue Bock-/Ramschrunde</b> dazu (${R.N} Bock- und ${R.N} Ramsch-Spiele). Offene Runden jetzt: <b>${R.rounds}</b>.</p><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" id="roundOk" onclick="closeModal()">✔ Gelesen</button></div></div></div>`;
+}
+function delHand(){
+  ask('Letztes Spiel wirklich löschen?','Ja, löschen',()=>{S.hands.pop();S.events=S.events.filter(e=>e.at<=S.hands.length);save();render()});
+}
+
+/* ---------- Einstellungen ---------- */
+function openSettings(){
+  const st=S.settings;
+  const chk=(k,l)=>`<label class="chk"><input type="checkbox" ${st[k]?'checked':''} onchange="S.settings['${k}']=this.checked;save();render()"> ${l}</label>`;
+  document.getElementById('modal').innerHTML=`<div class="modal"><div class="sheet"><h1>Einstellungen</h1>
+  <label>Namen</label>${S.players.map((p,i)=>`<input type="text" value="${esc(p)}" style="margin-bottom:6px" onchange="S.players[${i}]=this.value.trim()||'Spieler ${i+1}';save();render()">`).join('')}
+  <label>Mitspieler (wirkt ab dem nächsten Spiel)</label>
+  ${(()=>{const R=replay();
+    if(!R.canChange)return `<div class="banner orange">🔒 Während einer Bock-/Ramschrunde oder Malenko-Runde kann niemand gehen oder kommen. Ein Wechsel ist erst nach Ende der laufenden Runde möglich.</div>`;
+    const gone=R.seat.length>3?R.seat.map(p=>`<button class="btn sec" onclick="leavePlayer(${p})">${nm(p)} geht</button>`).join(''):'<span class="muted">Mindestens 3 Spieler nötig.</span>';
+    const add=R.seat.length+R.pending.length<4?`<div class="row2" style="margin-top:8px">${(()=>{const av=S.nameList.filter(x=>!S.players.includes(x));return `<select id="newSel" onchange="document.getElementById('newName').style.display=this.value==='__new'?'':'none'">${av.map(x=>`<option value="${esc(x)}">${esc(x)}</option>`).join('')}<option value="__new">Anderer Name …</option></select>`})()}<input type="text" id="newName" placeholder="Neuer Name" style="display:${S.nameList.filter(x=>!S.players.includes(x)).length?'none':''}"></div><button class="btn" style="margin-top:8px" onclick="joinPlayer()">Neuer Mitspieler</button><div class="muted">Einstieg erst nach der laufenden Bock-/Ramsch- bzw. Malenko-Runde. Startpunkte = Schnitt der Spieler (ganz rechts angefügt). Offene, noch nicht begonnene Runden gelten dann mit 4 Bock- und 4 Ramsch-Spielen.</div>`:'<span class="muted">Es sind schon 4 Spieler dabei (oder vorgemerkt).</span>';
+    return `<div class="seg">${gone}</div>${add}`})()}
+  <div class="row2"><div><label>Grundeinsatz (€)</label><input type="number" min="0" step="0.5" value="${S.stake.base}" onchange="setStake('base',this.value)"></div>
+  <div><label>Wert von 100 Punkten (€)</label><input type="number" min="0" step="0.1" value="${S.stake.per100}" onchange="setStake('per100',this.value)"></div></div>
+  <p class="muted">Beim Abschließen: Punkte ÷ 100 × Wert, aufgerundet auf volle €, plus Grundeinsatz. Die zuletzt eingegebenen Werte bleiben für den nächsten Spieltag erhalten.</p>
+  <label>Ablageordner für Import und Export</label>
+  <div class="prev" style="margin:4px 0;font-weight:400">${folderLabel()?'Ordner: <b>'+esc(folderLabel())+'</b> – Export speichert dort, Import zeigt die Dateien dort.':'Nicht festgelegt – Standardordner des Geräts (Android: Downloads/SkatLog) bzw. Download-Ordner des Browsers.'}</div>
+  ${canPickDir()?`<p class="muted">Tipp: Wähle einen eigenen Unterordner (z. B. „Skat“), nicht „Dokumente“, „Downloads“ oder „Desktop“ selbst – die sperrt der Browser.</p><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn sec" onclick="pickDir()">Ordner wählen …</button>${folderLabel()?'<button class="btn sec" onclick="clearDir()">Ordner entfernen</button>':''}</div>`:'<p class="muted">Ein fester Ordner lässt sich nur in Chrome oder Edge am PC wählen. Auf dem Handy und in anderen Browsern bestimmt der Browser den Speicherort (meist „Downloads“).</p>'}
+  ${chk('contraPays','Gewonnenes Spiel: alle anderen Mitspieler bekommen den Spielwert')}
+  ${chk('round10','Ramsch: Verlust-Augen auf nächste 10 runden (55 → 60, 54 → 50)')}
+  ${chk('startBock','Spieltag beginnt mit Bock-/Ramschrunde')}
+  ${chk('malenko','Malenko aktiv, wenn keine Bockrunde läuft')}
+  ${chk('spitze','Spitze (umgekehrte Rangfolge, 7 Trumpf, verdoppelt den Spielwert)')}
+  <div class="prev" style="margin:8px 0;font-weight:400">🔒 Fest: Bei 4 Spielern setzt der Geber aus und kann <b>nie Alleinspieler</b> sein. Er steht bei „Alleinspieler“ nicht zur Auswahl, und ein Spiel mit dem Geber als Alleinspieler wird nicht gespeichert.</div>
+  <p class="muted" style="margin-top:14px">Spieleranzahl ändern oder neu beginnen:</p>
+  <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn bad" onclick="newGame()">Spieltag beenden …</button><button class="btn sec" onclick="openImport()">📥 Import</button><button class="btn sec" onclick="closeModal()">Schließen</button><button class="btn sec" onclick="goHome()">🏠 Startbildschirm</button></div></div></div>`;
+}
+function joinPlayer(){
+  if(!replay().canChange)return;
+  const sel=document.getElementById('newSel'),el=document.getElementById('newName');
+  const name=(sel&&sel.value!=='__new'?sel.value:(el&&el.value.trim()))||('Spieler '+(S.players.length+1));
+  if(!S.nameList.includes(name))S.nameList.push(name);
+  S.players.push(name);
+  S.events.push({type:'join',p:S.players.length-1,at:S.hands.length});
+  save();closeModal();render();
+}
+function leavePlayer(p){
+  if(!replay().canChange)return;
+  S.events.push({type:'leave',p,at:S.hands.length});
+  save();closeModal();render();
+}
+function ask(text,yes,fn){
+  window._ask=fn;
+  document.getElementById('modal').innerHTML=`<div class="modal"><div class="sheet"><h1>${text}</h1><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn bad" onclick="closeModal();window._ask()">${yes}</button><button class="btn sec" onclick="closeModal()">Abbrechen</button></div></div></div>`;
+}
+function resetDay(){S.hands=[];S.events=[];S.started=false;S.n=4;S.startDealer=0;S.players=[...NAMES];S.settings={...DEF}}
+function newGame(){
+  closeDay();
+}
+
+/* ---------- Spieltage, Gesamtansicht, Statistik ---------- */
+S.days=S.days||[];
+S.stake=S.stake||{base:25,per100:0.5}; // zuletzt benutzte Werte bleiben für den nächsten Spieltag erhalten
+const eur=v=>(Math.round(v*100)/100).toLocaleString('de-DE',{minimumFractionDigits:v%1?2:0,maximumFractionDigits:2})+' €';
+// Punkte → €: Punktwert, immer auf volle Euro aufgerundet, plus Grundeinsatz
+const payOf=(pts,stake)=>{const e=Math.ceil(pts*stake.per100/100-1e-9);return {euro:Math.max(0,e),total:Math.max(0,e)+(+stake.base||0)}};
+function setStake(k,v){const x=parseFloat(String(v).replace(',','.'));S.stake[k]=isNaN(x)||x<0?0:x;save()}
+const fmtDate=d=>new Date(d).toLocaleDateString('de-DE');
+function curDay(){return {id:'cur',current:true,season:S.season.id,date:new Date().toISOString(),players:S.players,hands:S.hands,events:S.events,startDealer:S.startDealer,n:S.n,settings:S.settings}}
+// Spieltag beenden: speichern (Abrechnung) oder löschen (mit zweiter Rückfrage) - geht immer, auch ohne Spiele oder mit laufendem Spiel
+function savableHands(){return S.hands.filter(h=>!h.open)}
+function closeDay(){
+  const open=S.hands.filter(h=>h.open).length,done=savableHands();
+  const del=`<button class="btn bad" onclick="confirmDeleteDay()">🗑 Spieltag löschen</button>`;
+  if(!done.length){
+    showSheet(`<h1>Spieltag beenden</h1><p>${S.hands.length?'Es gibt nur ein Spiel ohne Ergebnis.':'Es ist noch kein Spiel eingetragen.'} Es gibt nichts zu speichern. Der Spieltag kann nur gelöscht werden.</p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">${del}<button class="btn sec" onclick="closeModal()">Abbrechen</button></div>`);return}
+  const a=analyze({...curDay(),hands:done});
+  const ent=entries(a).sort((x,y)=>x.end-y.end);
+  const rows=ent.map(e=>`<tr><td>${esc(e.name)}${e.ghost?' <span class="muted">(abwesend – Schnitt)</span>':''}</td><td class="pc">${e.end}</td><td class="pc">${eur(e.pay.euro)}</td><td class="pc">${eur(+S.stake.base||0)}</td><td class="pc"><b>${eur(e.pay.total)}</b></td></tr>`).join('');
+  const tot=ent.reduce((s,e)=>s+e.pay.total,0);
+  showSheet(`<h1>Spieltag beenden</h1><p class="muted">${esc(S.season.name)} · ${done.length} Spiele</p>${open?`<div class="banner orange">Ein Spiel ohne Ergebnis wird beim Speichern nicht mitgenommen.</div>`:''}<div class="scroll"><table><thead><tr><th>Spieler</th><th class="pc">Punkte</th><th class="pc">Punktwert (${eur(+S.stake.per100)}/100, aufgerundet)</th><th class="pc">Grundeinsatz</th><th class="pc">Zu zahlen</th></tr></thead><tbody>${rows}</tbody><tfoot><tr><th colspan="4">Gesamtsumme aller Zahlungen</th><th class="pc">${eur(tot)}</th></tr></tfoot></table></div>
+  <p class="muted">Speichern legt den Spieltag in der Gesamtansicht ab, danach beginnt ein neuer Spieltag. Löschen verwirft ihn ohne Spuren (danach noch eine Rückfrage).</p>
+  <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" id="saveDay" onclick="doCloseDay()">💾 Speichern</button><button class="btn" onclick="doCloseDay('wa')">💬 Speichern und an WhatsApp senden</button><button class="btn sec" onclick="doCloseDay(true)">💾 Speichern und senden an …</button>${del}<button class="btn sec" onclick="closeModal()">Abbrechen</button></div>
+  <p class="muted">„Senden an …“ öffnet das Teilen-Menü des Geräts, dort wählst du z. B. die WhatsApp-Gruppe. Gesendet werden das Ergebnis als Text und eine Datei mit allen Daten (alle Saisons und Spiele).</p>`);
+}
+function confirmDeleteDay(){
+  ask('Wirklich löschen? Der Spieltag wird endgültig verworfen und nicht gespeichert.','Ja, endgültig löschen',doDeleteDay);
+}
+function doDeleteDay(){resetDay();save();closeModal();HOME=true;render()}
+function doCloseDay(send){
+  S.hands=savableHands();
+  const text=send?summaryText(curDay()):null; // vor dem Zurücksetzen berechnen
+  const d=JSON.parse(JSON.stringify({id:Date.now(),season:S.season.id,date:new Date().toISOString(),players:S.players,hands:S.hands,events:S.events,startDealer:S.startDealer,n:S.n,settings:S.settings,stake:S.stake}));
+  S.days.push(d);resetDay();save();closeModal();HOME=true;render();
+  if(send==='wa')waDialog({title:'Nachricht mit den Zahlungen',text,name:exportName(),content:JSON.stringify(S,null,1),mime:'application/json'});
+  else if(send)shareAll(text);
+}// Spieltag durchrechnen (S wird kurz auf den Spieltag umgestellt)
+function analyze(day){
+  const bak={players:S.players,hands:S.hands,events:S.events,n:S.n,startDealer:S.startDealer,settings:S.settings};
+  let R;
+  Object.assign(S,{players:day.players,hands:day.hands,events:day.events||[],n:day.n,startDealer:day.startDealer,settings:{...S.settings,...(day.settings||{}),...FIX}});
+  try{R=replay()}finally{Object.assign(S,bak)}
+  const part=[];day.players.forEach((_,i)=>{if(i<day.n||R.info[i].joinAt!=null)part.push(i)});
+  const end=R.totals.map((t,i)=>t+(R.info[i].proj||0));
+  const rank={};part.forEach(i=>{rank[i]=1+part.filter(j=>end[j]<end[i]).length});
+  const stake=day.current?S.stake:(day.stake||S.stake);
+  const pay=end.map(e=>payOf(e,stake));
+  // Spielt man nur zu dritt, bekommt der fehlende Stammspieler den Schnitt der Punkte (und die daraus folgenden €)
+  const ghosts=[];
+  if(part.length&&part.length<4){
+    const here=part.map(i=>day.players[i]);
+    const avg=Math.round(part.reduce((s,i)=>s+end[i],0)/part.length);
+    NAMES.filter(x=>!here.includes(x)).slice(0,4-part.length).forEach(name=>ghosts.push({name,end:avg,pay:payOf(avg,stake)}));
+  }
+  return {day,R,part,end,rank,pay,stake,ghosts};
+}
+const entries=a=>[...a.part.map(i=>({name:a.day.players[i],end:a.end[i],pay:a.pay[i],rank:a.rank[i],ghost:false})),...a.ghosts.map(g=>({name:g.name,end:g.end,pay:g.pay,rank:null,ghost:true}))];
+// Saisons: Spieltage gehören zur Saison, in der sie abgeschlossen wurden
+S.season=S.season||{id:1,name:'Saison 1',start:new Date().toISOString()};
+S.pastSeasons=S.pastSeasons||[];
+S.days.forEach(d=>{if(d.season==null)d.season=S.season.id});
+let VIEWSEASON=null; // null = aktuelle Saison, 'all' = alle
+const viewSeason=()=>VIEWSEASON==null?S.season.id:VIEWSEASON;
+const seasonName=id=>(id===S.season.id?S.season:S.pastSeasons.find(s=>s.id===id)||{name:'?'}).name;
+function daysOf(sel,includeCur){
+  return [...S.days.filter(d=>sel==='all'||d.season===sel),...(includeCur&&S.hands.length&&(sel==='all'||sel===S.season.id)?[curDay()]:[])];
+}
+function allDays(includeCur){return daysOf(viewSeason(),includeCur)}
+function seasonSelect(fn){
+  const all=[...S.pastSeasons,S.season];
+  return `<select style="margin-bottom:8px" onchange="VIEWSEASON=this.value==='all'?'all':+this.value;${fn}()"><option value="all" ${viewSeason()==='all'?'selected':''}>Alle Saisons</option>${all.slice().reverse().map(s=>`<option value="${s.id}" ${viewSeason()===s.id?'selected':''}>${esc(s.name)}${s.id===S.season.id?' (aktuell)':''}</option>`).join('')}</select>`;
+}
+function showSheet(html){document.getElementById('modal').innerHTML=`<div class="modal"><div class="sheet wide">${html}${HOME?'':'<div class="homebar"><button class="btn sec" onclick="goHome()">🏠 Startbildschirm</button></div>'}</div></div>`}
+
+function openOverview(){
+  const list=allDays(true).map(analyze);
+  const names=[];list.forEach(a=>entries(a).forEach(e=>{if(!names.includes(e.name))names.push(e.name)}));
+  const sum={},cnt={},sumE={};names.forEach(n=>{sum[n]=0;cnt[n]=0;sumE[n]=0});
+  let grand=0;
+  const rows=list.slice().reverse().map((a,zx)=>{
+    const ent=entries(a);
+    const dayTot=ent.reduce((s,e)=>s+e.pay.total,0);grand+=dayTot;
+    const cells=names.map(n=>{
+      const e=ent.find(x=>x.name===n);
+      if(!e)return `<td class="pc muted">-</td>`;
+      sum[n]+=e.end;cnt[n]++;sumE[n]+=e.pay.total;
+      return `<td class="pc"><b>${e.end}</b> ${e.ghost?'<span class="rk">Ø</span>':`<span class="rk r${e.rank}">${e.rank}.</span>`}<div class="tag">${eur(e.pay.total)}</div></td>`;
+    }).join('');
+    const label=a.day.current?'läuft':fmtDate(a.day.date);
+    const act=`<button class="btn sec sm" onclick="openStats('${a.day.current?'cur':'d'+a.day.id}')">Statistik</button>${a.day.current?'':` <button class="btn sec sm" title="Spieltag löschen" onclick="delDay(${a.day.id})">🗑</button>`}`; // Löschen nur mit doppelter Rückfrage
+    return `<tr class="${zx%2?'z':''}"><td>${label}<div class="muted">${a.day.hands.length} Spiele</div></td>${cells}<td class="pc"><b>${eur(dayTot)}</b></td><td>${act}</td></tr>`;
+  }).join('');
+  showSheet(`<h1>Gesamtansicht</h1>${seasonSelect('openOverview')}${list.length?`<div class="statwrap ov"><table><thead><tr><th>Spieltag</th>${names.map(n=>`<th class="pc">${esc(n)}</th>`).join('')}<th class="pc">Alle Zahlungen</th><th></th></tr>
+  <tr><th>Summe (${list.length} Spieltage)</th>${names.map(n=>`<th class="pc tot2">${sum[n]}<div class="tag">${cnt[n]} Spieltage · ${eur(sumE[n])}</div></th>`).join('')}<th class="pc tot2">${eur(grand)}</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>
+  <p class="muted">Zahl = verlorene Punkte am Spielende (Spieler, die früher gegangen sind, inkl. Schnitt; „Ø“ = nicht anwesender Stammspieler bei nur 3 Spielern, er bekommt den Schnitt), danach der Platz (1. = wenigste Punkte), darunter der zu zahlende Betrag (Punktwert aufgerundet + Grundeinsatz).</p>`:'<p class="muted">Noch kein Spieltag vorhanden.</p>'}
+  <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" onclick="openStats('all')">Statistik aller Spieltage</button><button class="btn sec" onclick="openSeasons()">🏆 Saisons</button><button class="btn sec" onclick="closeModal()">Schließen</button></div>`);
+}
+
+/* ---------- Löschen von Spieltagen und Saisons (immer mit zwei Rückfragen) ---------- */
+function delDay(id){
+  const d=S.days.find(x=>x.id===id);if(!d)return;
+  const txt=`${esc(fmtDate(d.date))} · ${esc(seasonName(d.season??S.season.id))} · ${d.hands.length} Spiele`;
+  ask(`Spieltag löschen? (1. Rückfrage)<br><small>${txt}</small>`,'Weiter …',()=>
+    ask(`Wirklich endgültig löschen? (2. Rückfrage)<br><small>Der Spieltag ${txt} und alle seine Spiele verschwinden aus Gesamtansicht und Statistik. Mit „↶ Rückgängig“ lässt es sich nur zurücknehmen, solange die App offen bleibt. Sichere vorher über „Export“.</small>`,'Ja, Spieltag endgültig löschen',()=>doDelDay(id)));
+}
+function doDelDay(id){S.days=S.days.filter(x=>x.id!==id);save();openOverview();toast('Spieltag gelöscht')}
+function delSeason(id){
+  const cur=id===S.season.id,se=cur?S.season:S.pastSeasons.find(s=>s.id===id);if(!se)return;
+  const n=S.days.filter(d=>d.season===id).length,g=S.days.filter(d=>d.season===id).reduce((s,d)=>s+d.hands.length,0);
+  const txt=`${esc(se.name)} · ${n} Spieltage · ${g} Spiele`;
+  ask(`Saison löschen? (1. Rückfrage)<br><small>${txt}</small>`,'Weiter …',()=>
+    ask(`Wirklich endgültig löschen? (2. Rückfrage)<br><small>${cur?'Die aktuelle Saison':'Die Saison'} ${txt} ${cur?'wird mit allen ihren Spieltagen gelöscht'+(S.pastSeasons.length?'. Die zuletzt begonnene ältere Saison wird danach wieder die aktuelle':'. Danach beginnt eine neue, leere Saison'):'wird mit allen ihren Spieltagen gelöscht'}. Mit „↶ Rückgängig“ lässt es sich nur zurücknehmen, solange die App offen bleibt. Sichere vorher über „Export“.</small>`,'Ja, endgültig löschen',()=>doDelSeason(id)));
+}
+// Alle Spieltage der aktuellen Saison in eine ältere Saison übertragen (zwei Rückfragen)
+function mergeSeason(){
+  const sel=document.getElementById('mergeTarget'),tid=sel?+sel.value:null,msg=document.getElementById('seasonMsg');
+  const target=S.pastSeasons.find(s=>s.id===tid),n=S.days.filter(d=>d.season===S.season.id).length;
+  if(!target){if(msg)msg.textContent='Es gibt keine ältere Saison als Ziel.';return}
+  if(!n){if(msg)msg.textContent='Die aktuelle Saison hat noch keine abgeschlossenen Spieltage.';return}
+  const txt=`${n} Spieltage aus „${esc(S.season.name)}“ nach „${esc(target.name)}“`;
+  ask(`Übertragen? (1. Rückfrage)<br><small>${txt}</small>`,'Weiter …',()=>
+    ask(`Wirklich übertragen? (2. Rückfrage)<br><small>${txt}. Die Spieltage gehören danach zur älteren Saison und zählen in deren Statistik. Die aktuelle Saison bleibt leer bestehen. Mit „↶ Rückgängig“ lässt es sich nur zurücknehmen, solange die App offen bleibt.</small>`,'Ja, jetzt übertragen',()=>doMergeSeason(tid)));
+}
+function doMergeSeason(tid){
+  const target=S.pastSeasons.find(s=>s.id===tid);if(!target)return;
+  const moved=S.days.filter(d=>d.season===S.season.id);
+  moved.forEach(d=>{d.season=tid});
+  const last=moved.map(d=>d.date).sort().pop();
+  if(last&&(!target.end||String(last)>String(target.end)))target.end=last;
+  save();openSeasons();toast(moved.length+' Spieltage übertragen');
+}
+function doDelSeason(id){
+  S.days=S.days.filter(d=>d.season!==id);
+  if(id!==S.season.id)S.pastSeasons=S.pastSeasons.filter(s=>s.id!==id);
+  else if(S.pastSeasons.length){ // aktuelle Saison gelöscht: die zuletzt begonnene ältere Saison wird wieder die aktuelle
+    const prev=S.pastSeasons.slice().sort((a,b)=>String(a.start).localeCompare(String(b.start))).pop();
+    S.pastSeasons=S.pastSeasons.filter(s=>s.id!==prev.id);
+    S.season={id:prev.id,name:prev.name,start:prev.start};
+  }else{ // keine ältere Saison vorhanden: es muss immer eine aktuelle geben, also eine neue leere
+    S.season={id:Math.max(1,...S.days.map(d=>+d.season||0),id)+1,name:'Saison 1',start:new Date().toISOString()};
+  }
+  if(VIEWSEASON===id)VIEWSEASON=null;
+  save();openSeasons();toast('Saison gelöscht');
+}
+
+/* ---------- Saisons ---------- */
+function openSeasons(){
+  const seasons=[...S.pastSeasons,S.season].slice().reverse();
+  const data=seasons.map(se=>{
+    const list=daysOf(se.id,se.id===S.season.id).map(analyze);
+    const per={};let paid=0;
+    list.forEach(a=>entries(a).forEach(e=>{const n=e.name;const p=per[n]||(per[n]={pts:0,eur:0,days:0,first:0});p.pts+=e.end;p.eur+=e.pay.total;p.days++;if(!a.day.current&&e.rank===1)p.first++;paid+=e.pay.total}));
+    return {se,list,per,paid};
+  });
+  const names=[];data.forEach(d=>Object.keys(d.per).forEach(n=>{if(!names.includes(n))names.push(n)}));
+  const rows=data.map(d=>{
+    const best=Object.keys(d.per).sort((a,b)=>d.per[a].pts-d.per[b].pts)[0];
+    return `<tr><td><b>${esc(d.se.name)}</b>${d.se.id===S.season.id?' <span class="rk r1">aktuell</span>':''}<div class="muted">${fmtDate(d.se.start)} – ${d.se.end?fmtDate(d.se.end):'läuft'} · ${d.list.length} Spieltage</div>
+      <div style="margin-top:4px"><button class="btn sec sm" onclick="VIEWSEASON=${d.se.id};openStats('all')">Statistik</button> <button class="btn sec sm" onclick="VIEWSEASON=${d.se.id};openOverview()">Spieltage</button> <button class="btn sec sm" title="Saison löschen" onclick="delSeason(${d.se.id})">🗑 Saison löschen</button></div></td>
+      ${names.map(n=>{const p=d.per[n];return p?`<td class="pc"><b>${p.pts}</b>${n===best&&d.list.length?' <span class="rk r1">1.</span>':''}<div class="tag">${eur(p.eur)} · ${p.first}× Platz 1</div></td>`:'<td class="pc muted">-</td>'}).join('')}
+      <td class="pc"><b>${eur(d.paid)}</b></td></tr>`}).join('');
+  showSheet(`<h1>Saisons</h1><div class="scroll"><table><thead><tr><th>Saison</th>${names.map(n=>`<th class="pc">${esc(n)}</th>`).join('')}<th class="pc">Alle Zahlungen</th></tr></thead><tbody>${rows}</tbody></table></div>
+  <p class="muted">Zahl = verlorene Punkte in der Saison, darunter Zahlungen in € und Anzahl Spieltage auf Platz 1.</p>
+  <label>Aktuelle Saison umbenennen</label><div class="row2"><input type="text" id="seasonRename" value="${esc(S.season.name)}"><button class="btn sec" onclick="renameSeason()">Umbenennen</button></div>
+  <label>Neue Saison anlegen (die aktuelle wird abgeschlossen und gespeichert)</label><div class="row2"><input type="text" id="seasonNew" placeholder="Name der neuen Saison"><button class="btn" onclick="newSeason()">Neue Saison</button></div>
+  ${S.pastSeasons.length?`<label>Aktuelle Saison in eine ältere übertragen (alle ihre Spieltage)</label><div class="row2"><select id="mergeTarget">${S.pastSeasons.slice().reverse().map(s=>`<option value="${s.id}">${esc(s.name)}</option>`).join('')}</select><button class="btn sec" onclick="mergeSeason()">Übertragen …</button></div>`:''}
+  <p id="seasonMsg" class="lost"></p>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px"><button class="btn sec" onclick="closeModal()">Schließen</button></div>`);
+}
+function renameSeason(){
+  const v=document.getElementById('seasonRename').value.trim();
+  if(v){S.season.name=v;save();openSeasons()}
+}
+function newSeason(){
+  const name=document.getElementById('seasonNew').value.trim(),msg=document.getElementById('seasonMsg');
+  if(!name){msg.textContent='Bitte einen Namen für die neue Saison eingeben.';return}
+  if(S.hands.length){msg.textContent='Bitte zuerst den laufenden Spieltag abschließen.';return}
+  S.pastSeasons.push({...S.season,end:new Date().toISOString()});
+  S.season={id:Date.now(),name,start:new Date().toISOString()};
+  VIEWSEASON=null;save();openSeasons();
+}
+
+/* ---------- Diagramme (SVG/HTML, ohne Bibliothek) ---------- */
+let STATVIEW='charts';
+const colVar=i=>`var(--c${(i%8)+1})`;
+const nf=n=>Math.round(n).toLocaleString('de-DE');
+function legendHTML(items,fmt){
+  const tot=items.reduce((s,x)=>s+x.v,0);
+  return `<div class="legend">${items.map(x=>`<span class="it"><i class="sw" style="background:${x.c}"></i>${esc(x.l)} <b>${fmt?fmt(x):nf(x.v)}</b>${tot&&x.pct!==false?` <span class="muted">${Math.round(100*x.v/tot)} %</span>`:''}</span>`).join('')}</div>`;
+}
+function donutSVG(items,aria,big,small){
+  const tot=items.reduce((s,x)=>s+x.v,0);
+  if(!tot)return '<p class="muted">Noch keine Daten.</p>';
+  const cx=110,cy=110,R=100,r=60;let a0=-Math.PI/2,paths='';
+  const pt=(a,rad)=>[(cx+rad*Math.cos(a)).toFixed(2),(cy+rad*Math.sin(a)).toFixed(2)];
+  items.forEach(x=>{
+    if(!x.v)return;
+    const frac=x.v/tot,a1=a0+frac*2*Math.PI;let d;
+    if(frac>=0.9999){d=`M${cx} ${cy-R}A${R} ${R} 0 1 1 ${cx-0.01} ${cy-R}L${cx-0.01} ${cy-r}A${r} ${r} 0 1 0 ${cx} ${cy-r}Z`}
+    else{const [x0,y0]=pt(a0,R),[x1,y1]=pt(a1,R),[x2,y2]=pt(a1,r),[x3,y3]=pt(a0,r),lg=frac>.5?1:0;
+      d=`M${x0} ${y0}A${R} ${R} 0 ${lg} 1 ${x1} ${y1}L${x2} ${y2}A${r} ${r} 0 ${lg} 0 ${x3} ${y3}Z`}
+    paths+=`<path d="${d}" fill="${x.c}"><title>${esc(x.l)}: ${x.t||nf(x.v)} (${Math.round(frac*100)} %)</title></path>`;
+    a0=a1;
+  });
+  return `<svg class="donut" viewBox="0 0 220 220" role="img" aria-label="${esc(aria)}">${paths}<text x="110" y="${small?108:118}" text-anchor="middle" font-size="22" font-weight="800">${esc(big)}</text>${small?`<text x="110" y="130" text-anchor="middle" font-size="12" style="fill:var(--mute)">${esc(small)}</text>`:''}</svg>`;
+}
+function hbarsHTML(rows,series,fmtRow){
+  const max=Math.max(1,...rows.map(r=>r.vals.reduce((a,b)=>a+b,0)));
+  return rows.map(r=>`<div class="hrow"><div class="nm" title="${esc(r.name)}">${esc(r.name)}</div><div><div class="hb">${r.vals.map((v,i)=>v?`<i style="width:${(100*v/max).toFixed(2)}%;background:${series[i].c}" title="${esc(r.name)} · ${esc(series[i].l)}: ${v}"></i>`:'').join('')}</div><div class="hv">${fmtRow(r)}</div></div></div>`).join('');
+}
+function lineSVG(labels,series,aria){
+  const W=Math.max(290,Math.min(640,innerWidth-64)),H=250,L=44,Rr=12,T=12,B=34,n=labels.length;
+  const mx=Math.max(1,...series.flatMap(s=>s.vals));
+  const step=Math.pow(10,Math.floor(Math.log10(mx/4)));const nice=[1,2,2.5,5,10].map(k=>k*step).find(k=>mx/k<=5)||step*10;
+  const top=Math.ceil(mx/nice)*nice;
+  const X=i=>n<2?L+(W-L-Rr)/2:L+i*(W-L-Rr)/(n-1),Y=v=>T+(H-T-B)*(1-v/top);
+  let g='';
+  for(let v=0;v<=top+0.001;v+=nice){g+=`<line x1="${L}" x2="${W-Rr}" y1="${Y(v)}" y2="${Y(v)}" style="stroke:var(--grid)" stroke-width="1"/><text x="${L-6}" y="${Y(v)+4}" text-anchor="end">${nf(v)}</text>`}
+  const every=Math.ceil(n/Math.max(2,Math.floor((W-L)/62)));
+  labels.forEach((l,i)=>{if((i%every===0&&(n-1-i>=every*0.6||i===0))||i===n-1)g+=`<text x="${X(i)}" y="${H-12}" text-anchor="middle">${esc(l)}</text>`});
+  g+=`<line x1="${L}" x2="${W-Rr}" y1="${Y(0)}" y2="${Y(0)}" style="stroke:var(--mute)" stroke-width="1"/>`;
+  series.forEach(s=>{
+    g+=`<polyline fill="none" stroke="${s.c}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" points="${s.vals.map((v,i)=>X(i).toFixed(1)+','+Y(v).toFixed(1)).join(' ')}"/>`;
+    s.vals.forEach((v,i)=>{g+=`<circle cx="${X(i).toFixed(1)}" cy="${Y(v).toFixed(1)}" r="4" fill="${s.c}" style="stroke:var(--card)" stroke-width="2"><title>${esc(s.name)} · ${esc(labels[i])}: ${nf(v)} Punkte</title></circle>`});
+  });
+  return `<svg class="linechart" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(aria)}">${g}</svg>`;
+}
+function statCharts(st,order,an,ramschHands,hasPl){
+  if(!order.length)return '<p class="muted">Keine Daten.</p>';
+  const P=order.map((n,i)=>({n,c:colVar(i),s:st[n]}));
+  const euroItems=P.map(p=>({l:p.n,v:p.s.eurTot,c:p.c,t:eur(p.s.eurTot)}));
+  const ptsItems=P.map(p=>({l:p.n,v:p.s.punkte,c:p.c,t:nf(p.s.punkte)+' Punkte'}));
+  const totE=euroItems.reduce((a,x)=>a+x.v,0),totP=ptsItems.reduce((a,x)=>a+x.v,0);
+  const g=P.reduce((a,p)=>a+p.s.grand[0],0),f=P.reduce((a,p)=>a+p.s.farbe[0],0),nl=P.reduce((a,p)=>a+p.s.null[0],0);
+  const artItems=[{l:'Grand',v:g,c:'var(--c1)'},{l:'Farbspiele',v:f,c:'var(--c2)'},{l:'Null',v:nl,c:'var(--c3)'},{l:'Ramsch',v:ramschHands,c:'var(--c4)'}].filter(x=>x.v>0);
+  const wl=[{l:'Gewonnen',c:'var(--c1)'},{l:'Verloren',c:'var(--c2)'}];
+  const wlRows=P.map(p=>({name:p.n,vals:[p.s.w,p.s.l],sp:p.s.sp}));
+  let h='<div class="charts">';
+  h+=`<div class="chartcard"><h3>Zahlungen je Spieler</h3><p class="muted">Anteil an den Gesamtzahlungen (mit Grundeinsatz)</p>${donutSVG(euroItems,'Zahlungen je Spieler',eur(totE),'gesamt')}${legendHTML(euroItems,x=>eur(x.v))}</div>`;
+  h+=`<div class="chartcard"><h3>Verlorene Punkte</h3><p class="muted">Anteil an allen verlorenen Punkten</p>${donutSVG(ptsItems,'Verlorene Punkte je Spieler',nf(totP),'Punkte')}${legendHTML(ptsItems,x=>nf(x.v))}</div>`;
+  h+=`<div class="chartcard"><h3>Spielarten</h3><p class="muted">Anzahl gespielter Spiele</p>${donutSVG(artItems,'Verteilung der Spielarten',String(artItems.reduce((a,x)=>a+x.v,0)),'Spiele')}${legendHTML(artItems)}</div>`;
+  h+=`<div class="chartcard"><h3>Als Alleinspieler</h3><p class="muted">Gewonnen und verloren je Spieler</p>${hbarsHTML(wlRows,wl,r=>`${r.vals[0]} gewonnen · ${r.vals[1]} verloren${r.sp?' · '+Math.round(100*r.vals[0]/r.sp)+' %':''}`)}${legendHTML(wl.map(x=>({...x,v:0})),x=>'').replace(/<b><\/b>/g,'')}</div>`;
+  if(hasPl){
+    const pl=[{l:'1. Platz',c:'var(--pl1)'},{l:'2. Platz',c:'var(--pl2)'},{l:'3. Platz',c:'var(--pl3)'},{l:'4. Platz',c:'var(--pl4)'}];
+    const rows=P.map(p=>({name:p.n,vals:[p.s.pl[1],p.s.pl[2],p.s.pl[3],p.s.pl[4]]})).filter(r=>r.vals.some(v=>v));
+    if(rows.length)h+=`<div class="chartcard"><h3>Platzierungen</h3><p class="muted">Spieltage je Platz (1. = wenigste Punkte)</p>${hbarsHTML(rows,pl,r=>r.vals.map((v,i)=>v?`${v}× ${i+1}.`:'').filter(Boolean).join(' · '))}${legendHTML(pl.map(x=>({...x,v:0})),x=>'').replace(/<b><\/b>/g,'')}</div>`;
+  }
+  if(an.length>=2){
+    const labels=an.map(a=>a.day.current?'heute':new Date(a.day.date).toLocaleDateString('de-DE',{day:'numeric',month:'numeric'}));
+    const run={};order.forEach(n=>run[n]=0);
+    const series=order.map((n,i)=>({name:n,c:colVar(i),vals:[]}));
+    an.forEach(a=>{const ent=entries(a);series.forEach(s=>{const e=ent.find(x=>x.name===s.name);if(e)run[s.name]+=e.end;s.vals.push(run[s.name])})});
+    h+=`<div class="chartcard wide"><h3>Punkteverlauf</h3><p class="muted">Verlorene Punkte, über die Spieltage addiert</p>${lineSVG(labels,series,'Punkteverlauf je Spieler')}${legendHTML(series.map(s=>({l:s.name,v:s.vals[s.vals.length-1],c:s.c})),x=>nf(x.v))}</div>`;
+  }
+  return h+'</div>';
+}
+
+let STATSEL=null;
+function openStats(sel){
+  STATSEL=sel||STATSEL||(S.hands.length?'cur':'all');
+  if(STATSEL==='cur'&&(!S.hands.length||!(viewSeason()==='all'||viewSeason()===S.season.id)))STATSEL='all';
+  if(STATSEL[0]==='d'&&!daysOf(viewSeason(),false).some(d=>'d'+d.id===STATSEL))STATSEL='all';
+  let days;
+  if(STATSEL==='all')days=allDays(true);
+  else if(STATSEL==='cur')days=[curDay()];
+  else days=S.days.filter(d=>'d'+d.id===STATSEL);
+  const an=days.map(analyze);
+  let ramschHands=0;
+  const st={},order=[];
+  const get=n=>st[n]||(order.push(n),st[n]={days:0,pl:[0,0,0,0,0,0,0],punkte:0,sp:0,w:0,l:0,
+    grand:[0,0,0],farbe:[0,0,0],null:[0,0,0],fc:{kreuz:0,pik:0,herz:0,karo:0},ramsch:0,ramschL:0,ramschP:0,dm:0,
+    mit:0,ohne:0,mitB:0,ohneB:0,hand:0,ouvert:0,snA:0,swA:0,spitze:0,kontra:0,kontraW:0,re:0,veto:0,mal:0,malW:0,malL:0,malP:0,euro:0,eurTot:0,maxW:0,sumAug:0,nAug:0});
+  an.forEach(a=>{
+    const nm_=i=>a.day.players[i];
+    a.ghosts.forEach(g=>{const s=get(g.name);s.days++;s.punkte+=g.end;s.euro+=g.pay.euro;s.eurTot+=g.pay.total});
+    a.part.forEach(i=>{const s=get(nm_(i));s.days++;s.punkte+=a.end[i];s.euro+=a.pay[i].euro;s.eurTot+=a.pay[i].total;if(!a.day.current)s.pl[Math.min(a.rank[i],6)]++});
+    a.R.rows.forEach(r=>{
+      const h=r.h,c=r.c;
+      if(c.open)return; // noch offene Spiele zählen nicht
+      if(r.slot==='mal')Object.entries(c.pts).forEach(([k,v])=>{if(v>0)get(nm_(+k)).malP+=v});
+      if(h.malPlayer!=null&&h.malPlayer!==''){
+        const mp=+h.malPlayer,ms=get(nm_(mp));ms.mal++;
+        // eigene Malenko-Aufgabe (auch bei Veto): keine Punkte = gewonnen, sonst verloren
+        (c.pts[mp]||0)>0?ms.malL++:ms.malW++;
+      }
+      if(h.type==='ramsch'){
+        ramschHands++;
+        r.play.forEach(p=>get(nm_(p)).ramsch++);
+        if(h.durchmarsch!=null&&h.durchmarsch!=='')get(nm_(+h.durchmarsch)).dm++;
+        else r.play.forEach(p=>{if((c.pts[p]||0)>0){const s=get(nm_(p));s.ramschL++;s.ramschP+=c.pts[p]}});
+        return;
+      }
+      const s=get(nm_(h.declarer));
+      s.sp++;c.won?s.w++:s.l++;
+      const g=h.type==='grand'?s.grand:h.type==='null'?s.null:s.farbe;
+      g[0]++;g[c.won?1:2]++;
+      if(s.fc[h.type]!=null)s.fc[h.type]++;
+      if(h.type!=='null'){if(h.mo==='mit'){s.mit++;s.mitB+=h.n}else{s.ohne++;s.ohneB+=h.n}}
+      if(h.hand||h.ouvert)s.hand++;if(h.ouvert)s.ouvert++;if(h.schnAng||h.schwarzAng||h.ouvert)s.snA++;if(h.schwarzAng||h.ouvert)s.swA++;
+      if(h.spitze&&a.day.settings&&a.day.settings.spitze)s.spitze++;
+      if(h.veto)s.veto++;
+      const sf=STAGEF[stageOf(h)],bf=r.lv>0?2:1,lf=c.won?1:2;
+      s.maxW=Math.max(s.maxW,c.value*sf*lf*bf);
+      if(h.augenSp!=null&&h.augenSp!==''){s.sumAug+=+h.augenSp;s.nAug++}
+      if(stageOf(h)>=1){(h.contra||[]).forEach(p=>{const t=get(nm_(p));t.kontra++;if(!c.won)t.kontraW++})}
+      if(stageOf(h)>=2)s.re++;
+    });
+  });
+  const hasPl=an.some(a=>!a.day.current);
+  const pct=(w,t)=>t?Math.round(100*w/t)+'%':'-';
+  const sec=t=>`<tr class="sec"><th colspan="${order.length+1}">${t}</th></tr>`;
+  let zi=0; // jede 2. Zeile dunkler
+  const row=(l,f)=>`<tr class="${(zi++)%2?'z':''}"><td>${l}</td>${order.map(n=>`<td class="pc">${f(st[n])}</td>`).join('')}</tr>`;
+  const body=[
+    sec('Geld'),
+    row('Verloren gesamt in € (ohne Grundeinsatz)',s=>`<b>${eur(s.euro)}</b>`),
+    row('Zu zahlen gesamt in € (mit Grundeinsatz)',s=>`<b>${eur(s.eurTot)}</b>`),
+    sec('Allgemein'),
+    row('Spieltage',s=>s.days),
+    hasPl?[1,2,3,4].map(p=>row(p+'. Platz (Spieltage)',s=>s.pl[p])).join(''):'',
+    row('Verlorene Punkte gesamt',s=>`<b>${s.punkte}</b>`),
+    row('Ø Punkte je Spieltag',s=>s.days?Math.round(s.punkte/s.days):'-'),
+    sec('Als Alleinspieler'),
+    row('Spiele gesamt',s=>s.sp),row('gewonnen',s=>s.w),row('verloren',s=>s.l),row('Gewinnquote',s=>pct(s.w,s.sp)),
+    sec('Grand'),row('gespielt',s=>s.grand[0]),row('gewonnen',s=>s.grand[1]),row('verloren',s=>s.grand[2]),
+    sec('Farbspiele'),row('gespielt',s=>s.farbe[0]),row('gewonnen',s=>s.farbe[1]),row('verloren',s=>s.farbe[2]),
+    row('Kreuz / Pik / Herz / Karo',s=>`${s.fc.kreuz} / ${s.fc.pik} / ${s.fc.herz} / ${s.fc.karo}`),
+    sec('Null'),row('gespielt',s=>s.null[0]),row('gewonnen',s=>s.null[1]),row('verloren',s=>s.null[2]),
+    sec('Ramsch'),row('mitgespielt',s=>s.ramsch),row('verloren',s=>s.ramschL),row('Verlustpunkte im Ramsch',s=>s.ramschP),row('Durchmarsch',s=>s.dm),
+    sec('Buben'),row('Spiele „mit“',s=>s.mit),row('Buben „mit“ gezählt',s=>s.mitB),row('Spiele „ohne“',s=>s.ohne),row('Buben „ohne“ gezählt',s=>s.ohneB),
+    sec('Ansagen und Sonstiges'),
+    row('Hand / Ouvert',s=>`${s.hand} / ${s.ouvert}`),row('Schneider / Schwarz angesagt',s=>`${s.snA} / ${s.swA}`),
+    S.settings.spitze||an.some(a=>a.day.settings&&a.day.settings.spitze)?row('Spitze',s=>s.spitze):'',
+    row('Kontra gesagt (davon gewonnen)',s=>`${s.kontra} (${s.kontraW})`),row('Re gesagt',s=>s.re),
+    row('Veto im Ramsch',s=>s.veto),
+    sec('Malenko'),
+    row('Eigene Aufgaben gesamt',s=>s.mal),row('Eigene Aufgaben gewonnen',s=>s.malW),row('Eigene Aufgaben verloren',s=>s.malL),
+    row('Punkte verloren (alle Malenko-Spiele)',s=>s.malP),
+    sec('Weitere'),
+    row('Höchster Spielwert',s=>s.maxW||'-'),row('Ø Augen als Alleinspieler',s=>s.nAug?Math.round(s.sumAug/s.nAug):'-')
+  ].join('');
+  const totalPaid=an.reduce((s,a)=>s+entries(a).reduce((t,e)=>t+e.pay.total,0),0);
+  const opts=[['all','Alle Spieltage'],...(S.hands.length&&(viewSeason()==='all'||viewSeason()===S.season.id)?[['cur','Laufender Spieltag']]:[]),...daysOf(viewSeason(),false).reverse().map(d=>['d'+d.id,'Spieltag '+fmtDate(d.date)])];
+  showSheet(`<h1>Statistik</h1><div class="selrow">${seasonSelect('openStats')}<select onchange="openStats(this.value)">${opts.map(([v,l])=>`<option value="${v}" ${STATSEL===v?'selected':''}>${l}</option>`).join('')}</select></div>
+  <p style="margin:10px 0 0"><b>Gesamtsumme aller Zahlungen: ${eur(totalPaid)}</b> <span class="muted">(Punktwert + Grundeinsatz aller Spieler)</span></p>
+  <div class="seg" style="margin:10px 0 0"><button class="${STATVIEW==='charts'?'on':''}" onclick="STATVIEW='charts';openStats()">📊 Diagramme</button><button class="${STATVIEW==='table'?'on':''}" onclick="STATVIEW='table';openStats()">📋 Tabelle</button></div>
+  ${STATVIEW==='charts'?statCharts(st,order,an,ramschHands,hasPl):(order.length?`<div class="statwrap"><table><thead><tr><th></th>${order.map(n=>`<th class="pc">${esc(n)}</th>`).join('')}</tr></thead><tbody>${body}</tbody></table></div>`:'<p class="muted">Keine Daten.</p>')}
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px"><button class="btn sec" onclick="openOverview()">📋 Gesamtansicht</button><button class="btn sec" onclick="closeModal()">Schließen</button></div>`);
+}
+/* ---------- Export und Senden (z. B. an eine WhatsApp-Gruppe) ---------- */
+const exportName=()=>'skat-'+new Date().toISOString().slice(0,10)+'.json';
+/* Ablageordner für Import/Export (File System Access API: Chrome/Edge am PC). Sonst gilt der Download-Ordner des Browsers. */
+let dirHandle=null;
+function idb(){return new Promise((res,rej)=>{const r=indexedDB.open('skat-fs',1);r.onupgradeneeded=()=>r.result.createObjectStore('kv');r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)})}
+async function idbPut(k,v){const db=await idb();return new Promise((res,rej)=>{const s=db.transaction('kv','readwrite').objectStore('kv');const q=v===undefined?s.delete(k):s.put(v,k);q.onsuccess=()=>res();q.onerror=()=>rej(q.error)})}
+async function idbGet(k){const db=await idb();return new Promise((res,rej)=>{const q=db.transaction('kv').objectStore('kv').get(k);q.onsuccess=()=>res(q.result);q.onerror=()=>rej(q.error)})}
+try{idbGet('dir').then(h=>{dirHandle=h||null}).catch(()=>{})}catch(e){}
+const canPickDir=()=>typeof window.showDirectoryPicker==='function'||!!(androidApp()&&typeof androidApp().pickFolder!=='undefined');
+const folderLabel=()=>androidApp()&&typeof androidApp().folderName!=='undefined'?androidApp().folderName():(dirHandle?dirHandle.name:'');
+window.onFolderChanged=()=>{toast(folderLabel()?'Ordner gewählt: '+folderLabel():'Kein Ordner gewählt');const m=document.getElementById('modal').innerHTML;if(m.includes('Daten importieren'))openImport();else if(m.trim())openSettings()};
+async function pickDir(){
+  if(androidApp()&&typeof androidApp().pickFolder!=='undefined'){androidApp().pickFolder();return} // Android: Ordnerauswahl des Systems
+  let h=null;
+  try{h=await window.showDirectoryPicker({mode:'readwrite',id:'skat'})}
+  catch(e){
+    if(e&&e.name==='AbortError')return; // Auswahl abgebrochen
+    const n=e&&e.name,m=e&&e.message||'';
+    if(n==='SecurityError'||/system files|contains|sicher|blocked/i.test(m))
+      toast('Diesen Ordner sperrt der Browser (z. B. „Dokumente“, „Downloads“ oder „Desktop“ selbst). Lege darin einen Unterordner an, z. B. „Skat“, und wähle diesen.',9000);
+    else if(n==='NotAllowedError')
+      toast('Der Browser erlaubt den Ordnerzugriff hier nicht. Bitte in Chrome oder Edge am PC öffnen (nicht in einer eingebetteten Vorschau).',9000);
+    else toast('Ordner konnte nicht gewählt werden ('+(n||'Fehler')+(m?': '+m:'')+'). Dateien landen weiter im Download-Ordner.',9000);
+    return;
+  }
+  dirHandle=h;
+  try{await idbPut('dir',h)}catch(e){toast('Ordner „'+h.name+'“ gewählt, gilt aber nur bis zum Schließen der Seite (Browser kann ihn nicht dauerhaft merken).',7000)}
+  openSettings();
+}
+async function clearDir(){if(androidApp()&&typeof androidApp().clearFolder!=='undefined')androidApp().clearFolder();dirHandle=null;try{await idbPut('dir',undefined)}catch(e){}openSettings()}
+async function dirOk(){
+  if(!dirHandle)return false;
+  try{let p=await dirHandle.queryPermission({mode:'readwrite'});if(p!=='granted')p=await dirHandle.requestPermission({mode:'readwrite'});return p==='granted'}catch(e){return false}
+}
+function toast(t,ms){
+  const d=document.createElement('div');d.className='toast';d.textContent=t;d.onclick=()=>d.remove();document.body.appendChild(d);setTimeout(()=>d.remove(),ms||4000);
+}
+const androidApp=()=>typeof window.AndroidBridge!=='undefined'&&window.AndroidBridge; // läuft in der Android-App (WebView)
+async function exportData(){await saveText(exportName(),JSON.stringify(S,null,1),'application/json')} // alle Daten (Spiele, Saisons, Termine mit Verlauf)
+async function saveText(name,text,mime){ // Datei in den Ablageordner bzw. als Download speichern
+
+  if(androidApp()){androidApp().saveFile(name,text);return} // Android: Datei im Ordner „Downloads“
+  if(dirHandle&&await dirOk()){
+    try{const fh=await dirHandle.getFileHandle(name,{create:true});const w=await fh.createWritable();await w.write(text);await w.close();toast('Gespeichert in „'+dirHandle.name+'“: '+name);return}catch(e){}
+  }
+  const b=new Blob([text],{type:mime||'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=name;a.click();
+  toast('Als Download gespeichert: '+name);
+}
+function summaryText(day){
+  const a=analyze(day);const ent=entries(a).sort((x,y)=>x.end-y.end);
+  const tot=ent.reduce((s,e)=>s+e.pay.total,0);
+  return ['♠ Skat – '+seasonName(day.season??S.season.id)+' – '+fmtDate(day.date)+' ('+day.hands.length+' Spiele)',
+    ...ent.map((e,i)=>(i+1)+'. '+e.name+': '+e.end+' Punkte → '+eur(e.pay.total)+(e.ghost?' (Schnitt, abwesend)':'')),
+    'Alle Zahlungen: '+eur(tot)].join('\n');
+}
+function lastSummary(){
+  if(S.hands.length)return summaryText(curDay());
+  const d=S.days[S.days.length-1];return d?summaryText(d):'♠ Skat – noch keine Spiele';
+}
+// Teilen-Dialog des Geräts (dort die WhatsApp-Gruppe wählen); Datei mit allen Daten wird angehängt
+async function shareAll(text){
+  const json=JSON.stringify(S,null,1);
+  if(androidApp()){androidApp().shareFile(exportName(),json,text);return} // Android: Teilen-Menü mit Datei und Text
+  try{
+    const file=new File([json],exportName(),{type:'application/json'});
+    if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],title:'Skat-Daten',text});return}
+    if(navigator.share){await navigator.share({title:'Skat',text});exportData();return}
+  }catch(e){if(e&&e.name==='AbortError')return}
+  // Fallback (z. B. am PC): Datei speichern und WhatsApp mit dem Text öffnen, Datei dort anhängen
+  exportData();
+  window.open('https://wa.me/?text='+encodeURIComponent(text),'_blank');
+}
+function sendTextWhatsApp(text){if(androidApp()){androidApp().shareText(text);return}window.open('https://wa.me/?text='+encodeURIComponent(text),'_blank')}
+function openExport(){
+  showSheet(`<h1>Export / Senden</h1><p class="muted">Enthält alle Daten: alle Saisons, alle Spieltage, den laufenden Spieltag sowie alle Termine mit ihrem Änderungsverlauf.</p>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin:8px 0"><button class="btn" onclick="waDialog({title:'Nachricht mit den Zahlungen',text:lastSummary(),name:exportName(),content:JSON.stringify(S,null,1),mime:'application/json'})">💬 An WhatsApp senden (Text + Datei)</button><button class="btn" onclick="exportData()">Als Datei speichern</button>
+  <button class="btn" onclick="shareAll(lastSummary())">Senden an … (z. B. WhatsApp-Gruppe)</button>
+  <button class="btn sec" onclick="sendTextWhatsApp(lastSummary())">Nur Ergebnis als Text an WhatsApp</button></div>
+  <label>Vorschau des Textes</label><pre style="white-space:pre-wrap;background:var(--chip);padding:10px;border-radius:8px;font:13px/1.4 inherit">${esc(lastSummary())}</pre>
+  <button class="btn sec" onclick="closeModal()">Schließen</button>`);
+}
+// Import-Dialog mit „Zurück“; auf Android zusätzlich Liste der gesicherten Dateien (ohne System-Dateiauswahl)
+let _bk=[];
+function openImport(){
+  const A=androidApp();_bk=[];
+  if(A&&A.listBackups){try{_bk=JSON.parse(A.listBackups())}catch(e){_bk=[]}}
+  const fmt=n=>n>1024?Math.round(n/1024)+' KB':n+' B';
+  showSheet(`<h1>Daten importieren</h1>
+  <p class="muted">Ersetzt <b>alle</b> Daten dieser App durch den Inhalt einer Skat-Datei (.json). Sichere vorher mit „Export / Senden“.</p>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin:8px 0"><button class="btn sec" onclick="closeModal()">← Zurück</button><button class="btn" onclick="importData()">📂 ${A?'Dateiauswahl des Geräts':'Datei wählen'} …</button>${A?'<button class="btn sec" onclick="pickDir()">📁 Ordner wählen …</button>':''}</div>
+  ${A?(_bk.length?`<label>Gesicherte Dateien ${folderLabel()?'im Ordner „'+esc(folderLabel())+'“':'in Downloads/SkatLog'} (antippen zum Laden)</label>`+_bk.map((f,i)=>`<div class="hit" onclick="importBackup(${i})"><b>${esc(f.name)}</b> <span class="muted">· ${fmt(f.size)}${f.date?' · '+esc(f.date):''}</span></div>`).join(''):`<p class="muted">${folderLabel()?'Im Ordner „'+esc(folderLabel())+'“ liegen keine .json-Dateien.':'Im Standardordner liegen noch keine gesicherten Dateien.'} Wähle über „📁 Ordner wählen“ den Ordner mit deinen Sicherungen.</p>`):''}
+  <details style="margin-top:8px"><summary>Ohne Dateiauswahl: Inhalt einfügen</summary>
+  <p class="muted">Kopiere den Inhalt der Skat-Datei (z. B. aus einer Nachricht) und füge ihn hier ein.</p>
+  <textarea id="pasteBox" rows="5" style="width:100%;font:13px monospace;background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:8px" placeholder='{"started":…}'></textarea>
+  <button class="btn" style="margin-top:6px" onclick="loadImport(document.getElementById('pasteBox').value)">Einfügen und laden</button></details>
+  <div style="margin-top:12px"><button class="btn sec" onclick="closeModal()">← Zurück</button></div>
+  <p class="muted">Aus der Datei- oder Ordnerauswahl des Geräts kommst du mit der Zurück-Taste (oder Geste) wieder hierher, oft ist sie zweimal nötig. Bei „Ordner wählen“ den Ordner antippen und unten „AUSWÄHLEN“ drücken.</p>`);
+}
+function importBackup(i){
+  const A=androidApp();if(!A||!_bk[i])return;
+  try{loadImport(A.readBackup(_bk[i].id))}catch(e){toast('Datei konnte nicht gelesen werden')}
+}
+async function importData(){
+  if(dirHandle&&typeof window.showOpenFilePicker==='function'&&await dirOk()){
+    try{
+      const [fh]=await window.showOpenFilePicker({startIn:dirHandle,types:[{description:'Skat-Daten',accept:{'application/json':['.json']}}]});
+      loadImport(await (await fh.getFile()).text());return;
+    }catch(e){if(e&&e.name==='AbortError')return}
+  }
+  const i=document.createElement('input');i.type='file';i.accept='.json';
+  i.onchange=()=>{const r=new FileReader();r.onload=()=>loadImport(r.result);r.readAsText(i.files[0])};
+  i.click();
+}
+// Import ersetzt ALLES: erst prüfen, dann Warnung mit Bestätigung (Häkchen + Knopf), erst danach wird übernommen
+let _pendingImport=null;
+function loadImport(text){
+  let nS;
+  try{
+    nS=JSON.parse(text);
+    if(!nS||!Array.isArray(nS.players)||!Array.isArray(nS.hands))throw new Error('format');
+  }catch(e){toast('Datei ungültig – nichts geändert');return}
+  _pendingImport=nS;
+  const sum=s=>`${(s.days||[]).length} abgeschlossene Spieltage in ${(s.pastSeasons||[]).length+1} Saison(s)${s.hands.length?', laufender Spieltag mit '+s.hands.length+' Spielen':''}, ${(s.appts||[]).length} Termine (${(s.apptLog||[]).length} Verlaufseinträge)`;
+  showSheet(`<h1>⚠ Achtung: Alles wird ersetzt</h1>
+  <div class="banner orange" style="margin:8px 0">Beim Import werden <b>alle aktuellen Daten gelöscht und durch den Inhalt der Datei ersetzt</b>: Spieltage, Saisons, laufender Spieltag, Termine mit Verlauf und Einstellungen.</div>
+  <table style="margin:6px 0"><tbody><tr><td>Jetzt in der App</td><td>${sum(S)}</td></tr><tr><td>Neu aus der Datei</td><td><b>${sum(nS)}</b></td></tr></tbody></table>
+  <label class="chk"><input type="checkbox" id="impOk" onchange="document.getElementById('impGo').disabled=!this.checked"> Ja, ich habe verstanden: alle aktuellen Daten werden ersetzt.</label>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin:10px 0"><button class="btn bad" id="impGo" disabled onclick="applyImport()">Alles ersetzen</button><button class="btn sec" onclick="_pendingImport=null;openImport()">← Abbrechen</button></div>
+  <p class="muted">Danach lässt sich der Import mit „↶ Rückgängig“ zurücknehmen, solange die App offen bleibt. Sicherer: vorher mit „Export / Senden“ sichern.</p>`);
+}
+function applyImport(){
+  const nS=_pendingImport;if(!nS)return;
+  try{
+    S=nS;S.settings={...DEF,...S.settings,...FIX};S.events=S.events||[];S.days=S.days||[];S.stake=S.stake||{base:25,per100:0.5};
+    S.season=S.season||{id:1,name:'Saison 1',start:new Date().toISOString()};S.pastSeasons=S.pastSeasons||[];
+    S.days.forEach(d=>{if(d.season==null)d.season=S.season.id});S.nameList=S.nameList||[...NAMES];apptEnsure();
+    _pendingImport=null;
+    save();closeModal();render();toast('Daten importiert – „↶ Rückgängig“ nimmt es zurück',6000);
+  }catch(e){toast('Datei ungültig – nichts geändert')}
+}
+// Testdaten: index.html#demo62 füllt den laufenden Spieltag mit 62 zufälligen Spielen (ersetzt den laufenden Spieltag!)
+function fillDemo(count,np,silent){
+  np=np||4;
+  let seed=Date.now()%2147483646+1;const rnd=()=>(seed=(seed*16807)%2147483647)/2147483647;const ri=n=>Math.floor(rnd()*n);
+  S.started=true;S.n=np;S.players=NAMES.slice(0,np);S.events=[];S.startDealer=0;S.settings={...DEF,...FIX};S.hands=[];
+  const farben=['karo','herz','pik','kreuz'];
+  const split=play=>{const a=ri(70),b=ri(120-a),c=120-a-b,v=[a,b,c].sort(()=>rnd()-.5);const augen={};play.forEach((p,i)=>augen[p]=v[i]);return augen};
+  for(let k=0;k<count;k++){
+    const R=replay(),play=R.play;let h;
+    if(R.forcedRamsch){
+      h={type:'ramsch',augen:split(play),contra:[]};
+      if(rnd()<.1){h={type:'grand',declarer:play[ri(play.length)],mo:'mit',n:1+ri(2),hand:true,veto:true,outcome:'W',augenSp:75,contra:[]}}
+    }else{
+      let type,decl=play[ri(play.length)],mal=null;
+      if(R.mal){mal=R.mal.player;decl=mal;const g=R.mal.remaining[ri(R.mal.remaining.length)];type=g==='grand'?'grand':g==='ramsch'?'ramsch':farben[ri(4)]}
+      else type=rnd()<.15?'grand':rnd()<.05?'null':farben[ri(4)];
+      if(!R.mal&&rnd()<.04){h={type:'ramsch',augen:split(play),contra:[],passe:true}}
+      else if(type==='ramsch')h={type:'ramsch',augen:split(play),contra:[],malPlayer:mal};
+      else if(type==='null')h={type:'null',declarer:decl,outcome:rnd()<.6?'W':'L',contra:[],malPlayer:mal};
+      else{
+        const aug=15+ri(105);
+        h={type,declarer:decl,mo:rnd()<.5?'mit':'ohne',n:1+ri(type==='grand'?3:4),hand:rnd()<.12,outcome:outFrom(aug,false),augenSp:aug,contra:[],malPlayer:mal,reiz:rnd()<.5?[18,20,22,24,27,30][ri(6)]:null};
+        if(rnd()<.2){const opp=play.filter(x=>x!==decl);h.contra=[opp[ri(opp.length)]];h.stage=1+ri(3)}
+      }
+    }
+    S.hands.push(h);
+  }
+  if(!silent)save();
+}
+// Testdaten: index.html#demoSaisons erzeugt 2 Saisons mit je 13 Spieltagen zu je mindestens 100 Spielen (ERSETZT ALLE vorhandenen Daten!)
+function fillDemoSeasons(daysPer,minGames){
+  daysPer=daysPer||13;minGames=minGames||100;
+  const day0=new Date();day0.setHours(19,0,0,0);day0.setDate(day0.getDate()-7*(daysPer*2+1));
+  S.days=[];S.pastSeasons=[];S.events=[];
+  const seasonNames=['Saison 2025/26','Saison 2026/27'];
+  let week=0;
+  S.season={id:1001,name:seasonNames[0],start:day0.toISOString()};
+  for(let s=0;s<2;s++){
+    for(let d=0;d<daysPer;d++){
+      const np=(d%5===4)?3:4;                      // gelegentlich nur zu dritt (der 4. bekommt den Schnitt)
+      fillDemo(minGames+Math.floor(Math.random()*21),np,true);
+      if(np===3){const absent=NAMES[(d+s)%4];S.players=NAMES.filter(n=>n!==absent)} // wechselnder Abwesender
+      const date=new Date(day0);date.setDate(day0.getDate()+7*week++);
+      S.days.push(JSON.parse(JSON.stringify({id:date.getTime(),season:S.season.id,date:date.toISOString(),players:S.players,hands:S.hands,events:S.events,startDealer:S.startDealer,n:S.n,settings:S.settings,stake:S.stake})));
+    }
+    if(s===0){
+      const end=new Date(day0);end.setDate(day0.getDate()+7*(week-1));
+      S.pastSeasons.push({...S.season,end:end.toISOString()});
+      const st=new Date(end);st.setDate(st.getDate()+7);
+      S.season={id:1002,name:seasonNames[1],start:st.toISOString()};
+    }
+  }
+  resetDay();save();
+}
+/* ---------- Termine (geplante Spieltermine, Kalender-Dateien, Änderungsverlauf) ---------- */
+// Daten: S.appts (Termine) und S.apptLog (Verlauf, nie löschbar); beides steckt im normalen Export/Import.
+const pad2=n=>String(n).padStart(2,'0');
+const ymd=d=>d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate());
+const ymdParse=s=>{const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(s||'');return m?new Date(+m[1],+m[2]-1,+m[3]):null};
+const WD=['So','Mo','Di','Mi','Do','Fr','Sa'],WDL=['Sonntag','Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag'];
+const MONTHS=['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
+const dayLabel=s=>{const d=ymdParse(s);return d?WD[d.getDay()]+', '+pad2(d.getDate())+'.'+pad2(d.getMonth()+1)+'.'+d.getFullYear():(s||'–')};
+// Datum aus Eingabe wie 24.10.2026, 24.10.26, 24.10. (aktuelles Jahr) oder 2026-10-24; sonst null
+function parseDate(txt){
+  const t=String(txt||'').trim();let y,m,d,x;
+  if((x=/^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(t))){y=+x[1];m=+x[2];d=+x[3]}
+  else if((x=/^(\d{1,2})\.\s*(\d{1,2})\.?\s*(\d{2}|\d{4})?$/.exec(t))){d=+x[1];m=+x[2];y=x[3]?(+x[3]<100?2000+ +x[3]:+x[3]):new Date().getFullYear()}
+  else return null;
+  const dt=new Date(y,m-1,d);if(dt.getFullYear()!==y||dt.getMonth()!==m-1||dt.getDate()!==d)return null;
+  return ymd(dt);
+}
+const addDays=(s,k)=>{const d=ymdParse(s);return ymd(new Date(d.getFullYear(),d.getMonth(),d.getDate()+k))};
+const fmtDE=s=>{const d=ymdParse(s);return d?pad2(d.getDate())+'.'+pad2(d.getMonth()+1)+'.'+d.getFullYear():''};
+// Feiertage (Deutschland): bundesweit und regional (nicht in jedem Bundesland), Ostern nach Gauß/Anonymous-Gregorian
+const _hol={};
+function easter(y){const a=y%19,b=Math.floor(y/100),c=y%100,d=Math.floor(b/4),e=b%4,f=Math.floor((b+8)/25),g=Math.floor((b-f+1)/3),h=(19*a+b-d-g+15)%30,i=Math.floor(c/4),k=c%4,l=(32+2*e+2*i-h-k)%7,m=Math.floor((a+11*h+22*l)/451),mo=Math.floor((h+l-7*m+114)/31),da=((h+l-7*m+114)%31)+1;return new Date(y,mo-1,da)}
+function holidays(y){
+  if(_hol[y])return _hol[y];
+  const H={},E=easter(y),add=(d,n,reg)=>{H[ymd(d)]={n,reg:!!reg}},off=k=>new Date(y,E.getMonth(),E.getDate()+k);
+  add(new Date(y,0,1),'Neujahr');add(off(-2),'Karfreitag');add(off(0),'Ostersonntag');add(off(1),'Ostermontag');add(new Date(y,4,1),'Tag der Arbeit');
+  add(off(39),'Christi Himmelfahrt');add(off(49),'Pfingstsonntag');add(off(50),'Pfingstmontag');add(new Date(y,9,3),'Tag der Deutschen Einheit');
+  add(new Date(y,11,25),'1. Weihnachtstag');add(new Date(y,11,26),'2. Weihnachtstag');
+  add(new Date(y,0,6),'Heilige Drei Könige',1);add(off(60),'Fronleichnam',1);add(new Date(y,7,15),'Mariä Himmelfahrt',1);add(new Date(y,9,31),'Reformationstag',1);add(new Date(y,10,1),'Allerheiligen',1);
+  const n23=new Date(y,10,23);add(new Date(y,10,23-((n23.getDay()+7-3)%7||7)),'Buß- und Bettag',1); // Mittwoch vor dem 23.11.
+  return _hol[y]=H;
+}
+const holidayOf=s=>{const d=ymdParse(s);return d?holidays(d.getFullYear())[s]||null:null};
+function apptEnsure(){S.appts=Array.isArray(S.appts)?S.appts:[];S.apptLog=Array.isArray(S.apptLog)?S.apptLog:[]}
+apptEnsure();
+const REMINDERS=[[0,'keine'],[15,'15 Minuten vorher'],[60,'1 Stunde vorher'],[180,'3 Stunden vorher'],[1440,'1 Tag vorher'],[2880,'2 Tage vorher']];
+const REPEATS=[['none','einmalig'],['weekly','jede Woche'],['biweekly','alle 2 Wochen'],['monthly','jeden Monat']];
+const remText=m=>(REMINDERS.find(r=>r[0]===+m)||[0,'keine'])[1];
+const repText=a=>a.repeat&&a.repeat!=='none'?(REPEATS.find(r=>r[0]===a.repeat)||[0,''])[1]+', '+(a.count||1)+' Termine':'einmalig';
+const timeText=a=>a.allDay?'ganztägig':(a.start||'')+(a.end?' – '+a.end+' Uhr':' Uhr');
+// alle Termin-Tage einer (wiederholten) Serie
+function occurrences(a){
+  const d0=ymdParse(a.date);if(!d0)return[];
+  const n=a.repeat&&a.repeat!=='none'?Math.max(1,Math.min(+a.count||1,200)):1,out=[];
+  for(let i=0;i<n;i++){
+    const d=new Date(d0);
+    if(a.repeat==='weekly')d.setDate(d0.getDate()+7*i);else if(a.repeat==='biweekly')d.setDate(d0.getDate()+14*i);
+    else if(a.repeat==='monthly'){d.setMonth(d0.getMonth()+i,1);const last=new Date(d.getFullYear(),d.getMonth()+1,0).getDate();d.setDate(Math.min(d0.getDate(),last))}
+    out.push(ymd(d));
+  }
+  return out;
+}
+const apptOn=s=>S.appts.filter(a=>occurrences(a).includes(s));
+const apptSort=(a,b)=>(a.date+(a.allDay?'00:00':a.start||'')).localeCompare(b.date+(b.allDay?'00:00':b.start||''));
+// nächstes Datum einer Serie ab heute (für die Liste)
+function nextOcc(a,today){return occurrences(a).find(d=>d>=today)||null}
+const todayStr=()=>ymd(new Date());
+
+/* --- Verlauf --- */
+const APPT_FIELDS=[['title','Titel',a=>a.title],['date','Datum',a=>dayLabel(a.date)],['start','Beginn',a=>a.allDay?'ganztägig':a.start||'–'],['end','Ende',a=>a.allDay?'–':a.end||'–'],['allDay','Ganztägig',a=>a.allDay?'ja':'nein'],['place','Ort',a=>a.place||'–'],['who','Teilnehmer',a=>(a.who||[]).join(', ')||'–'],['notes','Notizen',a=>a.notes||'–'],['remind','Erinnerung',a=>remText(a.remind)],['repeat','Wiederholung',a=>repText(a)],['count','Anzahl',a=>String(a.count||1)],['tentative','Status',a=>a.tentative?'vorläufig':'fest']];
+function apptDiff(o,n){
+  const ch=[];
+  APPT_FIELDS.forEach(([k,l,f])=>{const x=JSON.stringify(o[k]??''),y=JSON.stringify(n[k]??'');if(x!==y){
+    if(k==='start'&&o.allDay!==n.allDay)return; // Beginn/Ende ergeben sich aus „Ganztägig“
+    if(k==='end'&&o.allDay!==n.allDay)return;
+    if(k==='count'&&o.repeat==='none'&&n.repeat==='none')return;
+    ch.push({f:l,from:f(o),to:f(n)})}});
+  return ch;
+}
+function apptLogAdd(a,action,changes){
+  S.apptLog.push({t:new Date().toISOString(),id:a.id,title:a.title,a:action,changes:changes||[],snap:action==='gelöscht'||action==='angelegt'?JSON.parse(JSON.stringify(a)):undefined});
+}
+
+/* --- Kalender-Datei (.ics, funktioniert in Android, iOS/iPhone und Windows/Outlook) --- */
+const icsEsc=s=>String(s==null?'':s).replace(/\\/g,'\\\\').replace(/;/g,'\\;').replace(/,/g,'\\,').replace(/\r?\n/g,'\\n');
+function icsFold(line){
+  const enc=new TextEncoder();let out='',cur='',len=0;
+  for(const ch of line){const b=enc.encode(ch).length;if(len+b>73){out+=cur+'\r\n ';cur='';len=1}cur+=ch;len+=b}
+  return out+cur;
+}
+const icsDT=(date,time)=>date.replace(/-/g,'')+'T'+(time||'00:00').replace(':','')+'00';
+function icsEvent(a,stamp){
+  const L=['BEGIN:VEVENT','UID:'+a.id+'@skatlog.local','DTSTAMP:'+stamp,'SEQUENCE:'+(a.seq||0),'SUMMARY:'+icsEsc(a.title||'Skat-Abend')];
+  if(a.allDay){const d=ymdParse(a.date),n=new Date(d.getFullYear(),d.getMonth(),d.getDate()+1);L.push('DTSTART;VALUE=DATE:'+a.date.replace(/-/g,''),'DTEND;VALUE=DATE:'+ymd(n).replace(/-/g,''))}
+  else{
+    let endDate=a.date;const st=a.start||'19:00',en=a.end||'';
+    if(!en){const [h,m]=st.split(':').map(Number);const e=new Date(2000,0,1,h+3,m);endDate=e.getDate()>1?addDays(a.date,1):a.date;L.push('DTSTART:'+icsDT(a.date,st),'DTEND:'+icsDT(endDate,pad2(e.getHours())+':'+pad2(e.getMinutes())))}
+    else{if(en<=st)endDate=addDays(a.date,1);L.push('DTSTART:'+icsDT(a.date,st),'DTEND:'+icsDT(endDate,en))}
+  }
+  if(a.place)L.push('LOCATION:'+icsEsc(a.place));
+  const desc=[a.notes||'',(a.who&&a.who.length?'Mitspieler: '+a.who.join(', '):'')].filter(Boolean).join('\n');
+  if(desc)L.push('DESCRIPTION:'+icsEsc(desc));
+  L.push('STATUS:'+(a.tentative?'TENTATIVE':'CONFIRMED'),'TRANSP:OPAQUE','CATEGORIES:Skat');
+  if(a.repeat&&a.repeat!=='none'){const f=a.repeat==='monthly'?'FREQ=MONTHLY;INTERVAL=1':a.repeat==='biweekly'?'FREQ=WEEKLY;INTERVAL=2':'FREQ=WEEKLY;INTERVAL=1';L.push('RRULE:'+f+';COUNT='+Math.max(1,+a.count||1))}
+  if(+a.remind>0)L.push('BEGIN:VALARM','ACTION:DISPLAY','DESCRIPTION:'+icsEsc(a.title||'Skat-Abend'),'TRIGGER:-PT'+(+a.remind)+'M','END:VALARM');
+  L.push('END:VEVENT');return L;
+}
+function buildIcs(list){
+  const stamp=new Date().toISOString().replace(/[-:]/g,'').replace(/\.\d+/,'');
+  const L=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Skat-Log//Termine//DE','CALSCALE:GREGORIAN','METHOD:PUBLISH','X-WR-CALNAME:Skat-Termine'];
+  list.forEach(a=>L.push(...icsEvent(a,stamp)));L.push('END:VCALENDAR');
+  return L.map(icsFold).join('\r\n')+'\r\n';
+}
+function apptText(a){
+  const occ=occurrences(a);
+  return '♠ Skat-Termin: '+(a.title||'Skat-Abend')+'\n'+dayLabel(a.date)+' · '+timeText(a)+(a.place?'\nOrt: '+a.place:'')+(a.who&&a.who.length?'\nMitspieler: '+a.who.join(', '):'')+(occ.length>1?'\nWiederholung: '+repText(a):'')+(a.notes?'\n'+a.notes:'')+(a.tentative?'\n(vorläufig)':'');
+}
+// mode: 'cal' = in den Kalender des Geräts übernehmen, 'save' = Datei speichern, 'share' = Einladung teilen
+async function icsOut(name,text,mode,msg){
+  const A=androidApp();
+  if(A){
+    if(mode==='cal'&&typeof A.openCalendar!=='undefined'){A.openCalendar(name,text);return}
+    if(mode==='share'){A.shareFile(name,text,msg||'');return}
+    A.saveFile(name,text);return;
+  }
+  let file=null;try{file=new File([text],name,{type:'text/calendar'})}catch(e){}
+  if((mode==='cal'||mode==='share')&&file&&navigator.canShare&&navigator.canShare({files:[file]})){
+    try{await navigator.share(mode==='share'?{files:[file],title:'Skat-Termin',text:msg||''}:{files:[file],title:'Skat-Termin'});return}catch(e){if(e&&e.name==='AbortError')return}
+  }
+  if(mode==='share'&&msg&&!(file&&navigator.canShare)){sendTextWhatsApp(msg)}
+  await saveText(name,text,'text/calendar');
+  if(mode==='cal')toast('Datei gespeichert: '+name+' – zum Eintragen im Kalender öffnen (Doppelklick bzw. antippen).',7000);
+}
+const apptFile=a=>'skat-termin-'+a.date+'.ics';
+function exportAppt(id,mode){const a=S.appts.find(x=>x.id===id);if(!a)return;icsOut(apptFile(a),buildIcs([a]),mode,apptText(a))}
+function waAppt(id){
+  const t=todayStr(),list=id?S.appts.filter(a=>a.id===id):S.appts.filter(a=>occurrences(a).some(d=>d>=t)).sort(apptSort);
+  if(!list.length){toast('Keine kommenden Termine vorhanden');return}
+  waDialog({title:'Einladung',text:list.map(apptText).join('\n\n'),name:id?apptFile(list[0]):'skat-termine.ics',content:buildIcs(list),mime:'text/calendar'});
+}
+function exportAllAppts(mode){
+  const t=todayStr(),list=S.appts.filter(a=>occurrences(a).some(d=>d>=t)).sort(apptSort);
+  if(!list.length){toast('Keine kommenden Termine vorhanden');return}
+  icsOut('skat-termine.ics',buildIcs(list),mode,list.map(apptText).join('\n\n'));
+}
+
+/* --- Anzeige: Terminliste --- */
+const apptHead=()=>`<div style="display:flex;gap:8px;flex-wrap:wrap;margin:8px 0"><button class="btn" onclick="openApptForm(null)">＋ Neuer Termin</button><button class="btn sec" onclick="openApptLog()">🕘 Verlauf</button></div>`;
+function apptCard(a,past){
+  const t=todayStr(),nx=past?a.date:(nextOcc(a,t)||a.date),h=holidayOf(nx),ser=occurrences(a).length>1;
+  return `<div class="appt ${past?'past':''}"><div class="ad"><b>${esc(dayLabel(nx))}</b> · ${esc(timeText(a))}${a.tentative?' <span class="chip">vorläufig</span>':''}${h?` <span class="chip hol">${esc(h.n)}</span>`:''}</div>
+  <div class="at">${esc(a.title||'Skat-Abend')}</div>
+  <div class="muted">${a.place?'📍 '+esc(a.place)+' · ':''}${a.who&&a.who.length?'👥 '+esc(a.who.join(', '))+' · ':''}${ser?'↻ '+esc(repText(a))+' (ab '+esc(fmtDE(a.date))+') · ':''}${+a.remind?'🔔 '+esc(remText(a.remind)):''}</div>
+  ${a.notes?`<div class="muted">${esc(a.notes)}</div>`:''}
+  <div class="arow"><button class="btn sec" onclick="openApptForm('${a.id}')">✏ Ändern / verschieben</button><button class="btn sec" onclick="openApptExport('${a.id}')">📅 Kalender</button><button class="btn sec" onclick="openApptLog('${a.id}')">🕘</button><button class="btn sec" onclick="delAppt('${a.id}')">🗑</button></div></div>`;
+}
+function openAppts(){
+  apptEnsure();
+  const t=todayStr(),up=S.appts.filter(a=>occurrences(a).some(d=>d>=t)).sort((a,b)=>(nextOcc(a,t)+(a.start||'')).localeCompare(nextOcc(b,t)+(b.start||''))),
+    past=S.appts.filter(a=>!occurrences(a).some(d=>d>=t)).sort((a,b)=>apptSort(b,a));
+  showSheet(`<h1>📅 Termine</h1><p class="muted">Geplante Spieltermine. Jeder Termin lässt sich als Kalender-Datei (.ics) in den Kalender von Android, iPhone/iPad oder Windows übernehmen. Änderungen werden im Verlauf festgehalten.</p>
+  ${apptHead()}
+  ${up.length?`<h3>Kommende Termine (${up.length})</h3>`+up.map(a=>apptCard(a,false)).join(''):'<div class="banner">Noch kein kommender Termin. Mit „＋ Neuer Termin“ legst du einen an.</div>'}
+  ${up.length?`<div style="margin:8px 0"><button class="btn sec" onclick="openApptExport()">📅 Alle kommenden Termine in den Kalender …</button></div>`:''}
+  ${past.length?`<details style="margin-top:10px"><summary>Vergangene Termine (${past.length})</summary>${past.map(a=>apptCard(a,true)).join('')}</details>`:''}
+  <div style="margin-top:12px"><button class="btn sec" onclick="closeModal()">Schließen</button></div>`);
+}
+function openApptExport(id){
+  const one=id?S.appts.find(a=>a.id===id):null;
+  const fn=id?`'${id}'`:'';
+  showSheet(`<h1>📅 ${one?'In den Kalender':'Alle Termine in den Kalender'}</h1>
+  <p class="muted">${one?esc(one.title||'Skat-Abend')+' · '+esc(dayLabel(one.date))+' · '+esc(timeText(one)):'Alle kommenden Termine in einer Datei.'}</p>
+  <div style="display:flex;flex-direction:column;gap:8px;margin:8px 0">
+  <button class="btn" onclick="${id?`exportAppt(${fn},'cal')`:`exportAllAppts('cal')`}">📅 In Kalender übernehmen</button>
+  <button class="btn" onclick="${id?`waAppt('${id}')`:`waAppt()`}">💬 Einladung an WhatsApp senden (Text + Datei)</button>
+  <button class="btn sec" onclick="${id?`exportAppt(${fn},'share')`:`exportAllAppts('share')`}">✉ Einladung senden (Mail, andere Apps …)</button>
+  <button class="btn sec" onclick="${id?`exportAppt(${fn},'save')`:`exportAllAppts('save')`}">💾 Nur Datei speichern (.ics)</button></div>
+  <p class="muted"><b>Android:</b> „In Kalender übernehmen“ öffnet die Kalender-App. <b>iPhone/iPad:</b> die .ics-Datei antippen und „Zum Kalender hinzufügen“ wählen (Teilen-Menü, Dateien oder Mail). <b>Windows:</b> die Datei doppelklicken, sie öffnet sich im Kalender (Outlook) und wird dort gespeichert. Wird ein Termin später geändert und die Datei erneut geöffnet, aktualisiert der Kalender den vorhandenen Eintrag.</p>
+  <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn sec" onclick="openAppts()">← Zurück zu den Terminen</button></div>`);
+}
+function delAppt(id){
+  const a=S.appts.find(x=>x.id===id);if(!a)return;
+  ask('Termin „'+esc(a.title||'Skat-Abend')+'“ am '+esc(dayLabel(a.date))+' löschen? Er bleibt im Verlauf sichtbar.','Ja, Termin löschen',()=>{
+    S.appts=S.appts.filter(x=>x.id!==id);apptLogAdd(a,'gelöscht',[]);save();openAppts();toast('Termin gelöscht (im Verlauf nachlesbar)');
+  });
+}
+
+/* --- Formular mit Kalender --- */
+let AF=null;
+function newApptId(){return 'a'+Date.now().toString(36)+Math.random().toString(36).slice(2,6)}
+function nextSaturday(){const d=new Date();d.setDate(d.getDate()+((6-d.getDay()+7)%7||7));return ymd(d)}
+function openApptForm(id){
+  const a=id?S.appts.find(x=>x.id===id):null;
+  const last=S.appts.length?S.appts[S.appts.length-1]:null;
+  // neuer Termin: alle Mitspieler angewählt, Beginn 17:00, Ort wie beim letzten Termin
+  const all=[...new Set([...NAMES,...S.players.slice(0,S.n)])].filter(n=>S.nameList.includes(n));
+  AF=a?JSON.parse(JSON.stringify(a)):{id:null,title:'Skat-Abend',date:nextSaturday(),start:'17:00',end:'23:00',allDay:false,place:last?last.place||'':'',who:all,notes:'',remind:60,repeat:'none',count:10,tentative:false};
+  if(AF.allDay){AF.allDay=false;AF.start=AF.start||'17:00';AF.end=AF.end||'23:00'} // „Ganztägig“ gibt es im Formular nicht mehr
+  AF.who=AF.who||[];AF._orig=a?JSON.parse(JSON.stringify(a)):null;
+  const d=ymdParse(AF.date)||new Date();AF._y=d.getFullYear();AF._m=d.getMonth();
+  drawApptForm();
+}
+function drawApptForm(){
+  const a=AF,names=AF._names=[...new Set([...(S.nameList||[]),...(AF.who||[])])];
+  showSheet(`<h1>${a._orig?'Termin ändern / verschieben':'Neuer Termin'}</h1>
+  <label>Titel</label><input type="text" id="afTitle" value="${esc(a.title)}" oninput="AF.title=this.value">
+  <label>Datum</label>
+  <div class="row2"><input type="text" id="afDate" inputmode="numeric" placeholder="TT.MM.JJJJ" value="${esc(fmtDE(a.date))}" oninput="apptDateTyped(this.value)"><div class="datelab" id="afDay">${esc(dayLabelHol(a.date))}</div></div>
+  <div id="calBox">${calHTML()}</div>
+  ${`<div class="row2"><div><label>Beginn</label><input type="time" id="afStart" value="${esc(a.start||'')}" oninput="AF.start=this.value"></div><div><label>Ende</label><input type="time" id="afEnd" value="${esc(a.end||'')}" oninput="AF.end=this.value"></div></div><div class="muted">Liegt das Ende vor dem Beginn, endet der Termin am nächsten Tag.</div>`}
+  <label>Ort</label>${(()=>{const opts=names.map(n=>'bei '+n),custom=!!a.place&&!opts.includes(a.place);
+    return `<select id="afPlaceSel" onchange="apptPlace(this.value)"><option value="">– kein Ort –</option>${opts.map(o=>`<option value="${esc(o)}" ${a.place===o?'selected':''}>${esc(o)}</option>`).join('')}<option value="__new" ${custom?'selected':''}>Anderer Ort …</option></select><input type="text" id="afPlace" style="margin-top:6px;${custom?'':'display:none'}" value="${custom?esc(a.place):''}" placeholder="Anderer Ort, z. B. Gasthaus Krone" oninput="AF.place=this.value">`})()}
+  <label>Mitspieler</label>
+  <div class="whobox">${names.map((n,i)=>`<label class="chk"><input type="checkbox" ${a.who.includes(n)?'checked':''} onchange="apptWho(${i},this.checked)"> ${esc(n)}</label>`).join('')}</div>
+  <div class="row2"><input type="text" id="afWho" placeholder="Weiterer Name" style="min-width:0"><button class="btn sec" onclick="apptAddWho()">＋ Hinzufügen</button></div>
+  <div class="row2"><div><label>Erinnerung</label><select onchange="AF.remind=+this.value">${REMINDERS.map(r=>`<option value="${r[0]}" ${+a.remind===r[0]?'selected':''}>${r[1]}</option>`).join('')}</select></div>
+  <div><label>Wiederholung</label><select onchange="AF.repeat=this.value;drawApptForm()">${REPEATS.map(r=>`<option value="${r[0]}" ${a.repeat===r[0]?'selected':''}>${r[1]}</option>`).join('')}</select></div></div>
+  ${a.repeat&&a.repeat!=='none'?`<label>Anzahl der Termine (mit dem ersten)</label><input type="number" min="2" max="200" value="${a.count||10}" oninput="AF.count=Math.max(2,Math.min(200,+this.value||2))">`:''}
+  <label class="chk"><input type="checkbox" ${a.tentative?'checked':''} onchange="AF.tentative=this.checked"> Vorläufig (noch nicht fest)</label>
+  <label>Notizen</label><textarea id="afNotes" rows="3" oninput="AF.notes=this.value">${esc(a.notes)}</textarea>
+  <div id="afMsg" class="banner orange" style="display:none"></div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin:12px 0"><button class="btn" onclick="saveAppt()">💾 ${a._orig?'Änderung speichern':'Termin speichern'}</button><button class="btn sec" onclick="openAppts()">Abbrechen</button></div>`);
+}
+const dayLabelHol=s=>{const h=holidayOf(s);return s?dayLabel(s)+(h?' · '+h.n+(h.reg?' (regional)':''):''):'Datum ungültig'};
+function apptDateTyped(v){
+  const s=parseDate(v);
+  AF._bad=!s;
+  if(s){AF.date=s;const d=ymdParse(s);AF._y=d.getFullYear();AF._m=d.getMonth();document.getElementById('calBox').innerHTML=calHTML()}
+  document.getElementById('afDay').textContent=s?dayLabelHol(s):'Datum ungültig';
+}
+function apptPlace(v){
+  const el=document.getElementById('afPlace');
+  if(v==='__new'){AF.place=el.value;el.style.display='';el.focus()}
+  else{AF.place=v;el.style.display='none'}
+}
+function apptWho(k,on){const n=AF._names[k],w=AF.who,i=w.indexOf(n);if(on&&i<0)w.push(n);if(!on&&i>=0)w.splice(i,1)}
+function apptAddWho(){const el=document.getElementById('afWho'),n=(el.value||'').trim();if(!n)return;if(!AF.who.includes(n))AF.who.push(n);if(!S.nameList.includes(n)){S.nameList.push(n);save()}drawApptForm()}
+function calHTML(){
+  const y=AF._y,m=AF._m,first=new Date(y,m,1),lead=(first.getDay()+6)%7,days=new Date(y,m+1,0).getDate(),t=todayStr(),H=holidays(y);
+  const hm=[];
+  let cells='';
+  for(let i=0;i<lead;i++)cells+='<span class="cd empty"></span>';
+  for(let d=1;d<=days;d++){
+    const s=y+'-'+pad2(m+1)+'-'+pad2(d),dt=new Date(y,m,d),wd=dt.getDay(),h=H[s],ap=apptOn(s).filter(x=>!AF.id||x.id!==AF.id).length;
+    if(h)hm.push(pad2(d)+'.'+pad2(m+1)+'. '+h.n+(h.reg?' (regional)':''));
+    const cls=['cd',wd===6?'sat':'',wd===0?'sun':'',h?(h.reg?'hol reg':'hol'):'',s===AF.date?'sel':'',s===t?'today':'',ap?'has':''].filter(Boolean).join(' ');
+    cells+=`<button type="button" class="${cls}" onclick="calPick('${s}')" title="${esc(dayLabel(s)+(h?' · '+h.n:''))}">${d}</button>`;
+  }
+  const on=apptOn(AF.date).filter(x=>!AF.id||x.id!==AF.id);
+  return `<div class="cal"><div class="calnav"><button type="button" class="btn sec" onclick="calNav(-12)" aria-label="Vorheriges Jahr">«</button><button type="button" class="btn sec" onclick="calNav(-1)" aria-label="Vorheriger Monat">‹</button><b>${MONTHS[m]} ${y}</b><button type="button" class="btn sec" onclick="calNav(1)" aria-label="Nächster Monat">›</button><button type="button" class="btn sec" onclick="calNav(12)" aria-label="Nächstes Jahr">»</button></div>
+  <div class="calgrid"><span class="cw">Mo</span><span class="cw">Di</span><span class="cw">Mi</span><span class="cw">Do</span><span class="cw">Fr</span><span class="cw sat">Sa</span><span class="cw sun">So</span>${cells}</div>
+  <div class="callegend"><span><i class="lg sat"></i>Samstag</span><span><i class="lg sun"></i>Sonntag</span><span><i class="lg hol"></i>Feiertag</span><span><i class="lg has"></i>Termin vorhanden</span><button type="button" class="btn sec" onclick="calToday()">Heute</button></div>
+  ${hm.length?`<div class="muted calhol">Feiertage: ${esc(hm.join(' · '))}</div>`:''}
+  ${on.length?`<div class="banner orange">An diesem Tag gibt es schon: ${esc(on.map(x=>(x.title||'Skat-Abend')+' ('+timeText(x)+')').join(', '))}</div>`:''}</div>`;
+}
+function calNav(k){const d=new Date(AF._y,AF._m+k,1);AF._y=d.getFullYear();AF._m=d.getMonth();document.getElementById('calBox').innerHTML=calHTML()}
+function calToday(){const d=new Date();AF._y=d.getFullYear();AF._m=d.getMonth();document.getElementById('calBox').innerHTML=calHTML()}
+function calPick(s){
+  AF.date=s;AF._bad=false;document.getElementById('afDate').value=fmtDE(s);document.getElementById('afDay').textContent=dayLabelHol(s);
+  document.getElementById('calBox').innerHTML=calHTML();
+}
+function saveAppt(){
+  const msg=t=>{const e=document.getElementById('afMsg');e.style.display='';e.textContent=t;e.scrollIntoView({block:'nearest'})};
+  const a=AF;
+  if(!(a.title||'').trim())return msg('Bitte einen Titel eingeben.');
+  if(AF._bad||!ymdParse(a.date))return msg('Das Datum ist ungültig. Bitte als TT.MM.JJJJ eingeben oder im Kalender wählen.');
+  if(!a.allDay&&!/^\d{2}:\d{2}$/.test(a.start||''))return msg('Bitte einen Beginn (Uhrzeit) eingeben.');
+  const n={id:a.id||newApptId(),title:a.title.trim(),date:a.date,allDay:!!a.allDay,start:a.allDay?'':a.start,end:a.allDay?'':(a.end||''),place:(a.place||'').trim(),who:[...a.who],notes:(a.notes||'').trim(),remind:+a.remind||0,repeat:a.repeat||'none',count:a.repeat&&a.repeat!=='none'?Math.max(2,+a.count||2):1,tentative:!!a.tentative};
+  const now=new Date().toISOString();
+  if(a._orig){
+    const ch=apptDiff(a._orig,n);
+    if(!ch.length){openAppts();toast('Keine Änderung');return}
+    n.seq=(a._orig.seq||0)+1;n.created=a._orig.created;n.updated=now;
+    const moved=ch.some(c=>c.f==='Datum'||c.f==='Beginn'||c.f==='Ende');
+    S.appts=S.appts.map(x=>x.id===n.id?n:x);apptLogAdd(n,moved?'verschoben':'geändert',ch);
+  }else{
+    n.seq=0;n.created=now;n.updated=now;S.appts.push(n);apptLogAdd(n,'angelegt',[]);
+  }
+  save();AF=null;openAppts();toast('Termin gespeichert');
+}
+
+/* --- Verlauf --- */
+function openApptLog(id){
+  apptEnsure();
+  const list=S.apptLog.filter(l=>!id||l.id===id).slice().reverse();
+  const icon={angelegt:'➕',geändert:'✏',verschoben:'↔',gelöscht:'🗑'};
+  const fdt=t=>{const d=new Date(t);return fdate(d)};
+  showSheet(`<h1>🕘 Terminverlauf</h1><p class="muted">${id?'Alle Änderungen dieses Termins':'Alle Änderungen an allen Terminen'}, neueste zuerst. Der Verlauf kann nicht gelöscht werden.</p>
+  ${list.length?list.map(l=>`<div class="logrow ${l.a}"><div><b>${icon[l.a]||''} ${esc(l.a)}</b> · ${esc(l.title||'')} <span class="muted">· ${esc(fdt(l.t))}</span></div>
+    ${l.a==='angelegt'&&l.snap?`<div class="muted">${esc(dayLabel(l.snap.date))} · ${esc(timeText(l.snap))}${l.snap.place?' · '+esc(l.snap.place):''}</div>`:''}
+    ${l.a==='gelöscht'&&l.snap?`<div class="muted">war: ${esc(dayLabel(l.snap.date))} · ${esc(timeText(l.snap))}${l.snap.place?' · '+esc(l.snap.place):''}</div>`:''}
+    ${(l.changes||[]).map(c=>`<div class="chg"><span class="muted">${esc(c.f)}:</span> <s>${esc(c.from)}</s> → <b>${esc(c.to)}</b></div>`).join('')}</div>`).join(''):'<div class="banner">Noch keine Einträge.</div>'}
+  <div style="margin-top:12px"><button class="btn sec" onclick="openAppts()">← Zurück zu den Terminen</button></div>`);
+}
+const fdate=d=>pad2(d.getDate())+'.'+pad2(d.getMonth()+1)+'.'+d.getFullYear()+' '+pad2(d.getHours())+':'+pad2(d.getMinutes());
+// nächster Termin für den Startbildschirm
+function nextApptLine(){
+  const t=todayStr();let best=null;
+  S.appts.forEach(a=>{const d=nextOcc(a,t);if(d&&(!best||(d+(a.start||'')).localeCompare(best.d+(best.a.start||''))<0))best={a,d}});
+  if(!best)return '';
+  const diff=Math.round((Date.UTC(...best.d.split('-').map((v,i)=>i===1?v-1:+v))-Date.UTC(...t.split('-').map((v,i)=>i===1?v-1:+v)))/864e5);
+  return `<div class="nextappt" onclick="openAppts()">📅 Nächster Termin: <b>${esc(dayLabel(best.d))}</b> ${esc(best.a.allDay?'':best.a.start||'')} – ${esc(best.a.title||'Skat-Abend')} <span class="muted">(${diff===0?'heute':diff===1?'morgen':'in '+diff+' Tagen'})</span></div>`;
+}
+
+/* ---------- WhatsApp: erst die Nachricht (Zahlungen als Text), dann die Datei ---------- */
+let _wa=null;
+function waDialog(o){_wa={...o,step:0};drawWa()}
+function drawWa(){
+  const o=_wa,hasFile=!!o.name;
+  showSheet(`<h1>💬 An WhatsApp senden</h1><p class="muted">${hasFile?'In zwei Schritten: erst die Nachricht, dann die Datei.':'Die Nachricht wird an WhatsApp übergeben.'} Im WhatsApp-Fenster wählst du den Chat oder die Gruppe.</p>
+  <label>${esc(o.title||'Nachricht')}</label><pre class="wapre">${esc(o.text)}</pre>
+  <div style="display:flex;flex-direction:column;gap:8px;margin:10px 0">
+  <button class="btn" id="waStep1" onclick="waStep(1)">${o.step>=1?'✔':'①'} Nachricht an WhatsApp senden</button>
+  ${hasFile?`<button class="btn ${o.step>=1?'':'sec'}" id="waStep2" onclick="waStep(2)">${o.step>=2?'✔':'②'} Datei senden: ${esc(o.name)}</button>`:''}</div>
+  <p class="muted">${hasFile?'Nach Schritt ① kommst du hierher zurück und sendest mit ② die Datei in denselben Chat. ':''}Ohne WhatsApp auf dem Gerät öffnet sich stattdessen das allgemeine Teilen-Menü bzw. WhatsApp im Browser.</p>
+  <button class="btn sec" onclick="closeModal()">${o.step>=(hasFile?2:1)?'Fertig':'Abbrechen'}</button>`);
+}
+async function waStep(n){
+  const o=_wa;if(!o)return;
+  const A=androidApp();
+  if(n===1){
+    if(A&&typeof A.shareWhatsApp!=='undefined')A.shareWhatsApp('','',o.text);
+    else if(A)A.shareText(o.text);
+    else window.open('https://wa.me/?text='+encodeURIComponent(o.text),'_blank');
+  }else{
+    if(A&&typeof A.shareWhatsApp!=='undefined')A.shareWhatsApp(o.name,o.content,'');
+    else if(A)A.shareFile(o.name,o.content,'');
+    else{
+      let done=false;
+      try{const f=new File([o.content],o.name,{type:o.mime||'application/json'});if(navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f],title:o.name});done=true}}catch(e){if(e&&e.name==='AbortError')return}
+      if(!done){await saveText(o.name,o.content,o.mime);toast('Datei gespeichert: '+o.name+' – in WhatsApp über die Büroklammer anhängen.',8000)}
+    }
+  }
+  o.step=Math.max(o.step,n);if(document.getElementById('modal').innerText.includes('An WhatsApp senden'))drawWa();
+}
+
+/* ---------- Logos, Info, Hilfe, Suche ---------- */
+const APP_NAME='Skat-LOGGER',APP_TAG='Spielverlauf aufschreiben + Statistik + mehr',APP_VERSION='1.14.0',APP_BUILD='2026-10-19';
+const LOGOS=[
+  {n:'Kartenfächer',svg:`<svg viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI Symbol,Arial,sans-serif"><rect width="128" height="128" rx="28" fill="#17382a"/><text x="64" y="31" text-anchor="middle" font-family="Georgia,serif" font-size="21" font-weight="700" fill="#f6f1e3" letter-spacing="3">SKAT</text><text x="64" y="118" text-anchor="middle" font-family="Georgia,serif" font-size="19" font-weight="700" fill="#e8b923" letter-spacing="4">LOG</text><g transform="translate(12.8 16) scale(0.8)"><g transform="rotate(-24 64 104)"><rect x="40" y="30" width="48" height="68" rx="6" fill="#fff" stroke="#cfc8b4" stroke-width="1.5"/><text x="47" y="50" font-size="15" fill="#c0392b">♦</text><text x="64" y="80" font-size="32" text-anchor="middle" fill="#c0392b">♦</text></g><g transform="rotate(24 64 104)"><rect x="40" y="30" width="48" height="68" rx="6" fill="#fff" stroke="#cfc8b4" stroke-width="1.5"/><text x="47" y="50" font-size="15" fill="#c0392b">♥</text><text x="64" y="80" font-size="32" text-anchor="middle" fill="#c0392b">♥</text></g><g><rect x="40" y="30" width="48" height="68" rx="6" fill="#fff" stroke="#cfc8b4" stroke-width="1.5"/><text x="47" y="50" font-size="15" fill="#1d2a24">♠</text><text x="64" y="80" font-size="32" text-anchor="middle" fill="#1d2a24">♠</text></g></g></svg>`},
+];
+const logoSvg=(i,px)=>LOGOS[0].svg.replace('<svg ',`<svg width="${px}" height="${px}" `);
+// Web-App (iPhone/Android Home-Bildschirm): Offline-Zwischenspeicher nur auf einer echten https-Adresse (nicht in der EXE, nicht in der Android-App)
+try{if('serviceWorker' in navigator&&(location.protocol==='https:'||/[?&]pwa=1/.test(location.search))&&!androidApp())navigator.serviceWorker.register('sw.js').catch(()=>{})}catch(e){}
+function applyFavicon(){
+  let l=document.getElementById('fav');if(!l){l=document.createElement('link');l.id='fav';l.rel='icon';document.head.appendChild(l)}
+  l.href='data:image/svg+xml,'+encodeURIComponent(LOGOS[0].svg);
+}
+const helpBtns=()=>`<button class="btn sec" onclick="openSearch()">🔍 Suche</button><button class="btn sec" onclick="openHelp()">❓ Hilfe</button><button class="btn sec" onclick="openInfo()">ℹ Info</button>`;
+
+// Menü für schmale Bildschirme (Handy): alle Aktionen als große Knöpfe
+function openMenu(){
+  const it=(ic,t,fn)=>`<button class="menu-item" onclick="${fn}"><span>${ic}</span>${t}</button>`;
+  const items=S.started
+    ? [it('🏠','Startbildschirm','goHome()'),it('⚙','Einstellungen','openSettings()'),it('📋','Gesamtansicht','openOverview()'),it('📊','Statistik','openStats()'),it('🏆','Saisons','openSeasons()'),it('✅','Spieltag abschließen','closeDay()'),it('📅','Termine','openAppts()'),it('📤','Export / Senden','openExport()'),it('🔍','Suche','openSearch()'),it('❓','Hilfe','openHelp()'),it('ℹ','Info','openInfo()')]
+    : [it('🏠','Startbildschirm','goHome()'),it('📋','Gesamtansicht','openOverview()'),it('📊','Statistik','openStats()'),it('🏆','Saisons','openSeasons()'),it('📅','Termine','openAppts()'),it('📤','Export / Senden','openExport()'),it('📥','Import','openImport()'),it('🔍','Suche','openSearch()'),it('❓','Hilfe','openHelp()'),it('ℹ','Info','openInfo()')];
+  showSheet(`<h1>Menü</h1><div class="menu-grid">${items.join('')}</div><div style="margin-top:12px"><button class="btn sec" onclick="closeModal()">Schließen</button></div>`);
+}
+function openInfo(){
+  const st=S.days.length;
+  showSheet(`<div style="display:flex;gap:14px;align-items:center;margin-bottom:6px">${logoSvg(S.logo,72)}<div><h1 style="margin:0">${APP_NAME}</h1><div class="muted">${APP_TAG}</div></div></div>
+  <table style="margin:8px 0"><tbody>
+  <tr><td>Versionsstand</td><td><b>${APP_VERSION}</b></td></tr>
+  <tr><td>Erzeugungsdatum</td><td><b>${new Date(APP_BUILD).toLocaleDateString('de-DE',{day:'2-digit',month:'long',year:'numeric'})}</b></td></tr>
+  <tr><td>Hersteller</td><td><b>Martin mit Claude</b></td></tr>
+  <tr><td>Gespeicherte Daten</td><td>${st} abgeschlossene Spieltage in ${S.pastSeasons.length+1} Saison(s)<br><span class="muted">liegen lokal in diesem Browser</span></td></tr>
+  </tbody></table>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px"><button class="btn" onclick="openHelp()">Hilfe und Regeln</button><button class="btn sec" onclick="closeModal()">Schließen</button></div>`);
+}
+
+const HELP=[
+{id:'bedienung',t:'Bedienung im Überblick',h:`<ul>
+<li><b>+ Spiel anlegen:</b> Sobald gereizt und angesagt ist, legst du das Spiel an (Spielart, Alleinspieler, Reizwert, Ansagen, Kontra). Das Ergebnis folgt nach dem Spiel.</li>
+<li><b>Ergebnis eintragen:</b> Danach trägst du Augen und Buben ein. „Spiel abschließen“ ist erst mit Ergebnis anwählbar. Die Spielart ist dann festgelegt.</li>
+<li><b>↶ Rückgängig:</b> nimmt die letzte gespeicherte Änderung zurück.</li>
+<li><b>Spieltag abschließen:</b> zeigt die Abrechnung in € und speichert den Spieltag in der Gesamtansicht. „Abschließen und senden an …“ schickt das Ergebnis und alle Daten z. B. an eine WhatsApp-Gruppe.</li>
+<li><b>Gesamtansicht, Statistik, Saisons:</b> alle Spieltage, Auswertungen je Spieler und je Saison.</li>
+<li><b>Export / Senden, Import:</b> alle Daten als Datei sichern oder wieder laden. Ein Ablageordner lässt sich in den Einstellungen festlegen (Chrome/Edge am PC).</li></ul>`},
+{id:'termine',t:'Termine und Kalender',h:`<ul>
+<li><b>📅 Termine</b> (Startbildschirm oder Menü): geplante Spieltermine mit Titel, Datum, Uhrzeit (Beginn vorbelegt mit 17:00), Ort (Auswahl „bei <Mitspieler>“ oder eigener Ort), Mitspielern (alle vorgewählt), Erinnerung, Wiederholung (wöchentlich, alle 2 Wochen, monatlich) und Notizen.</li>
+<li><b>Datum:</b> im Kalender antippen oder von Hand eingeben (z. B. 24.10.2026). Samstage sind blau, Sonntage und Feiertage rot markiert (regionale Feiertage heller), ein Punkt zeigt, dass schon ein Termin existiert.</li>
+<li><b>Ändern, verschieben, löschen:</b> jederzeit. Jede Änderung steht im <b>🕘 Verlauf</b> (mit altem und neuem Wert, z. B. altes Datum → neues Datum). Gelöschte Termine bleiben dort nachlesbar. Der Verlauf lässt sich nicht löschen.</li>
+<li><b>In den Kalender übernehmen:</b> erzeugt eine .ics-Datei. Android: öffnet die Kalender-App. iPhone/iPad: Datei antippen, „Zum Kalender hinzufügen“. Windows: Datei doppelklicken (Outlook/Kalender). „Einladung senden“ verschickt die Datei samt Text (z. B. WhatsApp). Nach einer Änderung die Datei erneut öffnen: der Kalender aktualisiert den vorhandenen Eintrag.</li>
+<li>Termine und Verlauf sind Teil von Export und Import.</li><li><b>WhatsApp:</b> „💬 An WhatsApp senden“ (bei Spieltag beenden, Export und Termin) arbeitet in zwei Schritten: ① die Nachricht (Zahlungen bzw. Einladung) als Text, ② die Datei (Daten bzw. .ics) in denselben Chat.</li></ul>`},
+{id:'spieler',t:'Spieler, Geber, Reihenfolge',h:`<p>3 oder 4 Spieler. Bei 4 Spielern setzt der Geber aus. Der erste eingetragene Spieler gibt zuerst, danach reihum. Ein dicker Strich in der Spielübersicht zeigt, wo der 1. Geber wieder beginnt.</p>`},
+{id:'spielarten',t:'Spielarten und Grundwerte',h:`<table><thead><tr><th>Spiel</th><th>Grundwert</th></tr></thead><tbody>
+<tr><td>Karo</td><td>9</td></tr><tr><td>Herz</td><td>10</td></tr><tr><td>Pik</td><td>11</td></tr><tr><td>Kreuz</td><td>12</td></tr><tr><td>Grand</td><td>24</td></tr>
+<tr><td>Null</td><td>23</td></tr><tr><td>Null Hand</td><td>35</td></tr><tr><td>Null Ouvert</td><td>46</td></tr><tr><td>Null Ouvert Hand</td><td>59</td></tr></tbody></table>
+<p>Optional „Spitze“ (Einstellungen): umgekehrte Rangfolge, die 7 ist Trumpf. Das verdoppelt den Grundwert, nur bei Farb- und Grandspielen.</p>`},
+{id:'spielwert',t:'Spielwert berechnen',h:`<p><b>Spielwert = Grundwert × Multiplikator</b> (Farbe und Grand).</p>
+<p>Multiplikator = Buben (mit/ohne 1 bis 11, im Grand 1 bis 4) + 1 (Spiel gespielt) + je +1 für: Hand, Schneider, Schneider angesagt, Schwarz, Schwarz angesagt, Ouvert.</p>
+<p>Beispiel: Kreuz mit 1, Hand: 12 × (1 + 1 + 1) = 36. „Mit 1 gespielt 2“ bedeutet: 1 Bube plus 1 für das Spiel.</p>
+<p>Ansagen und Ouvert werden nur gezählt, wenn du sie ankreuzt. „Schwarz angesagt“ setzt „Schneider angesagt“ automatisch mit.</p>`},
+{id:'gewinn',t:'Gewonnen, verloren, Schneider, Schwarz',h:`<ul><li>Farbe und Grand: Der Alleinspieler gewinnt mit mindestens <b>61 Augen</b>.</li>
+<li>Schneider: ab 90 Augen gewonnen oder höchstens 30 Augen verloren. Schwarz: Gegner machen keinen Stich (oder der Alleinspieler keinen).</li>
+<li>Eine angesagte Stufe, die nicht erreicht wird, bedeutet <b>verloren</b>.</li>
+<li>Null: gewonnen, wenn der Alleinspieler keinen Stich macht.</li>
+<li><b>Überreizen:</b> Ist der Spielwert kleiner als der Reizwert, ist das Spiel verloren. Es zählt das kleinste Vielfache des Grundwerts, das den Reizwert erreicht.</li></ul>`},
+{id:'kontra',t:'Kontra, Re, Hirsch, Geweih',h:`<table><thead><tr><th>Ansage</th><th>Von</th><th>Faktor</th></tr></thead><tbody>
+<tr><td>Kontra</td><td>Gegner</td><td>×2</td></tr><tr><td>Re</td><td>Alleinspieler</td><td>×4</td></tr><tr><td>Hirsch</td><td>Gegner</td><td>×8</td></tr><tr><td>Geweih</td><td>Alleinspieler</td><td>×16</td></tr></tbody></table>
+<p>Sie folgen nacheinander: Re geht erst nach Kontra, Hirsch nach Re, Geweih nach Hirsch. In einer Bockrunde kommt zusätzlich ×2 dazu.</p>`},
+{id:'wertung',t:'Wertung: verlorene Punkte',h:`<p>Die App schreibt <b>Verlustpunkte</b> auf. Unter jedem Namen steht die Summe.</p>
+<ul><li><b>Alleinspieler verliert:</b> er bekommt Spielwert × 2 × Faktoren (Kontra/Re/…, Bock).</li>
+<li><b>Alleinspieler gewinnt:</b> alle anderen Mitspieler bekommen den Spielwert × Faktoren, bei 4 Spielern auch der aussetzende Geber. Der Alleinspieler bekommt nichts. (Abschaltbar in den Einstellungen.)</li></ul>
+<p>Beispiel: Kreuz mit 1 und Hand (36), verloren, Bockrunde: 36 × 2 (verloren) × 2 (Bock) = 144 Punkte.</p>`},
+{id:'bock',t:'Bock-/Ramschrunden',h:`<ul><li>Eine <b>Bock-/Ramschrunde</b> besteht aus N Bock-Spielen (alle Werte ×2) und danach N Ramsch-Spielen (N = Spieleranzahl).</li>
+<li>Ein Spieltag beginnt mit <b>N solchen Runden</b>, bei 4 Spielern also 4 Runden mit 32 Spielen.</li>
+<li>Verliert ein Alleinspieler ein Spiel mit Kontra oder höher, oder verliert er mit genau 60 Augen (auch ohne Kontra, nicht bei Null), wird eine weitere Runde angehängt. Die App weist mit einem Hinweis darauf hin, den du mit „Gelesen“ bestätigst.</li>
+<li>Im Ramsch-Teil darf nur Ramsch gespielt werden, außer ein Spieler sagt Grand Hand an (<b>Veto</b>): Dann spielt dieser Spieler Grand Hand und das Ramsch-Spiel wird nachgeholt.</li>
+<li><b>Alle passen:</b> Dann werden N Ramsch-Spiele gespielt (Pflicht-Ramsch).</li>
+<li>Sind keine Runden mehr offen, läuft Malenko.</li></ul>`},
+{id:'ramsch',t:'Ramsch',h:`<ul><li>Jeder spielt für sich, nur Buben sind Trumpf. Wer die meisten Augen hat, verliert. Gleichstand: alle Gleichen verlieren voll.</li>
+<li>Die verlorenen Punkte sind die Augen, <b>auf die nächste 10 gerundet</b> (55 → 60, 54 → 50). In der Bockrunde ×2.</li>
+<li><b>Jungfrau:</b> Hat ein Spieler 0 Augen, kann Jungfrau gewählt werden. Dann zählt der Verlust ×2.</li>
+<li><b>Durchmarsch:</b> Ein Spieler hat 120 Augen und alle Stiche. Alle anderen bekommen je 120. Hat der Spieler 120 Augen, aber ein Mitspieler einen Stich mit 0 Punkten, ist es kein Durchmarsch, sondern Jungfrau.</li>
+<li>Die Augen aller Spieler ergeben zusammen 120 (inklusive Skat).</li></ul>`},
+{id:'malenko',t:'Malenko',h:`<ul><li>Malenko läuft, wenn keine Bock-/Ramschrunde mehr offen ist.</li>
+<li>Jeder Spieler muss drei verschiedene Spiele spielen: <b>G</b> = Grand, <b>R</b> = Ramsch, <b>F</b> = Farbspiel. Reihum spielt immer ein Spieler ein Spiel. Gespielte Arten sind rot durchkreuzt, offene grün.</li>
+<li>Bei Malenko wird nicht gereizt, es gibt keinen Bock und kein „alle gepasst“.</li>
+<li>Im Malenko-Ramsch dürfen die anderen Spieler Veto einlegen (Grand Hand). Die Ramsch-Aufgabe des Malenko-Spielers gilt dann als erledigt.</li>
+<li>Haben alle alle drei Arten gespielt und ist das letzte Spiel beendet, beginnt die nächste Malenko-Runde.</li>
+<li>Eine eigene Aufgabe zählt als gewonnen, wenn der Spieler keine Punkte bekommt, sonst als verloren.</li></ul>`},
+{id:'wechsel',t:'Mitspieler kommen und gehen',h:`<ul><li>Ein Wechsel ist nur zwischen den Runden möglich, nicht mitten in einer Bock-/Ramsch- oder Malenko-Runde und nicht, solange ein Spiel läuft.</li>
+<li><b>Neuer Mitspieler:</b> steht ganz rechts, startet mit dem Schnitt der Punkte der anderen und gibt zuletzt. Noch nicht begonnene Runden laufen dann mit 4 Bock- und 4 Ramsch-Spielen.</li>
+<li><b>Spieler geht:</b> sein Stand bleibt stehen. Am Ende kommt der Schnitt der Punkte dazu, die die übrigen seitdem bekommen haben.</li>
+<li><b>Nur zu dritt:</b> Der nicht anwesende Stammspieler (Guido, Karsten, Martin, Peter) bekommt den Schnitt der Punkte und die daraus folgenden Euro.</li></ul>`},
+{id:'geld',t:'Abrechnung in Euro',h:`<p><b>Zu zahlen = Punkte ÷ 100 × Wert von 100 Punkten, aufgerundet auf volle Euro, plus Grundeinsatz.</b></p>
+<p>Beispiel: 288 Punkte bei 0,50 € je 100 Punkte = 1,44 €, aufgerundet 2 €, plus 25 € Grundeinsatz = 27 €. Grundeinsatz und Punktwert stellst du unter Einstellungen ein, der letzte Wert bleibt erhalten.</p>`},
+{id:'auswertung',t:'Saisons, Gesamtansicht, Statistik',h:`<ul><li>Eine <b>Saison</b> fasst viele Spieltage zusammen. Mit „Neue Saison“ (Saisons) beginnst du eine neue mit eigenem Namen, die alte bleibt in der Statistik erhalten.</li>
+<li>Die <b>Gesamtansicht</b> zeigt alle Spieltage mit Punkten, Platz (1. = wenigste Punkte) und Zahlungen. Mit „🗑“ löschst du einen Spieltag, in „Saisons“ mit „🗑 Saison löschen“ eine ganze Saison mit allen ihren Spieltagen. Beides verlangt <b>zwei Rückfragen</b>. Sichere vorher über „Export“.</li>
+<li>Die <b>Statistik</b> zeigt je Spieler: Spiele, Gewinnquote, Grand/Farbe/Null, Ramsch, Buben, Ansagen, Malenko, Geld. Wählbar für einen Spieltag, eine Saison oder alle.</li></ul>`},
+{id:'daten',t:'Daten sichern, senden, rückgängig',h:`<ul><li>Alle Daten liegen lokal im Browser. Sichere sie regelmäßig über <b>Export / Senden → Als Datei speichern</b>.</li>
+<li><b>Senden an …</b> öffnet das Teilen-Menü deines Geräts (z. B. WhatsApp-Gruppe) mit Ergebnis und Datendatei.</li>
+<li><b>Import</b> lädt eine gespeicherte Datei und ersetzt die aktuellen Daten.</li>
+<li><b>↶ Rückgängig</b> gilt, solange die Seite offen ist.</li></ul>`}
+];
+const plainText=h=>h.replace(/<[^>]+>/g,' ').replace(/&[a-z]+;/g,' ').replace(/\s+/g,' ');
+const matchTerms=(text,terms)=>{const t=text.toLowerCase();return terms.every(x=>t.includes(x))};
+let HELPQ='';
+function openHelp(id,q){
+  if(q!==undefined)HELPQ=q;
+  const terms=HELPQ.toLowerCase().split(/\s+/).filter(Boolean);
+  const list=HELP.filter(s=>!terms.length||matchTerms(s.t+' '+plainText(s.h),terms));
+  showSheet(`<h1>Hilfe und Regeln</h1><p class="muted">So rechnet die App und diese Regeln werden angewendet.</p>
+  <input type="text" id="helpIn" placeholder="In der Hilfe suchen …" value="${esc(HELPQ)}" oninput="openHelp(undefined,this.value)">
+  <div class="help">${list.length?list.map(s=>`<div class="hsec" id="h-${s.id}"><h3>${s.t}</h3>${s.h}</div>`).join(''):'<p class="muted">Nichts gefunden.</p>'}</div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px"><button class="btn sec" onclick="openSearch(HELPQ)">🔍 In allen Daten suchen</button><button class="btn sec" onclick="closeModal()">Schließen</button></div>`);
+  const el=document.getElementById('helpIn');
+  if(q!==undefined&&el){el.focus();const v=el.value;el.value='';el.value=v}
+  if(id){const t=document.getElementById('h-'+id);if(t)t.scrollIntoView()}
+}
+
+let SEARCHQ='';
+function handSummary(a,r){
+  const h=r.h,c=r.c,pn=i=>a.day.players[i];
+  if(h.type==='ramsch')return {txt:'Ramsch · '+(c.open?'läuft':c.text),all:'ramsch '+(c.text||'')+(c.jf?' jungfrau':'')+(h.durchmarsch!=null&&h.durchmarsch!==''?' durchmarsch':'')+(h.passe?' alle gepasst':'')+(h.veto?' veto':'')};
+  const lost=(c.pts[h.declarer]||0)>0;
+  const st=STAGEN[stageOf(h)];
+  const txt=TYPES[h.type].n+' · '+pn(h.declarer)+' · '+(c.open?'läuft':(lost?'verloren':'gewonnen'))+(c.open?'':' · Wert '+c.value)+(h.reiz?' · gereizt '+h.reiz:'')+(st?' · '+st:'');
+  const all=txt+' '+(h.hand?'hand ':'')+(h.ouvert?'ouvert ':'')+(h.schnAng?'schneider angesagt ':'')+(h.schwarzAng?'schwarz angesagt ':'')+(h.veto?'veto ':'')+(h.malPlayer!=null&&h.malPlayer!==''?'malenko ':'')+(r.lv>0?'bock ':'')+(h.contra||[]).map(pn).join(' ')+' '+(h.augenSp!=null?h.augenSp+' augen':'');
+  return {txt,all};
+}
+function openSearch(q){
+  if(q!==undefined)SEARCHQ=q;
+  const terms=SEARCHQ.toLowerCase().split(/\s+/).filter(Boolean);
+  let out='';
+  if(terms.length){
+    const helpHits=HELP.filter(s=>matchTerms(s.t+' '+plainText(s.h),terms));
+    out+=`<h3>Hilfe und Regeln (${helpHits.length})</h3>`+(helpHits.map(s=>`<div class="hit" onclick="openHelp('${s.id}',SEARCHQ)">${s.t}</div>`).join('')||'<div class="muted">–</div>');
+    const days=daysOf('all',true).slice().reverse(); // alle Saisons, laufender Spieltag und neueste zuerst
+    const dayHits=[],handHits=[];let more=0;
+    days.forEach(d=>{
+      const label=(d.current?'laufender Spieltag ':'Spieltag ')+fmtDate(d.date)+' '+seasonName(d.season??S.season.id)+' '+d.players.join(' ');
+      if(matchTerms(label,terms))dayHits.push({d,label});
+      if(terms.join('').length>=2){
+        const a=analyze(d);
+        a.R.rows.forEach(r=>{
+          const hs=handSummary(a,r);
+          if(matchTerms(hs.all+' spiel '+(r.i+1)+' '+fmtDate(d.date)+' '+seasonName(d.season??S.season.id),terms)){
+            if(handHits.length<60)handHits.push({d,r,hs});else more++;
+          }
+        });
+      }
+    });
+    out+=`<h3>Spieltage (${dayHits.length})</h3>`+(dayHits.slice(0,30).map(x=>`<div class="hit" onclick="openStats('${x.d.current?'cur':'d'+x.d.id}')">${x.d.current?'Laufender Spieltag':'Spieltag '+fmtDate(x.d.date)} · ${esc(seasonName(x.d.season??S.season.id))} · ${esc(x.d.players.join(', '))} · ${x.d.hands.length} Spiele</div>`).join('')||'<div class="muted">–</div>');
+    out+=`<h3>Spiele (${handHits.length}${more?'+':''})</h3>`+(handHits.map(x=>`<div class="hit" onclick="${x.d.current?`closeModal();openForm(${x.r.i})`:`openStats('d${x.d.id}')`}"><span class="muted">${x.d.current?'laufend':fmtDate(x.d.date)} · Spiel ${x.r.i+1}</span><br>${esc(x.hs.txt)}</div>`).join('')||'<div class="muted">–</div>')+(more?`<div class="muted">… ${more} weitere Treffer, bitte genauer suchen.</div>`:'');
+  }else out='<p class="muted">Suche nach Spielern, Spielarten, Datum, Saison, Regeln … z. B. „Grand Karsten“, „verloren Kontra“, „Malenko“, „Jungfrau“, „2026“.</p>';
+  showSheet(`<h1>Suche</h1><input type="text" id="searchIn" placeholder="Suchbegriff …" value="${esc(SEARCHQ)}" oninput="openSearch(this.value)">${out}
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px"><button class="btn sec" onclick="openHelp()">❓ Hilfe</button><button class="btn sec" onclick="closeModal()">Schließen</button></div>`);
+  const el=document.getElementById('searchIn');if(el){el.focus();const v=el.value;el.value='';el.value=v}
+}
+
+lastSnap=JSON.stringify(S);
+applyFavicon();
+if(location.hash==='#demo62'){HOME=false;fillDemo(62);history.replaceState(null,'',location.pathname)}
+if(location.hash==='#demoSaisons'){HOME=false;fillDemoSeasons(13,100);history.replaceState(null,'',location.pathname)}
+render();
+</script>
+</body>
+</html>
