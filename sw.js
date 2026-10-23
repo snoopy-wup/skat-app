@@ -1,7 +1,7 @@
 // Service Worker für Skat-LOGGER (Offline-Betrieb als Web-App).
 // Strategie: Seite und Programm immer zuerst aus dem Netz (damit Updates sofort ankommen), ohne Netz aus dem Zwischenspeicher.
 // Die Spieldaten liegen NICHT hier, sondern im localStorage der App und bleiben bei Updates erhalten.
-const CACHE = 'skatlogger-1.15.2';
+const CACHE = 'skatlogger-1.16.4';
 const FILES = ['./', './index.html', './manifest.webmanifest', './icon-180.png', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', e => {

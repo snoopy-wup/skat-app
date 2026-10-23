@@ -66,6 +66,10 @@ tr.row{cursor:pointer}
 body.lock{overflow:hidden}
 .modal,.sheet,.statwrap{overscroll-behavior:contain}
 .btn.sm{padding:4px 10px;font-size:13px}
+.nb{width:40px;height:40px;border-radius:50%;border:1px solid var(--line);background:var(--chip);color:var(--ink);font-size:20px;line-height:1;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;padding:0;flex:none}
+.nb.x{margin-left:auto}
+.navbar{display:flex;align-items:center;justify-content:space-between;position:sticky;top:-16px;z-index:3;background:var(--bg);margin:-16px -16px 8px;padding:8px 16px}
+.podi{display:block;margin:0 auto 2px}
 .rk{font-size:12px;border-radius:5px;padding:0 5px;background:var(--chip)}
 .rk.r1{background:#e8b923;color:#2a1a00}
 .sheet table th.pc,.sheet table td.pc{min-width:70px}
@@ -162,6 +166,7 @@ textarea,input[type=time]{background:var(--card);color:var(--ink);border:1px sol
   #app tr.h1 th.pc{min-width:0!important}
   .wrap{padding:0 10px}
   .dsk{display:none}
+  .tlogo{display:none!important}
   .menu-btn{display:inline-block}
   .top{padding:6px 0}
   .top .banner{font-size:13px;padding:6px 10px;margin:4px 0 0}
@@ -411,7 +416,7 @@ function home(){
   const it=(ic,t,fn,cls)=>`<button class="menu-item ${cls||''}" onclick="${fn}"><span>${ic}</span>${t}</button>`;
   const main=S.started?it('▶','Spieltag fortsetzen ('+S.hands.length+' Spiele)','goApp()','prim'):it('＋','Neuer Spieltag','goApp()','prim');
   const items=[...(S.started?[it('⚙','Einstellungen','openSettings()'),it('✅','Spieltag abschließen','closeDay()')]:[]),it('📋','Gesamtansicht','openOverview()'),it('📊','Statistik','openStats()'),it('🏆','Saisons','openSeasons()'),it('📅','Termine','openAppts()'),it('📤','Export / Senden','openExport()'),it('📥','Import','openImport()'),it('🔍','Suche','openSearch()'),it('❓','Hilfe','openHelp()'),it('ℹ','Info','openInfo()')];
-  return `<div class="home"><div class="homelogo" onclick="openInfo()">${logoSvg(S.logo,240)}</div><h1 class="hometitle">${APP_NAME}</h1><div class="muted" style="text-align:center;margin-bottom:14px">${APP_TAG}<br><small>Version ${APP_VERSION}</small></div><div class="homemain">${main}</div>${nextApptLine()}<div class="menu-grid">${items.join('')}</div></div>`;
+  return `<div class="home"><div style="display:flex;justify-content:flex-end">${NB_X}</div><div class="homelogo" onclick="openInfo()">${logoSvg(S.logo,240)}</div><h1 class="hometitle">${APP_NAME}</h1><div class="muted" style="text-align:center;margin-bottom:14px">${APP_TAG}<br><small>Version ${APP_VERSION}</small></div><div class="homemain">${main}</div>${nextApptLine()}<div class="menu-grid">${items.join('')}</div></div>`;
 }
 function render(){
   document.getElementById('app').innerHTML=HOME?home():S.started?board():setup();
@@ -442,7 +447,7 @@ function startDay(){
 function setup(){
   const n=S.n;padPlayers();
   return `<h1 style="display:flex;align-items:center;gap:10px;cursor:pointer" onclick="goHome()" title="Startbildschirm">${logoSvg(S.logo,40)} ${APP_NAME}</h1>
-  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px"><button class="btn sec" onclick="goHome()">🏠 Start</button>${undoBtn()}<button class="btn sec menu-btn" onclick="openMenu()">☰ Menü</button><span class="dsk"><button class="btn sec" onclick="openOverview()">📋 Gesamtansicht</button><button class="btn sec" onclick="openStats()">📊 Statistik</button><button class="btn sec" onclick="openSeasons()">🏆 Saisons</button><button class="btn sec" onclick="openExport()">📤 Export / Senden</button>${helpBtns()}<button class="btn sec" onclick="openImport()">📥 Import</button></span></div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px;align-items:center">${NB_BACK}${undoBtn()}<button class="btn sec menu-btn" onclick="openMenu()">☰ Menü</button><span class="dsk"><button class="btn sec" onclick="openOverview()">📋 Gesamtansicht</button><button class="btn sec" onclick="openStats()">📊 Statistik</button><button class="btn sec" onclick="openSeasons()">🏆 Saisons</button><button class="btn sec" onclick="openExport()">📤 Export / Senden</button>${helpBtns()}<button class="btn sec" onclick="openImport()">📥 Import</button></span>${NB_X}</div>
   <div class="card">
   <label>Anzahl Spieler</label>
   <div class="seg"><button class="${n===3?'on':''}" onclick="S.n=3;render()">3 Spieler</button><button class="${n===4?'on':''}" onclick="S.n=4;render()">4 Spieler (Geber setzt aus)</button></div>
@@ -494,7 +499,7 @@ function board(){
     if(typeof sv==='number')svSum+=sv;
     // dicker Strich vor jedem Spiel, das der 1. Geber gibt (Beginn einer neuen Geberrunde)
     return `<tr class="row ${r.dealer===R.rows[0].dealer?'cyc':''}" onclick="openForm(${r.i})"><td>${r.i+1}</td><td><span class="rn">${r.i+1}.</span> ${descr(r)}</td>${cells}<td class="num"><b>${sv}</b></td></tr>`}).join('');
-  return `<div class="top" id="topbar"><div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><span onclick="goHome()" style="cursor:pointer;display:inline-flex" title="Startbildschirm">${logoSvg(S.logo,34)}</span><button class="btn sec" onclick="goHome()">🏠</button>${undoBtn()}<button class="btn sec menu-btn" onclick="openMenu()">☰ Menü</button><span class="dsk"><button class="btn sec" onclick="openSettings()">⚙ Einstellungen</button><button class="btn sec" onclick="openOverview()">📋 Gesamtansicht</button><button class="btn sec" onclick="openStats()">📊 Statistik</button><button class="btn sec" onclick="openSeasons()">🏆 Saisons</button><button class="btn sec" onclick="closeDay()">✅ Spieltag abschließen</button><button class="btn sec" onclick="openExport()">📤 Export / Senden</button>${helpBtns()}</span></div>${ban}</div>
+  return `<div class="top" id="topbar"><div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">${NB_BACK}<span class="tlogo" onclick="goHome()" style="cursor:pointer;display:inline-flex" title="Startbildschirm">${logoSvg(S.logo,34)}</span>${undoBtn()}<button class="btn sec menu-btn" onclick="openMenu()">☰ Menü</button><span class="dsk"><button class="btn sec" onclick="openSettings()">⚙ Einstellungen</button><button class="btn sec" onclick="openOverview()">📋 Gesamtansicht</button><button class="btn sec" onclick="openStats()">📊 Statistik</button><button class="btn sec" onclick="openSeasons()">🏆 Saisons</button><button class="btn sec" onclick="closeDay()">✅ Spieltag abschließen</button><button class="btn sec" onclick="openExport()">📤 Export / Senden</button>${helpBtns()}</span>${NB_X}</div>${ban}</div>
   <div class="card"><table class="gt" style="--np:${n}"><thead><tr class="h1"><th>#</th><th>Spiel</th>${hh.join('')}<th class="num">Spielwert</th></tr>
   <tr class="h2"><th></th><th>Summe verlorene Punkte</th>${tt.join('')}<th class="num" title="Summe aller Spielwerte">Σ ${svSum}</th></tr></thead>
   <tbody>${rows||`<tr><td colspan="${n+3}" class="muted">Noch kein Spiel eingetragen.</td></tr>`}</tbody></table></div>
@@ -550,7 +555,17 @@ function openForm(i){
     F.ouvertFree=true}
   drawForm();
 }
-function closeModal(){document.getElementById('modal').innerHTML='';F=null}
+function closeModal(){document.getElementById('modal').innerHTML='';F=null;SHEETSTACK=[]}
+/* ---------- Navigation: ← zurück (oben links), ✕ Anwendung schließen (oben rechts) ---------- */
+let SHEETSTACK=[]; // zuvor geöffnete Fenster (z. B. Gesamtansicht → Statistik → zurück zur Gesamtansicht)
+function sheetBack(){const p=SHEETSTACK.pop();if(p)document.getElementById('modal').innerHTML=p;else closeModal()}
+function quitApp(){
+  if(androidApp()&&androidApp().closeApp){androidApp().closeApp();return}
+  window.close();
+  setTimeout(()=>toast('Hier lässt sich das Fenster nicht per Knopf schließen – bitte den Tab bzw. die App selbst schließen. Alle Daten sind gespeichert.',6000),500);
+}
+function navBar(back){return `<div class="navbar">${back?`<button class="nb" onclick="${back}" title="Zurück" aria-label="Zurück">←</button>`:'<span></span>'}<button class="nb" onclick="quitApp()" title="Anwendung schließen" aria-label="Anwendung schließen">✕</button></div>`}
+const NB_BACK='<button class="nb" onclick="goHome()" title="Zurück zum Startbildschirm" aria-label="Zurück">←</button>',NB_X='<button class="nb x" onclick="quitApp()" title="Anwendung schließen" aria-label="Anwendung schließen">✕</button>';
 function toggleVeto(v){
   F.veto=v;F.passe=v?F.passe:F.passe;
   if(v){
@@ -630,7 +645,7 @@ function drawForm(){
   const fsOpen=resLocked?'<fieldset disabled style="border:0;padding:0;margin:0;opacity:.4">':'<fieldset style="border:0;padding:0;margin:0">';
   const isMalHand=F.malPlayer!=null&&F.malPlayer!==''; // Malenko: es wird nicht gereizt
   if(isMalHand&&F.reiz)F.reiz=null;
-  let h=`<div class="modal"><div class="sheet"><h1>${editIdx==null?'Neues Spiel':'Spiel '+(editIdx+1)+' bearbeiten'}</h1>`;
+  let h=`<div class="modal"><div class="sheet">${navBar('closeModal()')}<h1>${editIdx==null?'Neues Spiel':'Spiel '+(editIdx+1)+' bearbeiten'}</h1>`;
   const autoLv=ctx.auto;
   if(editIdx==null&&ctx.mal){
     h+=`<div class="banner mal">Malenko: <b>${nm(ctx.mal.player)}</b> muss spielen · offen: ${ctx.mal.remaining.map(g=>GROUPN[g]).join(' / ')}
@@ -743,7 +758,7 @@ function delHand(){
 function openSettings(){
   const st=S.settings;
   const chk=(k,l)=>`<label class="chk"><input type="checkbox" ${st[k]?'checked':''} onchange="S.settings['${k}']=this.checked;save();render()"> ${l}</label>`;
-  document.getElementById('modal').innerHTML=`<div class="modal"><div class="sheet"><h1>Einstellungen</h1>
+  document.getElementById('modal').innerHTML=`<div class="modal"><div class="sheet">${navBar('closeModal()')}<h1>Einstellungen</h1>
   <label>Namen</label>${S.players.map((p,i)=>`<input type="text" value="${esc(p)}" style="margin-bottom:6px" onchange="S.players[${i}]=this.value.trim()||'Spieler ${i+1}';save();render()">`).join('')}
   <label>Mitspieler (wirkt ab dem nächsten Spiel)</label>
   ${(()=>{const R=replay();
@@ -874,13 +889,49 @@ function seasonSelect(fn){
   const all=[...S.pastSeasons,S.season];
   return `<select style="margin-bottom:8px" onchange="VIEWSEASON=this.value==='all'?'all':+this.value;${fn}()"><option value="all" ${viewSeason()==='all'?'selected':''}>Alle Saisons</option>${all.slice().reverse().map(s=>`<option value="${s.id}" ${viewSeason()===s.id?'selected':''}>${esc(s.name)}${s.id===S.season.id?' (aktuell)':''}</option>`).join('')}</select>`;
 }
-function showSheet(html){document.getElementById('modal').innerHTML=`<div class="modal"><div class="sheet wide">${html}${HOME?'':'<div class="homebar"><button class="btn sec" onclick="goHome()">🏠 Startbildschirm</button></div>'}</div></div>`}
+function showSheet(html){
+  const m=document.getElementById('modal'),h1=t=>(String(t).match(/<h1>(.*?)<\/h1>/)||[])[1];
+  if(!m.innerHTML.trim())SHEETSTACK=[];else if(h1(m.innerHTML)!==h1(html)&&h1(m.innerHTML)!=null)SHEETSTACK.push(m.innerHTML);
+  m.innerHTML=`<div class="modal"><div class="sheet wide">${navBar('sheetBack()')}${html}${HOME?'':'<div class="homebar"><button class="btn sec" onclick="goHome()">🏠 Startbildschirm</button></div>'}</div></div>`}
+
+// Gleichstand: Anzahl der Spieler auf demselben Platz (2–4), sonst 0
+function tieK(names,rk,n){return Math.min(4,names.filter(o=>rk[o]===rk[n]).length)<2?0:Math.min(4,names.filter(o=>rk[o]===rk[n]).length)}
+const isMartin=n=>/^\s*martin\s*$/i.test(n||'');
+/* Podest-Symbol: Platz 1–3 = Männchen auf der jeweiligen Stufe, Platz 4 = gestolpertes Männchen neben der Treppe */
+function podiumIcon(rank,w,tie,martin){
+  // tie: Anzahl der Spieler auf diesem Platz (0 = allein, sonst 2–4: das linke Männchen schwarz, alle anderen grau). Bei Martin schubst das schwarze alle grauen (sie stürzen nach rechts); bei allen anderen stürzt das schwarze nach links.
+  w=w||72;tie=tie||0;
+  const steps=[[2,2,18,26,'#b8c0c8'],[1,20,18,18,'#e8b923'],[3,38,18,32,'#c98b52']]; // Platz, x, Breite, Oberkante, Farbe
+  const base=40,DARK='var(--ink)',LIGHT='#aab0b6';
+  const blocks=steps.map(([r,x,sw,top,c])=>`<rect x="${x}" y="${top}" width="${sw}" height="${base-top}" fill="${rank===r?c:'var(--line)'}" stroke="var(--mute)" stroke-width=".6"/><text x="${x+sw/2}" y="${base-3}" font-size="8" text-anchor="middle" fill="var(--ink)" opacity=".7">${r}</text>`).join('');
+  // Männchen mit Füßen im Ursprung; arms: 'up' Arme hoch, 'push' Arme nach rechts, 'pushL' nach links, sonst Arme hängend
+  const man=(arms,col)=>{
+    const fig=`stroke="${col}" stroke-width="1.8" stroke-linecap="round" fill="none"`;
+    const a=arms==='up'?'M0 -8L-4 -13M0 -8L4 -13':arms==='push'?'M0 -8L7 -9M0 -8L-4 -5':arms==='pushL'?'M0 -8L-7 -9M0 -8L4 -5':'M0 -8L-4 -5M0 -8L4 -5';
+    return `<circle cx="0" cy="-12" r="3" fill="${col}"/><path ${fig} d="M0 -9V-3M0 -3L-3 0M0 -3L3 0M${a}"/>`;
+  };
+  let f;
+  if(rank>=1&&rank<=3){
+    const st=steps.find(x=>x[0]===rank),x0=st[1],sw=st[2],top=st[3];
+    if(tie>=2){
+      const slot=i=>x0+(i+.5)*sw/tie;
+      f=[...Array(tie).keys()].map(i=>{
+        const col=i?LIGHT:DARK; // ganz links schwarz, alle anderen grau
+        if(martin)return i?`<g transform="translate(${slot(i)} ${top}) rotate(62)">${man('up',col)}</g>`:`<g transform="translate(${slot(i)} ${top})">${man('push',col)}</g>`; // Martin (schwarz) schubst alle grauen
+        return i?`<g transform="translate(${slot(i)} ${top})">${man('',col)}</g>`:`<g transform="translate(${x0+2} ${top}) rotate(-62)">${man('up',col)}</g>`; // sonst stürzt das schwarze nach links
+      }).join('');
+    }
+    else f=`<g transform="translate(${x0+sw/2} ${top})">${man(rank===1?'up':'',DARK)}</g>`;
+  }else f=`<g transform="translate(66 40) rotate(62)">${man('',DARK)}</g><path stroke="${DARK}" stroke-width="1.8" stroke-linecap="round" fill="none" d="M58 28L55 25M62 26L62 22M54 31L50 30" opacity=".6"/>`;
+  const lab=rank<=3?rank+'. Platz'+(tie?' (Gleichstand)':''):rank+'. Platz – gestolpert';
+  return `<svg class="podi" viewBox="-10 0 86 42" width="${Math.round(w*86/76)}" height="${Math.round(w*86/76*42/86)}" role="img" aria-label="${lab}">${blocks}${f}</svg>`;
+}
 
 function openOverview(){
   const list=allDays(true).map(analyze);
   const names=[];list.forEach(a=>entries(a).forEach(e=>{if(!names.includes(e.name))names.push(e.name)}));
   const sum={},cnt={},sumE={};names.forEach(n=>{sum[n]=0;cnt[n]=0;sumE[n]=0});
-  const anyImp=list.some(a=>a.day.imp);
+  const anyImp=list.some(a=>a.day.imp),ovRank={};
   let grand=0;
   const rows=list.slice().reverse().map((a,zx)=>{
     const ent=entries(a);
@@ -897,7 +948,8 @@ function openOverview(){
     const act=`<button class="btn sec sm" onclick="openStats('${a.day.current?'cur':'d'+a.day.id}')">Statistik</button>${a.day.current?'':` <button class="btn sec sm" title="Spieltag löschen" onclick="delDay(${a.day.id})">🗑</button>`}`; // Löschen nur mit doppelter Rückfrage
     return `<tr class="${zx%2?'z':''}"><td>${label}<div class="muted">${a.day.imp?[a.day.host?'bei '+esc(a.day.host):'',esc(a.day.note||'nur Beträge')].filter(Boolean).join(' · '):a.day.hands.length+' Spiele'}</div></td>${cells}<td class="pc"><b>${eur(dayTot)}</b></td><td>${act}</td></tr>`;
   }).join('');
-  showSheet(`<h1>Gesamtansicht</h1>${seasonSelect('openOverview')}${list.length?`<div class="statwrap ov"><table><thead><tr><th>Spieltag</th>${names.map(n=>`<th class="pc">${esc(n)}</th>`).join('')}<th class="pc">Alle Zahlungen</th><th></th></tr>
+  names.filter(n=>cnt[n]>0).forEach(n=>{ovRank[n]=1+names.filter(o=>cnt[o]>0&&sum[o]<sum[n]).length}); // 1. = wenigste verlorene Punkte, Gleichstand = gleicher Platz
+  showSheet(`<h1>Gesamtansicht</h1>${seasonSelect('openOverview')}${list.length?`<div class="statwrap ov"><table><thead><tr><th>Spieltag</th>${names.map(n=>`<th class="pc">${ovRank[n]?podiumIcon(ovRank[n],72,tieK(names.filter(o=>ovRank[o]),ovRank,n),isMartin(n)):''}${esc(n)}</th>`).join('')}<th class="pc">Alle Zahlungen</th><th></th></tr>
   <tr><th>Summe (${list.length} Spieltage)</th>${names.map(n=>`<th class="pc tot2">${anyImp?`<span style="white-space:nowrap">${eur(sumE[n])}</span><div class="tag">${cnt[n]} Spieltage · ≈${sum[n]}</div>`:`${sum[n]}<div class="tag">${cnt[n]} Spieltage · ${eur(sumE[n])}</div>`}</th>`).join('')}<th class="pc tot2">${eur(grand)}</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>
   ${anyImp?'<p class="muted"><b>Spieltage „nur Beträge“</b> (ohne Einzelspiele, z. B. aus Excel): oben steht der gezahlte Betrag (echter Wert), darunter die daraus zurückgerechneten Punkte (<b>≈</b>). Die Summe zeigt dann zuerst die Zahlungen.</p>':''}
   <p class="muted">Zahl = verlorene Punkte am Spielende (Spieler, die früher gegangen sind, inkl. Schnitt; „Ø“ = nicht anwesender Stammspieler bei nur 3 Spielern, er bekommt den Schnitt), danach der Platz (1. = wenigste Punkte), darunter der zu zahlende Betrag (Punktwert aufgerundet + Grundeinsatz).</p>`:'<p class="muted">Noch kein Spieltag vorhanden.</p>'}
@@ -962,10 +1014,10 @@ function openSeasons(){
   });
   const names=[];data.forEach(d=>Object.keys(d.per).forEach(n=>{if(!names.includes(n))names.push(n)}));
   const rows=data.map(d=>{
-    const best=Object.keys(d.per).sort((a,b)=>d.per[a].pts-d.per[b].pts)[0];
+    const rkm={};Object.keys(d.per).forEach(n=>{rkm[n]=1+Object.keys(d.per).filter(o=>d.per[o].pts<d.per[n].pts).length});const rk=n=>rkm[n]; // 1. = wenigste verlorene Punkte, Gleichstand = gleicher Platz
     return `<tr><td><b>${esc(d.se.name)}</b>${d.se.id===S.season.id?' <span class="rk r1">aktuell</span>':''}<div class="muted">${fmtDate(d.se.start)} – ${d.se.end?fmtDate(d.se.end):'läuft'} · ${d.list.length} Spieltage</div>
       <div style="margin-top:4px"><button class="btn sec sm" onclick="VIEWSEASON=${d.se.id};openStats('all')">Statistik</button> <button class="btn sec sm" onclick="VIEWSEASON=${d.se.id};openOverview()">Spieltage</button> <button class="btn sec sm" title="Saison löschen" onclick="delSeason(${d.se.id})">🗑 Saison löschen</button></div></td>
-      ${names.map(n=>{const p=d.per[n];return p?`<td class="pc"><b>${p.pts}</b>${n===best&&d.list.length?' <span class="rk r1">1.</span>':''}<div class="tag">${eur(p.eur)} · ${p.first}× Platz 1</div></td>`:'<td class="pc muted">-</td>'}).join('')}
+      ${names.map(n=>{const p=d.per[n];return p?`<td class="pc">${d.list.length?podiumIcon(rk(n),56,tieK(names.filter(o=>d.per[o]),rkm,n),isMartin(n)):''}<b>${p.pts}</b><div class="tag">${eur(p.eur)} · ${p.first}× Platz 1</div></td>`:'<td class="pc muted">-</td>'}).join('')}
       <td class="pc"><b>${eur(d.paid)}</b></td></tr>`}).join('');
   showSheet(`<h1>Saisons</h1><div class="scroll"><table><thead><tr><th>Saison</th>${names.map(n=>`<th class="pc">${esc(n)}</th>`).join('')}<th class="pc">Alle Zahlungen</th></tr></thead><tbody>${rows}</tbody></table></div>
   <p class="muted">Zahl = verlorene Punkte in der Saison, darunter Zahlungen in € und Anzahl Spieltage auf Platz 1.${S.days.some(d=>d.imp)?' Spieltage nur mit Beträgen (z. B. aus Excel) zählen mit aus dem Betrag zurückgerechneten Punkten (≈).':''}</p>
@@ -1036,14 +1088,16 @@ function lineSVG(labels,series,aria){
 }
 function statCharts(st,order,an,ramschHands,hasPl,hasGames,nImp){
   if(!order.length)return '<p class="muted">Keine Daten.</p>';
-  const P=order.map((n,i)=>({n,c:colVar(i),s:st[n]}));
-  const euroItems=P.map(p=>({l:p.n,v:p.s.eurTot,c:p.c,t:eur(p.s.eurTot)}));
-  const ptsItems=P.map(p=>({l:p.n,v:p.s.punkte,c:p.c,t:nf(p.s.punkte)+' Punkte'}));
+  // Reihenfolge nach Platz (1. = wenigste verlorene Punkte oben, Letzter unten), Platzziffer vor dem Namen; Farben bleiben je Spieler gleich
+  const P=order.map((n,i)=>({n,c:colVar(i),s:st[n]})).sort((a,b)=>a.s.punkte-b.s.punkte);
+  P.forEach(p=>{p.d=(1+P.filter(o=>o.s.punkte<p.s.punkte).length)+'. '+p.n});
+  const euroItems=P.map(p=>({l:p.d,v:p.s.eurTot,c:p.c,t:eur(p.s.eurTot)}));
+  const ptsItems=P.map(p=>({l:p.d,v:p.s.punkte,c:p.c,t:nf(p.s.punkte)+' Punkte'}));
   const totE=euroItems.reduce((a,x)=>a+x.v,0),totP=ptsItems.reduce((a,x)=>a+x.v,0);
   const g=P.reduce((a,p)=>a+p.s.grand[0],0),f=P.reduce((a,p)=>a+p.s.farbe[0],0),nl=P.reduce((a,p)=>a+p.s.null[0],0);
   const artItems=[{l:'Grand',v:g,c:'var(--c1)'},{l:'Farbspiele',v:f,c:'var(--c2)'},{l:'Null',v:nl,c:'var(--c3)'},{l:'Ramsch',v:ramschHands,c:'var(--c4)'}].filter(x=>x.v>0);
   const wl=[{l:'Gewonnen',c:'var(--c1)'},{l:'Verloren',c:'var(--c2)'}];
-  const wlRows=P.map(p=>({name:p.n,vals:[p.s.w,p.s.l],sp:p.s.sp}));
+  const wlRows=P.map(p=>({name:p.d,vals:[p.s.w,p.s.l],sp:p.s.sp}));
   let h='<div class="charts">';
   h+=`<div class="chartcard"><h3>Zahlungen je Spieler</h3><p class="muted">Anteil an den Gesamtzahlungen (mit Grundeinsatz)</p>${donutSVG(euroItems,'Zahlungen je Spieler',eur(totE),'gesamt')}${legendHTML(euroItems,x=>eur(x.v))}</div>`;
   h+=`<div class="chartcard"><h3>Verlorene Punkte${nImp?' (≈)':''}</h3><p class="muted">Anteil an allen verlorenen Punkten</p>${donutSVG(ptsItems,'Verlorene Punkte je Spieler',nf(totP),'Punkte')}${legendHTML(ptsItems,x=>nf(x.v))}</div>`;
@@ -1051,15 +1105,15 @@ function statCharts(st,order,an,ramschHands,hasPl,hasGames,nImp){
   if(hasGames)h+=`<div class="chartcard"><h3>Als Alleinspieler</h3><p class="muted">Gewonnen und verloren je Spieler</p>${hbarsHTML(wlRows,wl,r=>`${r.vals[0]} gewonnen · ${r.vals[1]} verloren${r.sp?' · '+Math.round(100*r.vals[0]/r.sp)+' %':''}`)}${legendHTML(wl.map(x=>({...x,v:0})),x=>'').replace(/<b><\/b>/g,'')}</div>`;
   if(hasPl){
     const pl=[{l:'1. Platz',c:'var(--pl1)'},{l:'2. Platz',c:'var(--pl2)'},{l:'3. Platz',c:'var(--pl3)'},{l:'4. Platz',c:'var(--pl4)'}];
-    const rows=P.map(p=>({name:p.n,vals:[p.s.pl[1],p.s.pl[2],p.s.pl[3],p.s.pl[4]]})).filter(r=>r.vals.some(v=>v));
+    const rows=P.map(p=>({name:p.d,vals:[p.s.pl[1],p.s.pl[2],p.s.pl[3],p.s.pl[4]]})).filter(r=>r.vals.some(v=>v));
     if(rows.length)h+=`<div class="chartcard"><h3>Platzierungen</h3><p class="muted">Spieltage je Platz (1. = wenigste Punkte)</p>${hbarsHTML(rows,pl,r=>r.vals.map((v,i)=>v?`${v}× ${i+1}.`:'').filter(Boolean).join(' · '))}${legendHTML(pl.map(x=>({...x,v:0})),x=>'').replace(/<b><\/b>/g,'')}</div>`;
   }
   if(an.length>=2){
     const years=new Set(an.map(a=>new Date(a.day.date).getFullYear()));  // über mehrere Jahre: Jahr mit anzeigen
     const labels=an.map(a=>a.day.current?'heute':new Date(a.day.date).toLocaleDateString('de-DE',years.size>1?{day:'numeric',month:'numeric',year:'2-digit'}:{day:'numeric',month:'numeric'}));
     const run={};order.forEach(n=>run[n]=0);
-    const series=order.map((n,i)=>({name:n,c:colVar(i),vals:[]}));
-    an.forEach(a=>{const ent=entries(a);series.forEach(s=>{const e=ent.find(x=>x.name===s.name);if(e)run[s.name]+=e.end;s.vals.push(run[s.name])})});
+    const series=P.map(p=>({name:p.d,key:p.n,c:p.c,vals:[]}));
+    an.forEach(a=>{const ent=entries(a);series.forEach(s=>{const e=ent.find(x=>x.name===s.key);if(e)run[s.key]+=e.end;s.vals.push(run[s.key])})});
     h+=`<div class="chartcard wide"><h3>Punkteverlauf</h3><p class="muted">Verlorene Punkte${nImp?' (≈ bei Spieltagen nur mit Beträgen)':''}, über die Spieltage addiert</p>${lineSVG(labels,series,'Punkteverlauf je Spieler')}${legendHTML(series.map(s=>({l:s.name,v:s.vals[s.vals.length-1],c:s.c})),x=>nf(x.v))}</div>`;
   }
   return h+'</div>';
@@ -1692,7 +1746,7 @@ async function waStep(n){
 }
 
 /* ---------- Logos, Info, Hilfe, Suche ---------- */
-const APP_NAME='Skat-LOGGER',APP_TAG='Spielverlauf aufschreiben + Statistik + mehr',APP_VERSION='1.15.2',APP_BUILD='2026-10-23';
+const APP_NAME='Skat-LOGGER',APP_TAG='Spielverlauf aufschreiben + Statistik + mehr',APP_VERSION='1.16.4',APP_BUILD='2026-10-23';
 const LOGOS=[
   {n:'Kartenfächer',svg:`<svg viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI Symbol,Arial,sans-serif"><rect width="128" height="128" rx="28" fill="#17382a"/><text x="64" y="31" text-anchor="middle" font-family="Georgia,serif" font-size="21" font-weight="700" fill="#f6f1e3" letter-spacing="3">SKAT</text><text x="64" y="118" text-anchor="middle" font-family="Georgia,serif" font-size="19" font-weight="700" fill="#e8b923" letter-spacing="4">LOG</text><g transform="translate(12.8 16) scale(0.8)"><g transform="rotate(-24 64 104)"><rect x="40" y="30" width="48" height="68" rx="6" fill="#fff" stroke="#cfc8b4" stroke-width="1.5"/><text x="47" y="50" font-size="15" fill="#c0392b">♦</text><text x="64" y="80" font-size="32" text-anchor="middle" fill="#c0392b">♦</text></g><g transform="rotate(24 64 104)"><rect x="40" y="30" width="48" height="68" rx="6" fill="#fff" stroke="#cfc8b4" stroke-width="1.5"/><text x="47" y="50" font-size="15" fill="#c0392b">♥</text><text x="64" y="80" font-size="32" text-anchor="middle" fill="#c0392b">♥</text></g><g><rect x="40" y="30" width="48" height="68" rx="6" fill="#fff" stroke="#cfc8b4" stroke-width="1.5"/><text x="47" y="50" font-size="15" fill="#1d2a24">♠</text><text x="64" y="80" font-size="32" text-anchor="middle" fill="#1d2a24">♠</text></g></g></svg>`},
 ];
