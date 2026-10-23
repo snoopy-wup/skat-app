@@ -824,16 +824,28 @@ function doCloseDay(send){
   if(send==='wa')waDialog({title:'Nachricht mit den Zahlungen',text,name:exportName(),content:JSON.stringify(S,null,1),mime:'application/json'});
   else if(send)shareAll(text);
 }// Spieltag durchrechnen (S wird kurz auf den Spieltag umgestellt)
+// Spieltag ohne Einzelspiele (day.imp = {Name: gezahlter Betrag inkl. Grundeinsatz}, z. B. aus Excel): Beträge gelten, Punkte ≈ zurückgerechnet
+function analyzeImp(day,stake){
+  const base=+stake.base||0,per=+stake.per100||0;
+  const part=[];day.players.forEach((n,i)=>{if(day.imp[n]!=null)part.push(i)});
+  const end=day.players.map(n=>day.imp[n]==null||!per?0:Math.round(Math.max(0,day.imp[n]-base)*100/per));
+  const pay=day.players.map(n=>{const t=+day.imp[n]||0;return {euro:Math.max(0,t-base),total:t}});
+  return {R:{rows:[]},part,end,pay};
+}
+const gamesTxt=d=>d.imp?'nur Beträge':d.hands.length+' Spiele';
 function analyze(day){
-  const bak={players:S.players,hands:S.hands,events:S.events,n:S.n,startDealer:S.startDealer,settings:S.settings};
-  let R;
-  Object.assign(S,{players:day.players,hands:day.hands,events:day.events||[],n:day.n,startDealer:day.startDealer,settings:{...S.settings,...(day.settings||{}),...FIX}});
-  try{R=replay()}finally{Object.assign(S,bak)}
-  const part=[];day.players.forEach((_,i)=>{if(i<day.n||R.info[i].joinAt!=null)part.push(i)});
-  const end=R.totals.map((t,i)=>t+(R.info[i].proj||0));
-  const rank={};part.forEach(i=>{rank[i]=1+part.filter(j=>end[j]<end[i]).length});
   const stake=day.current?S.stake:(day.stake||S.stake);
-  const pay=end.map(e=>payOf(e,stake));
+  let R,part,end,pay;
+  if(day.imp)({R,part,end,pay}=analyzeImp(day,stake));
+  else{
+    const bak={players:S.players,hands:S.hands,events:S.events,n:S.n,startDealer:S.startDealer,settings:S.settings};
+    Object.assign(S,{players:day.players,hands:day.hands,events:day.events||[],n:day.n,startDealer:day.startDealer,settings:{...S.settings,...(day.settings||{}),...FIX}});
+    try{R=replay()}finally{Object.assign(S,bak)}
+    part=[];day.players.forEach((_,i)=>{if(i<day.n||R.info[i].joinAt!=null)part.push(i)});
+    end=R.totals.map((t,i)=>t+(R.info[i].proj||0));
+    pay=end.map(e=>payOf(e,stake));
+  }
+  const rank={};part.forEach(i=>{rank[i]=1+part.filter(j=>end[j]<end[i]).length});
   // Spielt man nur zu dritt, bekommt der fehlende Stammspieler den Schnitt der Punkte (und die daraus folgenden €)
   const ghosts=[];
   if(part.length&&part.length<4){
@@ -865,6 +877,7 @@ function openOverview(){
   const list=allDays(true).map(analyze);
   const names=[];list.forEach(a=>entries(a).forEach(e=>{if(!names.includes(e.name))names.push(e.name)}));
   const sum={},cnt={},sumE={};names.forEach(n=>{sum[n]=0;cnt[n]=0;sumE[n]=0});
+  const anyImp=list.some(a=>a.day.imp);
   let grand=0;
   const rows=list.slice().reverse().map((a,zx)=>{
     const ent=entries(a);
@@ -873,14 +886,17 @@ function openOverview(){
       const e=ent.find(x=>x.name===n);
       if(!e)return `<td class="pc muted">-</td>`;
       sum[n]+=e.end;cnt[n]++;sumE[n]+=e.pay.total;
-      return `<td class="pc"><b>${e.end}</b> ${e.ghost?'<span class="rk">Ø</span>':`<span class="rk r${e.rank}">${e.rank}.</span>`}<div class="tag">${eur(e.pay.total)}</div></td>`;
+      const rk=e.ghost?'<span class="rk">Ø</span>':`<span class="rk r${e.rank}">${e.rank}.</span>`;
+      // Spieltag nur mit Beträgen: der Betrag ist der echte Wert (oben), die Punkte sind zurückgerechnet (klein darunter, schmal genug fürs Handy)
+      return a.day.imp?`<td class="pc"><b style="white-space:nowrap">${eur(e.pay.total)}</b> ${rk}<div class="tag">≈${e.end}</div></td>`:`<td class="pc"><b>${e.end}</b> ${rk}<div class="tag">${eur(e.pay.total)}</div></td>`;
     }).join('');
     const label=a.day.current?'läuft':fmtDate(a.day.date);
     const act=`<button class="btn sec sm" onclick="openStats('${a.day.current?'cur':'d'+a.day.id}')">Statistik</button>${a.day.current?'':` <button class="btn sec sm" title="Spieltag löschen" onclick="delDay(${a.day.id})">🗑</button>`}`; // Löschen nur mit doppelter Rückfrage
-    return `<tr class="${zx%2?'z':''}"><td>${label}<div class="muted">${a.day.hands.length} Spiele</div></td>${cells}<td class="pc"><b>${eur(dayTot)}</b></td><td>${act}</td></tr>`;
+    return `<tr class="${zx%2?'z':''}"><td>${label}<div class="muted">${a.day.imp?[a.day.host?'bei '+esc(a.day.host):'',esc(a.day.note||'nur Beträge')].filter(Boolean).join(' · '):a.day.hands.length+' Spiele'}</div></td>${cells}<td class="pc"><b>${eur(dayTot)}</b></td><td>${act}</td></tr>`;
   }).join('');
   showSheet(`<h1>Gesamtansicht</h1>${seasonSelect('openOverview')}${list.length?`<div class="statwrap ov"><table><thead><tr><th>Spieltag</th>${names.map(n=>`<th class="pc">${esc(n)}</th>`).join('')}<th class="pc">Alle Zahlungen</th><th></th></tr>
-  <tr><th>Summe (${list.length} Spieltage)</th>${names.map(n=>`<th class="pc tot2">${sum[n]}<div class="tag">${cnt[n]} Spieltage · ${eur(sumE[n])}</div></th>`).join('')}<th class="pc tot2">${eur(grand)}</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>
+  <tr><th>Summe (${list.length} Spieltage)</th>${names.map(n=>`<th class="pc tot2">${anyImp?`<span style="white-space:nowrap">${eur(sumE[n])}</span><div class="tag">${cnt[n]} Spieltage · ≈${sum[n]}</div>`:`${sum[n]}<div class="tag">${cnt[n]} Spieltage · ${eur(sumE[n])}</div>`}</th>`).join('')}<th class="pc tot2">${eur(grand)}</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>
+  ${anyImp?'<p class="muted"><b>Spieltage „nur Beträge“</b> (ohne Einzelspiele, z. B. aus Excel): oben steht der gezahlte Betrag (echter Wert), darunter die daraus zurückgerechneten Punkte (<b>≈</b>). Die Summe zeigt dann zuerst die Zahlungen.</p>':''}
   <p class="muted">Zahl = verlorene Punkte am Spielende (Spieler, die früher gegangen sind, inkl. Schnitt; „Ø“ = nicht anwesender Stammspieler bei nur 3 Spielern, er bekommt den Schnitt), danach der Platz (1. = wenigste Punkte), darunter der zu zahlende Betrag (Punktwert aufgerundet + Grundeinsatz).</p>`:'<p class="muted">Noch kein Spieltag vorhanden.</p>'}
   <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" onclick="openStats('all')">Statistik aller Spieltage</button><button class="btn sec" onclick="openSeasons()">🏆 Saisons</button><button class="btn sec" onclick="closeModal()">Schließen</button></div>`);
 }
@@ -888,7 +904,7 @@ function openOverview(){
 /* ---------- Löschen von Spieltagen und Saisons (immer mit zwei Rückfragen) ---------- */
 function delDay(id){
   const d=S.days.find(x=>x.id===id);if(!d)return;
-  const txt=`${esc(fmtDate(d.date))} · ${esc(seasonName(d.season??S.season.id))} · ${d.hands.length} Spiele`;
+  const txt=`${esc(fmtDate(d.date))} · ${esc(seasonName(d.season??S.season.id))} · ${gamesTxt(d)}`;
   ask(`Spieltag löschen? (1. Rückfrage)<br><small>${txt}</small>`,'Weiter …',()=>
     ask(`Wirklich endgültig löschen? (2. Rückfrage)<br><small>Der Spieltag ${txt} und alle seine Spiele verschwinden aus Gesamtansicht und Statistik. Mit „↶ Rückgängig“ lässt es sich nur zurücknehmen, solange die App offen bleibt. Sichere vorher über „Export“.</small>`,'Ja, Spieltag endgültig löschen',()=>doDelDay(id)));
 }
@@ -949,7 +965,7 @@ function openSeasons(){
       ${names.map(n=>{const p=d.per[n];return p?`<td class="pc"><b>${p.pts}</b>${n===best&&d.list.length?' <span class="rk r1">1.</span>':''}<div class="tag">${eur(p.eur)} · ${p.first}× Platz 1</div></td>`:'<td class="pc muted">-</td>'}).join('')}
       <td class="pc"><b>${eur(d.paid)}</b></td></tr>`}).join('');
   showSheet(`<h1>Saisons</h1><div class="scroll"><table><thead><tr><th>Saison</th>${names.map(n=>`<th class="pc">${esc(n)}</th>`).join('')}<th class="pc">Alle Zahlungen</th></tr></thead><tbody>${rows}</tbody></table></div>
-  <p class="muted">Zahl = verlorene Punkte in der Saison, darunter Zahlungen in € und Anzahl Spieltage auf Platz 1.</p>
+  <p class="muted">Zahl = verlorene Punkte in der Saison, darunter Zahlungen in € und Anzahl Spieltage auf Platz 1.${S.days.some(d=>d.imp)?' Spieltage nur mit Beträgen (z. B. aus Excel) zählen mit aus dem Betrag zurückgerechneten Punkten (≈).':''}</p>
   <label>Aktuelle Saison umbenennen</label><div class="row2"><input type="text" id="seasonRename" value="${esc(S.season.name)}"><button class="btn sec" onclick="renameSeason()">Umbenennen</button></div>
   <label>Neue Saison anlegen (die aktuelle wird abgeschlossen und gespeichert)</label><div class="row2"><input type="text" id="seasonNew" placeholder="Name der neuen Saison"><button class="btn" onclick="newSeason()">Neue Saison</button></div>
   ${S.pastSeasons.length?`<label>Aktuelle Saison in eine ältere übertragen (alle ihre Spieltage)</label><div class="row2"><select id="mergeTarget">${S.pastSeasons.slice().reverse().map(s=>`<option value="${s.id}">${esc(s.name)}</option>`).join('')}</select><button class="btn sec" onclick="mergeSeason()">Übertragen …</button></div>`:''}
@@ -1010,11 +1026,12 @@ function lineSVG(labels,series,aria){
   g+=`<line x1="${L}" x2="${W-Rr}" y1="${Y(0)}" y2="${Y(0)}" style="stroke:var(--mute)" stroke-width="1"/>`;
   series.forEach(s=>{
     g+=`<polyline fill="none" stroke="${s.c}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" points="${s.vals.map((v,i)=>X(i).toFixed(1)+','+Y(v).toFixed(1)).join(' ')}"/>`;
-    s.vals.forEach((v,i)=>{g+=`<circle cx="${X(i).toFixed(1)}" cy="${Y(v).toFixed(1)}" r="4" fill="${s.c}" style="stroke:var(--card)" stroke-width="2"><title>${esc(s.name)} · ${esc(labels[i])}: ${nf(v)} Punkte</title></circle>`});
+    // viele Spieltage: nur der letzte Punkt sichtbar, die anderen unsichtbar (Tooltip bleibt), sonst verdecken die Punkte die Linie
+    s.vals.forEach((v,i)=>{const dot=n<=30||i===n-1;g+=`<circle cx="${X(i).toFixed(1)}" cy="${Y(v).toFixed(1)}" r="${dot?4:3}" fill="${dot?s.c:'transparent'}" style="stroke:${dot?'var(--card)':'none'}" stroke-width="2"><title>${esc(s.name)} · ${esc(labels[i])}: ${nf(v)} Punkte</title></circle>`});
   });
   return `<svg class="linechart" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(aria)}">${g}</svg>`;
 }
-function statCharts(st,order,an,ramschHands,hasPl){
+function statCharts(st,order,an,ramschHands,hasPl,hasGames,nImp){
   if(!order.length)return '<p class="muted">Keine Daten.</p>';
   const P=order.map((n,i)=>({n,c:colVar(i),s:st[n]}));
   const euroItems=P.map(p=>({l:p.n,v:p.s.eurTot,c:p.c,t:eur(p.s.eurTot)}));
@@ -1026,20 +1043,21 @@ function statCharts(st,order,an,ramschHands,hasPl){
   const wlRows=P.map(p=>({name:p.n,vals:[p.s.w,p.s.l],sp:p.s.sp}));
   let h='<div class="charts">';
   h+=`<div class="chartcard"><h3>Zahlungen je Spieler</h3><p class="muted">Anteil an den Gesamtzahlungen (mit Grundeinsatz)</p>${donutSVG(euroItems,'Zahlungen je Spieler',eur(totE),'gesamt')}${legendHTML(euroItems,x=>eur(x.v))}</div>`;
-  h+=`<div class="chartcard"><h3>Verlorene Punkte</h3><p class="muted">Anteil an allen verlorenen Punkten</p>${donutSVG(ptsItems,'Verlorene Punkte je Spieler',nf(totP),'Punkte')}${legendHTML(ptsItems,x=>nf(x.v))}</div>`;
-  h+=`<div class="chartcard"><h3>Spielarten</h3><p class="muted">Anzahl gespielter Spiele</p>${donutSVG(artItems,'Verteilung der Spielarten',String(artItems.reduce((a,x)=>a+x.v,0)),'Spiele')}${legendHTML(artItems)}</div>`;
-  h+=`<div class="chartcard"><h3>Als Alleinspieler</h3><p class="muted">Gewonnen und verloren je Spieler</p>${hbarsHTML(wlRows,wl,r=>`${r.vals[0]} gewonnen · ${r.vals[1]} verloren${r.sp?' · '+Math.round(100*r.vals[0]/r.sp)+' %':''}`)}${legendHTML(wl.map(x=>({...x,v:0})),x=>'').replace(/<b><\/b>/g,'')}</div>`;
+  h+=`<div class="chartcard"><h3>Verlorene Punkte${nImp?' (≈)':''}</h3><p class="muted">Anteil an allen verlorenen Punkten</p>${donutSVG(ptsItems,'Verlorene Punkte je Spieler',nf(totP),'Punkte')}${legendHTML(ptsItems,x=>nf(x.v))}</div>`;
+  if(hasGames)h+=`<div class="chartcard"><h3>Spielarten</h3><p class="muted">Anzahl gespielter Spiele</p>${donutSVG(artItems,'Verteilung der Spielarten',String(artItems.reduce((a,x)=>a+x.v,0)),'Spiele')}${legendHTML(artItems)}</div>`;
+  if(hasGames)h+=`<div class="chartcard"><h3>Als Alleinspieler</h3><p class="muted">Gewonnen und verloren je Spieler</p>${hbarsHTML(wlRows,wl,r=>`${r.vals[0]} gewonnen · ${r.vals[1]} verloren${r.sp?' · '+Math.round(100*r.vals[0]/r.sp)+' %':''}`)}${legendHTML(wl.map(x=>({...x,v:0})),x=>'').replace(/<b><\/b>/g,'')}</div>`;
   if(hasPl){
     const pl=[{l:'1. Platz',c:'var(--pl1)'},{l:'2. Platz',c:'var(--pl2)'},{l:'3. Platz',c:'var(--pl3)'},{l:'4. Platz',c:'var(--pl4)'}];
     const rows=P.map(p=>({name:p.n,vals:[p.s.pl[1],p.s.pl[2],p.s.pl[3],p.s.pl[4]]})).filter(r=>r.vals.some(v=>v));
     if(rows.length)h+=`<div class="chartcard"><h3>Platzierungen</h3><p class="muted">Spieltage je Platz (1. = wenigste Punkte)</p>${hbarsHTML(rows,pl,r=>r.vals.map((v,i)=>v?`${v}× ${i+1}.`:'').filter(Boolean).join(' · '))}${legendHTML(pl.map(x=>({...x,v:0})),x=>'').replace(/<b><\/b>/g,'')}</div>`;
   }
   if(an.length>=2){
-    const labels=an.map(a=>a.day.current?'heute':new Date(a.day.date).toLocaleDateString('de-DE',{day:'numeric',month:'numeric'}));
+    const years=new Set(an.map(a=>new Date(a.day.date).getFullYear()));  // über mehrere Jahre: Jahr mit anzeigen
+    const labels=an.map(a=>a.day.current?'heute':new Date(a.day.date).toLocaleDateString('de-DE',years.size>1?{day:'numeric',month:'numeric',year:'2-digit'}:{day:'numeric',month:'numeric'}));
     const run={};order.forEach(n=>run[n]=0);
     const series=order.map((n,i)=>({name:n,c:colVar(i),vals:[]}));
     an.forEach(a=>{const ent=entries(a);series.forEach(s=>{const e=ent.find(x=>x.name===s.name);if(e)run[s.name]+=e.end;s.vals.push(run[s.name])})});
-    h+=`<div class="chartcard wide"><h3>Punkteverlauf</h3><p class="muted">Verlorene Punkte, über die Spieltage addiert</p>${lineSVG(labels,series,'Punkteverlauf je Spieler')}${legendHTML(series.map(s=>({l:s.name,v:s.vals[s.vals.length-1],c:s.c})),x=>nf(x.v))}</div>`;
+    h+=`<div class="chartcard wide"><h3>Punkteverlauf</h3><p class="muted">Verlorene Punkte${nImp?' (≈ bei Spieltagen nur mit Beträgen)':''}, über die Spieltage addiert</p>${lineSVG(labels,series,'Punkteverlauf je Spieler')}${legendHTML(series.map(s=>({l:s.name,v:s.vals[s.vals.length-1],c:s.c})),x=>nf(x.v))}</div>`;
   }
   return h+'</div>';
 }
@@ -1096,6 +1114,8 @@ function openStats(sel){
     });
   });
   const hasPl=an.some(a=>!a.day.current);
+  const nImp=an.filter(a=>a.day.imp).length,hasGames=an.length>nImp;
+  const impNote=nImp?`<div class="banner orange" style="margin:10px 0 0">${nImp===an.length?'Alle '+nImp+' Spieltage haben':nImp+' von '+an.length+' Spieltagen haben'} nur Beträge (ohne Einzelspiele, z. B. aus Excel). Die Punkte sind aus den Beträgen zurückgerechnet (≈). ${hasGames?'Spielarten, Alleinspieler, Buben usw. zählen nur die Spieltage mit Einzelspielen.':'Auswertungen zu einzelnen Spielen gibt es dafür nicht.'}</div>`:'';
   const pct=(w,t)=>t?Math.round(100*w/t)+'%':'-';
   const sec=t=>`<tr class="sec"><th colspan="${order.length+1}">${t}</th></tr>`;
   let zi=0; // jede 2. Zeile dunkler
@@ -1107,9 +1127,9 @@ function openStats(sel){
     sec('Allgemein'),
     row('Spieltage',s=>s.days),
     hasPl?[1,2,3,4].map(p=>row(p+'. Platz (Spieltage)',s=>s.pl[p])).join(''):'',
-    row('Verlorene Punkte gesamt',s=>`<b>${s.punkte}</b>`),
-    row('Ø Punkte je Spieltag',s=>s.days?Math.round(s.punkte/s.days):'-'),
-    sec('Als Alleinspieler'),
+    row('Verlorene Punkte gesamt'+(nImp?' (≈)':''),s=>`<b>${s.punkte}</b>`),
+    row('Ø Punkte je Spieltag'+(nImp?' (≈)':''),s=>s.days?Math.round(s.punkte/s.days):'-'),
+    ...(hasGames?[sec('Als Alleinspieler'),
     row('Spiele gesamt',s=>s.sp),row('gewonnen',s=>s.w),row('verloren',s=>s.l),row('Gewinnquote',s=>pct(s.w,s.sp)),
     sec('Grand'),row('gespielt',s=>s.grand[0]),row('gewonnen',s=>s.grand[1]),row('verloren',s=>s.grand[2]),
     sec('Farbspiele'),row('gespielt',s=>s.farbe[0]),row('gewonnen',s=>s.farbe[1]),row('verloren',s=>s.farbe[2]),
@@ -1126,14 +1146,14 @@ function openStats(sel){
     row('Eigene Aufgaben gesamt',s=>s.mal),row('Eigene Aufgaben gewonnen',s=>s.malW),row('Eigene Aufgaben verloren',s=>s.malL),
     row('Punkte verloren (alle Malenko-Spiele)',s=>s.malP),
     sec('Weitere'),
-    row('Höchster Spielwert',s=>s.maxW||'-'),row('Ø Augen als Alleinspieler',s=>s.nAug?Math.round(s.sumAug/s.nAug):'-')
+    row('Höchster Spielwert',s=>s.maxW||'-'),row('Ø Augen als Alleinspieler',s=>s.nAug?Math.round(s.sumAug/s.nAug):'-')]:[])
   ].join('');
   const totalPaid=an.reduce((s,a)=>s+entries(a).reduce((t,e)=>t+e.pay.total,0),0);
   const opts=[['all','Alle Spieltage'],...(S.hands.length&&(viewSeason()==='all'||viewSeason()===S.season.id)?[['cur','Laufender Spieltag']]:[]),...daysOf(viewSeason(),false).reverse().map(d=>['d'+d.id,'Spieltag '+fmtDate(d.date)])];
   showSheet(`<h1>Statistik</h1><div class="selrow">${seasonSelect('openStats')}<select onchange="openStats(this.value)">${opts.map(([v,l])=>`<option value="${v}" ${STATSEL===v?'selected':''}>${l}</option>`).join('')}</select></div>
-  <p style="margin:10px 0 0"><b>Gesamtsumme aller Zahlungen: ${eur(totalPaid)}</b> <span class="muted">(Punktwert + Grundeinsatz aller Spieler)</span></p>
+  <p style="margin:10px 0 0"><b>Gesamtsumme aller Zahlungen: ${eur(totalPaid)}</b> <span class="muted">(Punktwert + Grundeinsatz aller Spieler)</span></p>${impNote}
   <div class="seg" style="margin:10px 0 0"><button class="${STATVIEW==='charts'?'on':''}" onclick="STATVIEW='charts';openStats()">📊 Diagramme</button><button class="${STATVIEW==='table'?'on':''}" onclick="STATVIEW='table';openStats()">📋 Tabelle</button></div>
-  ${STATVIEW==='charts'?statCharts(st,order,an,ramschHands,hasPl):(order.length?`<div class="statwrap"><table><thead><tr><th></th>${order.map(n=>`<th class="pc">${esc(n)}</th>`).join('')}</tr></thead><tbody>${body}</tbody></table></div>`:'<p class="muted">Keine Daten.</p>')}
+  ${STATVIEW==='charts'?statCharts(st,order,an,ramschHands,hasPl,hasGames,nImp):(order.length?`<div class="statwrap"><table><thead><tr><th></th>${order.map(n=>`<th class="pc">${esc(n)}</th>`).join('')}</tr></thead><tbody>${body}</tbody></table></div>`:'<p class="muted">Keine Daten.</p>')}
   <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px"><button class="btn sec" onclick="openOverview()">📋 Gesamtansicht</button><button class="btn sec" onclick="closeModal()">Schließen</button></div>`);
 }
 /* ---------- Export und Senden (z. B. an eine WhatsApp-Gruppe) ---------- */
@@ -1188,8 +1208,8 @@ async function saveText(name,text,mime){ // Datei in den Ablageordner bzw. als D
 function summaryText(day){
   const a=analyze(day);const ent=entries(a).sort((x,y)=>x.end-y.end);
   const tot=ent.reduce((s,e)=>s+e.pay.total,0);
-  return ['♠ Skat – '+seasonName(day.season??S.season.id)+' – '+fmtDate(day.date)+' ('+day.hands.length+' Spiele)',
-    ...ent.map((e,i)=>(i+1)+'. '+e.name+': '+e.end+' Punkte → '+eur(e.pay.total)+(e.ghost?' (Schnitt, abwesend)':'')),
+  return ['♠ Skat – '+seasonName(day.season??S.season.id)+' – '+fmtDate(day.date)+' ('+gamesTxt(day)+')',
+    ...ent.map((e,i)=>(i+1)+'. '+e.name+': '+(day.imp?'':e.end+' Punkte → ')+eur(e.pay.total)+(e.ghost?' (Schnitt, abwesend)':'')),
     'Alle Zahlungen: '+eur(tot)].join('\n');
 }
 function lastSummary(){
@@ -1658,7 +1678,7 @@ async function waStep(n){
 }
 
 /* ---------- Logos, Info, Hilfe, Suche ---------- */
-const APP_NAME='Skat-LOGGER',APP_TAG='Spielverlauf aufschreiben + Statistik + mehr',APP_VERSION='1.14.0',APP_BUILD='2026-10-19';
+const APP_NAME='Skat-LOGGER',APP_TAG='Spielverlauf aufschreiben + Statistik + mehr',APP_VERSION='1.15.0',APP_BUILD='2026-10-23';
 const LOGOS=[
   {n:'Kartenfächer',svg:`<svg viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI Symbol,Arial,sans-serif"><rect width="128" height="128" rx="28" fill="#17382a"/><text x="64" y="31" text-anchor="middle" font-family="Georgia,serif" font-size="21" font-weight="700" fill="#f6f1e3" letter-spacing="3">SKAT</text><text x="64" y="118" text-anchor="middle" font-family="Georgia,serif" font-size="19" font-weight="700" fill="#e8b923" letter-spacing="4">LOG</text><g transform="translate(12.8 16) scale(0.8)"><g transform="rotate(-24 64 104)"><rect x="40" y="30" width="48" height="68" rx="6" fill="#fff" stroke="#cfc8b4" stroke-width="1.5"/><text x="47" y="50" font-size="15" fill="#c0392b">♦</text><text x="64" y="80" font-size="32" text-anchor="middle" fill="#c0392b">♦</text></g><g transform="rotate(24 64 104)"><rect x="40" y="30" width="48" height="68" rx="6" fill="#fff" stroke="#cfc8b4" stroke-width="1.5"/><text x="47" y="50" font-size="15" fill="#c0392b">♥</text><text x="64" y="80" font-size="32" text-anchor="middle" fill="#c0392b">♥</text></g><g><rect x="40" y="30" width="48" height="68" rx="6" fill="#fff" stroke="#cfc8b4" stroke-width="1.5"/><text x="47" y="50" font-size="15" fill="#1d2a24">♠</text><text x="64" y="80" font-size="32" text-anchor="middle" fill="#1d2a24">♠</text></g></g></svg>`},
 ];
