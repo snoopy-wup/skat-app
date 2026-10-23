@@ -62,6 +62,9 @@ tr.row{cursor:pointer}
 .pc{text-align:center}
 #app tr.cyc td{border-bottom:4px solid var(--ink)}
 .sheet.wide{max-width:980px}
+/* Fenster offen: Seite dahinter nicht mitscrollen (Wischen in Tabelle/Fenster darf nie die Hintergrundseite bewegen) */
+body.lock{overflow:hidden}
+.modal,.sheet,.statwrap{overscroll-behavior:contain}
 .btn.sm{padding:4px 10px;font-size:13px}
 .rk{font-size:12px;border-radius:5px;padding:0 5px;background:var(--chip)}
 .rk.r1{background:#e8b923;color:#2a1a00}
@@ -1246,7 +1249,7 @@ function openImport(){
   const fmt=n=>n>1024?Math.round(n/1024)+' KB':n+' B';
   showSheet(`<h1>Daten importieren</h1>
   <p class="muted">Ersetzt <b>alle</b> Daten dieser App durch den Inhalt einer Skat-Datei (.json). Sichere vorher mit „Export / Senden“.</p>
-  <div style="display:flex;gap:8px;flex-wrap:wrap;margin:8px 0"><button class="btn sec" onclick="closeModal()">← Zurück</button><button class="btn" onclick="importData()">📂 ${A?'Dateiauswahl des Geräts':'Datei wählen'} …</button>${A?'<button class="btn sec" onclick="pickDir()">📁 Ordner wählen …</button>':''}</div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin:8px 0"><button class="btn sec" onclick="closeModal()">← Zurück</button>${!A&&typeof window.showOpenFilePicker!=='function'?`<label class="btn" style="cursor:pointer">📂 Datei wählen …<input type="file" accept=".json,application/json,text/plain" style="display:none" onchange="importFile(this)"></label>`:`<button class="btn" onclick="importData()">📂 ${A?'Dateiauswahl des Geräts':'Datei wählen'} …</button>`}${A?'<button class="btn sec" onclick="pickDir()">📁 Ordner wählen …</button>':''}</div>
   ${A?(_bk.length?`<label>Gesicherte Dateien ${folderLabel()?'im Ordner „'+esc(folderLabel())+'“':'in Downloads/SkatLog'} (antippen zum Laden)</label>`+_bk.map((f,i)=>`<div class="hit" onclick="importBackup(${i})"><b>${esc(f.name)}</b> <span class="muted">· ${fmt(f.size)}${f.date?' · '+esc(f.date):''}</span></div>`).join(''):`<p class="muted">${folderLabel()?'Im Ordner „'+esc(folderLabel())+'“ liegen keine .json-Dateien.':'Im Standardordner liegen noch keine gesicherten Dateien.'} Wähle über „📁 Ordner wählen“ den Ordner mit deinen Sicherungen.</p>`):''}
   <details style="margin-top:8px"><summary>Ohne Dateiauswahl: Inhalt einfügen</summary>
   <p class="muted">Kopiere den Inhalt der Skat-Datei (z. B. aus einer Nachricht) und füge ihn hier ein.</p>
@@ -1266,9 +1269,20 @@ async function importData(){
       loadImport(await (await fh.getFile()).text());return;
     }catch(e){if(e&&e.name==='AbortError')return}
   }
-  const i=document.createElement('input');i.type='file';i.accept='.json';
-  i.onchange=()=>{const r=new FileReader();r.onload=()=>loadImport(r.result);r.readAsText(i.files[0])};
+  // Das Feld muss im Dokument hängen, sonst feuert iOS-Safari (auch die installierte Web-App) kein change-Ereignis
+  const i=document.createElement('input');i.type='file';i.accept='.json,application/json,text/plain';
+  i.style.cssText='position:fixed;left:-9999px;top:0;opacity:0';
+  document.body.appendChild(i);
+  i.addEventListener('change',()=>{importFile(i);setTimeout(()=>i.remove(),0)});
   i.click();
+}
+function importFile(inp){
+  const f=inp.files&&inp.files[0];
+  if(!f){toast('Keine Datei gewählt');return}
+  const r=new FileReader();
+  r.onload=()=>loadImport(r.result);
+  r.onerror=()=>toast('Datei konnte nicht gelesen werden');
+  r.readAsText(f);
 }
 // Import ersetzt ALLES: erst prüfen, dann Warnung mit Bestätigung (Häkchen + Knopf), erst danach wird übernommen
 let _pendingImport=null;
@@ -1678,7 +1692,7 @@ async function waStep(n){
 }
 
 /* ---------- Logos, Info, Hilfe, Suche ---------- */
-const APP_NAME='Skat-LOGGER',APP_TAG='Spielverlauf aufschreiben + Statistik + mehr',APP_VERSION='1.15.0',APP_BUILD='2026-10-23';
+const APP_NAME='Skat-LOGGER',APP_TAG='Spielverlauf aufschreiben + Statistik + mehr',APP_VERSION='1.15.2',APP_BUILD='2026-10-23';
 const LOGOS=[
   {n:'Kartenfächer',svg:`<svg viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI Symbol,Arial,sans-serif"><rect width="128" height="128" rx="28" fill="#17382a"/><text x="64" y="31" text-anchor="middle" font-family="Georgia,serif" font-size="21" font-weight="700" fill="#f6f1e3" letter-spacing="3">SKAT</text><text x="64" y="118" text-anchor="middle" font-family="Georgia,serif" font-size="19" font-weight="700" fill="#e8b923" letter-spacing="4">LOG</text><g transform="translate(12.8 16) scale(0.8)"><g transform="rotate(-24 64 104)"><rect x="40" y="30" width="48" height="68" rx="6" fill="#fff" stroke="#cfc8b4" stroke-width="1.5"/><text x="47" y="50" font-size="15" fill="#c0392b">♦</text><text x="64" y="80" font-size="32" text-anchor="middle" fill="#c0392b">♦</text></g><g transform="rotate(24 64 104)"><rect x="40" y="30" width="48" height="68" rx="6" fill="#fff" stroke="#cfc8b4" stroke-width="1.5"/><text x="47" y="50" font-size="15" fill="#c0392b">♥</text><text x="64" y="80" font-size="32" text-anchor="middle" fill="#c0392b">♥</text></g><g><rect x="40" y="30" width="48" height="68" rx="6" fill="#fff" stroke="#cfc8b4" stroke-width="1.5"/><text x="47" y="50" font-size="15" fill="#1d2a24">♠</text><text x="64" y="80" font-size="32" text-anchor="middle" fill="#1d2a24">♠</text></g></g></svg>`},
 ];
@@ -1833,6 +1847,7 @@ function openSearch(q){
   const el=document.getElementById('searchIn');if(el){el.focus();const v=el.value;el.value='';el.value=v}
 }
 
+new MutationObserver(()=>document.body.classList.toggle('lock',!!document.getElementById('modal').firstChild)).observe(document.getElementById('modal'),{childList:true});
 lastSnap=JSON.stringify(S);
 applyFavicon();
 if(location.hash==='#demo62'){HOME=false;fillDemo(62);history.replaceState(null,'',location.pathname)}
