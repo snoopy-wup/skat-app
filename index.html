@@ -22,6 +22,8 @@ button,select,input{font:inherit;color:inherit}
 button{cursor:pointer}
 .btn{background:var(--accent);color:var(--accent-ink);border:0;border-radius:10px;padding:10px 16px;font-weight:600}
 .btn.sec{background:var(--chip);color:var(--ink)}
+.btn:disabled{background:#c3c6c1;color:#6c6f6a;cursor:not-allowed;opacity:1} /* grau = nicht bedienbar */
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]) .btn:disabled{background:#4a4d4a;color:#9a9d99}}
 .btn.bad{background:var(--bad);color:#fff}
 input[type=text],input[type=number],select{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:8px 10px;width:100%}
 label{display:block;font-size:13px;color:var(--mute);margin:10px 0 4px}
@@ -68,8 +70,19 @@ body.lock{overflow:hidden}
 .btn.sm{padding:4px 10px;font-size:13px}
 .nb{width:40px;height:40px;border-radius:50%;border:1px solid var(--line);background:var(--chip);color:var(--ink);font-size:20px;line-height:1;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;padding:0;flex:none}
 .nb.x{margin-left:auto}
-.navbar{display:flex;align-items:center;justify-content:space-between;position:sticky;top:-16px;z-index:3;background:var(--bg);margin:-16px -16px 8px;padding:8px 16px}
+.navbar{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;position:sticky;top:-16px;z-index:3;background:var(--bg);margin:-16px -16px 8px;padding:8px 16px}
 .podi{display:block;margin:0 auto 2px}
+.btnbar .btn{padding:9px 10px;font-size:14px;min-height:38px;white-space:nowrap}
+.btnbar{position:sticky;bottom:-16px;z-index:3;display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;background:var(--bg);border-top:1px solid var(--line);margin:14px 0 -16px;padding:10px 0}
+.statwrap.ov tbody tr.pin td{position:sticky;z-index:2}
+.statwrap.ov tbody tr.pin td:first-child{z-index:3}
+.statwrap.ov tbody tr.pin1 td{top:var(--hdH,76px)}
+.statwrap.ov tbody tr.pin2 td{top:calc(var(--hdH,76px) + var(--p1H,56px));box-shadow:0 2px 0 var(--accent)}
+.statwrap.ov tbody tr.pin1:last-of-type td{box-shadow:0 2px 0 var(--accent)}
+.navbar.pg{position:static;margin:0 0 8px;padding:0;background:none}
+.nbio{display:flex;gap:8px}
+.nbl{display:flex;gap:8px;justify-self:start}
+.navbar>.nb:last-child{justify-self:end}
 .rk{font-size:12px;border-radius:5px;padding:0 5px;background:var(--chip)}
 .rk.r1{background:#e8b923;color:#2a1a00}
 .sheet table th.pc,.sheet table td.pc{min-width:70px}
@@ -91,6 +104,8 @@ tr.h1 th{top:var(--topH,0px)}
 tr.h2 th{top:calc(var(--topH,0px) + var(--h1H,0px));font-size:20px;font-weight:800;border-bottom:2px solid var(--accent)}
 tr.h2 th:nth-child(2){font-size:13px;font-weight:600;color:var(--mute)}
 tr.h1 th.deal{box-shadow:inset 0 -3px 0 var(--accent)}
+tr.h1 th.pc.rk{padding-top:20px!important}
+.rnk{position:absolute;top:2px;left:3px;min-width:18px;height:18px;line-height:18px;border-radius:9px;background:var(--accent);color:var(--accent-ink);font-size:11px;font-weight:800;text-align:center;padding:0 4px;z-index:1}
 th .nm{font-weight:700}
 th .tag{font-size:11px;font-weight:400;color:var(--mute)}
 th.gone{opacity:.7}
@@ -112,8 +127,8 @@ th.gone{opacity:.7}
 @media(min-width:640px){.gls{flex-wrap:nowrap}#app tr.h1 th.pc{min-width:132px}}
 .gl.green{background:#1f9d55}
 .gl.red{background-color:#c0392b;color:#ffd0cb;background-image:linear-gradient(to top right,transparent calc(50% - 1.5px),#fff calc(50% - 1.5px),#fff calc(50% + 1.5px),transparent calc(50% + 1.5px)),linear-gradient(to bottom right,transparent calc(50% - 1.5px),#fff calc(50% - 1.5px),#fff calc(50% + 1.5px),transparent calc(50% + 1.5px))}
-.statwrap.ov thead tr:first-child th{height:38px;white-space:nowrap}
-.statwrap.ov thead tr:nth-child(2) th{top:38px}
+.statwrap.ov thead tr:first-child th{min-height:38px;white-space:nowrap}
+.statwrap.ov thead tr:nth-child(2) th{top:var(--r1H,38px)}
 /* Diagramme der Statistik */
 .charts{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:12px;margin-top:10px}
 .chartcard{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px;min-width:0}
@@ -168,15 +183,17 @@ textarea,input[type=time]{background:var(--card);color:var(--ink);border:1px sol
   .dsk{display:none}
   .tlogo{display:none!important}
   .menu-btn{display:inline-block}
-  .top{padding:6px 0}
+  .top{position:static;padding:6px 0} /* am Handy scrollt die Leiste mit, fest bleiben nur Namen und Summen */
   .top .banner{font-size:13px;padding:6px 10px;margin:4px 0 0}
   .card{padding:6px;margin:8px 0}
   table.gt,table.gt thead,table.gt tbody{display:block}
   table.gt{font-size:13px}
-  table.gt thead{position:sticky;top:var(--topH,0px);z-index:4;background:var(--card)}
+  table.gt thead{position:sticky;top:0;z-index:4;background:var(--card)}
   table.gt tr{display:grid;grid-template-columns:repeat(var(--np),minmax(0,1fr)) 68px}
   table.gt tr.h1 th:nth-child(-n+2),table.gt tr.h2 th:nth-child(-n+2){display:none}
   table.gt tr.h1 th,table.gt tr.h2 th{position:static;padding:4px 2px;overflow:hidden}
+  table.gt tr.h1 th.pc{position:relative;top:auto}
+  .gls{gap:2px}.gl{width:17px;height:17px;line-height:17px;font-size:10px;border-radius:4px}.mlabel{flex-basis:100%;text-align:center} /* G R F in einer Zeile */
   table.gt tr.h2 th{font-size:17px}
   table.gt tr.h2 th:last-child{font-size:13px}
   table.gt tr.h1 th.deal{box-shadow:inset 0 -3px 0 var(--accent)}
@@ -203,12 +220,38 @@ textarea,input[type=time]{background:var(--card);color:var(--ink);border:1px sol
   .statwrap{max-height:62vh}
 }
 /* niedrige Bildschirme (Querformat am Handy): Kopf nicht festkleben, nur Namen und Summen */
+/* Breite Fenster (Windows/PC): Spielseite mit großer Kopfzeile (Name + Platzierung), großen Summen, großer Info-Leiste und großem laufenden/letzten Spiel, fest stehend */
+@media(min-width:901px){
+  #app table.gt{border-collapse:separate;border-spacing:0}
+  .top .banner{font-size:22px;font-weight:700;padding:12px 18px;margin:8px 0 0;border-radius:12px}
+  #app tr.h1 th.pc .nm{font-size:30px;font-weight:800;line-height:1.2}
+  #app tr.h1 th.pc .tag{font-size:15px}
+  #app tr.h1 th.pc.rk{padding-top:36px!important}
+  .rnk{min-width:32px;height:32px;line-height:32px;border-radius:16px;font-size:19px;top:4px;left:8px}
+  .gl{width:26px;height:26px;line-height:26px;font-size:15px}
+  .mlabel{font-size:12px}
+  #app tr.h2 th{font-size:46px;line-height:1.1;padding-top:6px;padding-bottom:6px}
+  #app tr.h2 th:nth-child(2){font-size:16px}
+  #app tr.h2 th:last-child{font-size:24px}
+  #app tr.big td{font-size:21px;background:var(--card);position:sticky;z-index:2}
+  #app tr.big td.pc{font-size:38px;font-weight:800}
+  #app tr.big td.num{font-size:34px}
+  #app tr.big .chip{font-size:15px}
+  #app tr.big td:nth-child(2) .rn{font-size:24px}
+  #app tr.big1 td{top:calc(var(--topH,0px) + var(--h1H,0px) + var(--h2H,0px))}
+  #app tr.big2 td{top:calc(var(--topH,0px) + var(--h1H,0px) + var(--h2H,0px) + var(--p1H,0px))}
+  #app tr.big1 td{box-shadow:0 -4px 0 var(--card)} /* deckt den schmalen Spalt unter den Summen ab */
+  #app tr.bigLast td{box-shadow:0 4px 0 var(--accent)}
+  #app tr.big1.bigLast td{box-shadow:0 -4px 0 var(--card),0 4px 0 var(--accent)}
+}
 @media(max-height:520px){
   .top{position:static}
   table.gt thead,tr.h1 th,tr.h2 th{top:0!important}
   tr.h2 th{top:var(--h1H,0px)!important}
   table.gt thead{top:0!important}
   th .tag{display:none}
+  .statwrap.ov tbody tr.pin td{position:static}
+  .statwrap.ov tbody tr.pin td:first-child{position:sticky}
   .sheet{max-height:96vh;padding:10px 14px}
   .sheet h1{margin:4px 0 8px;font-size:18px}
   input[type=text],input[type=number],select{min-height:38px;padding:6px 10px}
@@ -228,7 +271,7 @@ const groupOf=t=>t==='grand'?'grand':t==='ramsch'?'ramsch':['karo','herz','pik',
 const GROUPN={grand:'Grand',ramsch:'Ramsch',farbe:'Farbspiel'};
 const LEVELN=['','Bock','Hirsch','Geweih'];
 const OUTN={W:'Gewonnen',WS:'Gewonnen, Schneider',WSW:'Gewonnen, Schwarz',L:'Verloren',LS:'Verloren, Schneider',LSW:'Verloren, Schwarz'};
-const REIZ=(()=>{const s=new Set([23,35,46,59]);[9,10,11,12,24].forEach(b=>{for(let k=2;k<=13;k++)s.add(b*k)});return [...s].filter(v=>v>=18&&v<=264).sort((a,b)=>a-b)})();
+const REIZ=(()=>{const s=new Set([23,35,46,59]);[9,10,11,12,24,36].forEach(b=>{for(let k=2;k<=13;k++)s.add(b*k)});return [...s].filter(v=>v>=18&&v<=264).sort((a,b)=>a-b)})();
 const DEF={bock:2,hirsch:4,geweih:8,lossFactor:2,contraPays:true,startBock:true,malenko:true,durchmarsch:'andere',jungfrau:2,round10:true,spitze:false};
 const FIX={bock:2,hirsch:4,geweih:8,lossFactor:2,jungfrau:2,durchmarsch:'andere'}; // feste Faktoren, nicht einstellbar
 const r10=v=>Math.round(v/10)*10;
@@ -236,6 +279,7 @@ const KEY='skat-schreiber-v1';
 const NAMES=['Guido','Karsten','Martin','Peter']; // Auswahlmenü für Namen, weitere Namen sind frei eingebbar
 let S=load()||{started:false,n:4,players:[...NAMES],startDealer:0,hands:[],events:[],settings:{...DEF}};
 S.nameList=S.nameList||[...NAMES];
+S.emails=S.emails||{}; // E-Mail-Adresse je Name (steht in der Exportdatei)
 S.settings={...DEF,...S.settings,...FIX};
 S.events=S.events||[];
 const padPlayers=()=>{for(let i=S.players.length;i<4;i++)S.players.push(NAMES[i])};
@@ -256,7 +300,7 @@ function undo(){
   const prev=undoStack.pop();
   S=JSON.parse(prev);
   S.settings={...DEF,...S.settings,...FIX};S.events=S.events||[];S.days=S.days||[];S.stake=S.stake||{base:25,per100:0.5};
-  S.season=S.season||{id:1,name:'Saison 1',start:new Date().toISOString()};S.pastSeasons=S.pastSeasons||[];S.nameList=S.nameList||[...NAMES];
+  S.season=S.season||{id:1,name:'Saison 1',start:new Date().toISOString()};S.pastSeasons=S.pastSeasons||[];S.nameList=S.nameList||[...NAMES];S.emails=S.emails||{};
   apptEnsure();lastSnap=prev;
   try{localStorage.setItem(KEY,prev)}catch(e){}
   closeModal();render();
@@ -268,6 +312,7 @@ const nextSeat=(seat,from)=>{const x=seat.find(v=>v>from);return x===undefined?s
 const levelF=lv=>lv>0?S.settings.bock:1;
 const STAGEN=['','Kontra','Re','Hirsch','Geweih'];
 const STAGEF=[1,2,4,8,16];
+const schF=h=>Math.pow(2,new Set(h.schiebe||[]).size); // Schiebe (Stock nicht aufgenommen): jeder Schiebende verdoppelt das Spiel (1 → ×2, 2 → ×4, 3 → ×8)
 const stageOf=h=>{if(!h.contra||!h.contra.length)return 0;return h.stage!=null?h.stage:(h.re?2:1)};
 
 /* ---------- Berechnung ---------- */
@@ -278,18 +323,19 @@ function calc(h,level,active,seat){
   if(h.type==='ramsch'){
     const a=h.augen||{};
     let text='',jf=false,rvOut=null;
+    const sf=STAGEF[stageOf(h)]*schF(h); // Ramsch: Kontra ×2, Re ×4, Hirsch ×8 (von jedem Spieler möglich), Schiebe ×2
     if(h.durchmarsch!=null&&h.durchmarsch!==''){
       const m=+h.durchmarsch;
-      if(st.durchmarsch==='gut'){pts[m]=-120*lf;text=S.players[m]+' Durchmarsch (−120)'}
-      else{active.filter(i=>i!==m).forEach(i=>pts[i]=120*lf);text=S.players[m]+' Durchmarsch (andere je 120)'}
+      if(st.durchmarsch==='gut'){pts[m]=-120*lf*sf;text=S.players[m]+' Durchmarsch (−120)'}
+      else{active.filter(i=>i!==m).forEach(i=>pts[i]=120*lf*sf);text=S.players[m]+' Durchmarsch (andere je 120)'}
     }else{
       const vals=active.map(i=>+a[i]||0),mx=Math.max(...vals);
       const rv=st.round10?r10(mx):mx;
       // Jungfrau (×2) nur, wenn sie angesagt/gewählt wurde; möglich ist das nur, wenn ein Spieler 0 Augen hat
       jf=!!h.jungfrau&&active.some(i=>(+a[i]||0)===0);
       const jfF=jf?st.jungfrau:1;
-      active.forEach(i=>{if((+a[i]||0)===mx)pts[i]=rv*jfF*lf});
-      text='Verlierer: '+active.filter(i=>(+a[i]||0)===mx).map(i=>S.players[i]).join(', ')+' ('+mx+' Augen'+(rv!==mx?' → '+rv:'')+(jf?' × Jungfrau '+st.jungfrau:'')+')';
+      active.forEach(i=>{if((+a[i]||0)===mx)pts[i]=rv*jfF*lf*sf});
+      text='Verlierer: '+active.filter(i=>(+a[i]||0)===mx).map(i=>S.players[i]).join(', ')+' ('+mx+' Augen'+(rv!==mx?' → '+rv:'')+(jf?' × Jungfrau '+st.jungfrau:'')+(stageOf(h)?' × '+STAGEN[stageOf(h)]+' '+STAGEF[stageOf(h)]:'')+(schF(h)>1?' × Schiebe '+schF(h):'')+')';
       rvOut=rv;
     }
     return {kind:'ramsch',value:null,won:null,pts,text,contraWon:false,mult:null,jf,rv:rvOut,lf};
@@ -299,22 +345,22 @@ function calc(h,level,active,seat){
   if(h.type==='null'){
     base=h.ouvert&&h.hand?59:h.ouvert?46:h.hand?35:23;value=base;
   }else{
-    base=t.b*(h.spitze&&st.spitze?2:1); // Spitze: umgekehrte Rangfolge, Sieben Trumpf -> Wert verdoppelt
+    base=(h.type==='grand'&&h.ouvert?36:t.b)*(h.spitze&&st.spitze?2:1); // Grand Ouvert: Grundwert 36 (zählt dann nicht mehr als zusätzlicher Bube); Spitze: Wert verdoppelt
     const stage=h.outcome.endsWith('SW')?2:h.outcome.endsWith('S')?1:0;
     const fo=h.ouvert&&!h.ouvertFree; // alte Spiele: Ouvert schließt Hand/Schneider/Schwarz automatisch ein
     const hand=h.hand||fo,swA=h.schwarzAng||fo,snA=h.schnAng||swA;
     if(snA&&!(won&&stage>=1))won=false;
     if(swA&&!(won&&stage===2))won=false;
-    mult=h.n+1+(hand?1:0)+(stage>=1?1:0)+(stage===2?1:0)+(snA?1:0)+(swA?1:0)+(h.ouvert?1:0);
+    mult=h.n+1+(hand?1:0)+(stage>=1?1:0)+(stage===2?1:0)+(snA?1:0)+(swA?1:0)+(h.ouvert&&h.type!=='grand'?1:0);
     value=base*mult;
   }
   let over=false;
   if(h.reiz&&value<h.reiz&&h.type!=='null'){over=true;won=false;value=base*Math.ceil(h.reiz/base)}
   else if(h.reiz&&value<h.reiz){over=true;won=false}
-  const cf=STAGEF[stageOf(h)]*lf;
+  const cf=STAGEF[stageOf(h)]*lf*schF(h);
   if(h.open)return {kind:'game',open:true,value,won:null,over:false,mult,pts,contraWon:false,newRound:false,base,cf};
   const contraWon=!won&&h.contra&&h.contra.length>0;
-  const sixty=!won&&h.type!=='null'&&h.augenSp!==''&&h.augenSp!=null&&+h.augenSp===60; // mit genau 60 Augen verloren (ohne Kontra)
+  const sixty=!won&&h.type!=='null'&&((h.augenSp!==''&&h.augenSp!=null&&+h.augenSp===60)||!!h.sixty); // mit genau 60 Augen verloren (ohne Kontra), Häkchen oder Augenzahl
   if(!won)pts[h.declarer]=value*st.lossFactor*cf;
   else if(st.contraPays)seat.forEach(i=>{if(i!==h.declarer)pts[i]=value*cf}); // Gewonnen: alle anderen Mitspieler (auch der aussetzende Geber) bekommen den Wert
   return {kind:'game',value,won,over,mult,pts,contraWon,sixty,newRound:!!(contraWon||sixty),base,cf};
@@ -325,9 +371,10 @@ function replay(){
   // Mitspieler können kommen (Start = Schnitt der Aktiven, ganz rechts) oder gehen (Ende: Schnitt der Folgepunkte kommt dazu)
   const L=S.players.length;
   let seat=[...Array(Math.min(S.n,L)).keys()],N=seat.length;
-  // Eine Bock-/Ramschrunde = N Bock-Spiele + N Ramsch-Spiele. Der Spieltag beginnt mit N solchen Runden (N = Spieleranzahl).
-  let rounds=S.settings.startBock?N:0,pos=0,dealer=null;
-  let done=Array.from({length:L},()=>new Set()),ptr=null,ramschLeft=0;
+  // Eine Bock-/Ramschrunde = N Bock-Spiele + N Ramsch-Spiele. Ein neuer Spieltag beginnt mit 3 solchen Runden (unabhängig von der Spieleranzahl, `S.startRounds`); ältere Spieltage ohne Eintrag zählen weiter N Runden.
+  let rounds=S.settings.startBock?(S.startRounds!=null?S.startRounds:N):0,pos=0,dealer=null; // neue Spieltage beginnen immer mit 3 Bock-/Ramschrunden (S.startRounds=3, unabhängig von der Spieleranzahl); ältere Spieltage ohne Eintrag behalten N Runden
+  let done=Array.from({length:L},()=>new Set()),ptr=null,ramschLeft=0,queued=0;
+  const mq=S.malQueue===true; // ab 1.20.0: eine mitten im Malenko erspielte Bock-/Ramschrunde startet erst nach dem Ende der laufenden Malenko-Runde (ältere Spieltage ohne Kennzeichen rechnen wie früher)
   const rows=[],totals=Array(L).fill(0),info=Array.from({length:L},()=>({}));
   const applied=new Set();
   // Einstieg erst, wenn keine Bock-/Ramschrunde und keine Malenko-Runde angefangen ist
@@ -362,20 +409,23 @@ function replay(){
     // Veto: Spieler spielt Grand Hand statt Ramsch, das Ramschspiel wird nicht verbraucht (ein weiteres kommt dazu)
     if(h.veto){if(h.passe)ramschLeft=N}
     else if(h.passe)ramschLeft=N-1;else if(ramschLeft>0&&!h.open)ramschLeft--;
+    const slotMal=rounds===0; // dieses Spiel liegt im Malenko-Teil
     const auto=rounds>0&&pos<N?1:0;
     const isMalH=h.malPlayer!=null&&h.malPlayer!=='';
     const lv=isMalH?0:(h.levelOverride!=null&&h.levelOverride!==''?+h.levelOverride:auto); // im Malenko gibt es keinen Bock
     const c=calc(h,lv,play,seat);
     Object.entries(c.pts).forEach(([k,v])=>totals[+k]+=v);
-    rows.push({h,i,lv,c,dealer,seat:seat.slice(),play,cum:totals.slice(),forced,slot:rounds>0?(pos<N?'bock':'ramsch'):'mal'});
+    const row={h,i,lv,c,dealer,seat:seat.slice(),play,cum:totals.slice(),forced,slot:rounds>0?(pos<N?'bock':'ramsch'):'mal',queuedRound:false};
+    rows.push(row);
     // ein noch laufendes Spiel (ohne Ergebnis) belegt seinen Platz in der Runde, die Runde ist erst mit dem Ergebnis weiter
     if(rounds>0&&!c.open&&!(h.veto&&inRamschSlot)){pos++;if(pos>=2*N){pos=0;rounds--}}
-    if(c.newRound)rounds++;
+    if(!mq&&c.newRound)rounds++;
     if(h.malPlayer!=null&&h.malPlayer!==''){
       done[+h.malPlayer].add(h.veto?'ramsch':groupOf(h.type));ptr=+h.malPlayer;
       // erst wenn das letzte Malenko-Spiel beendet ist (Ergebnis eingetragen), beginnt die nächste Malenko-Runde (alles wieder grün)
-      if(seat.every(p=>done[p].size===3)&&!c.open)done=Array.from({length:L},()=>new Set());
+      if(seat.every(p=>done[p].size===3)&&!c.open){done=Array.from({length:L},()=>new Set());if(mq){rounds+=queued;queued=0}} // Malenko-Runde zu Ende: jetzt starten die erspielten Runden
     }
+    if(mq&&c.newRound){if(slotMal&&done.some(d=>d.size>0)){queued++;row.queuedRound=true}else rounds++} // mitten im Malenko: Runde merken, erst Malenko zu Ende spielen
   });
   applyEvents(S.hands.length);
   // Solange das letzte Spiel läuft (Ergebnis offen), bleibt dessen Geber Geber; erst mit dem Ergebnis geht es zum nächsten Geber
@@ -405,7 +455,7 @@ function replay(){
   const pending=(S.events||[]).filter(e=>e.type==='join'&&!applied.has(e)).map(e=>e.p);
   const lastOpen=S.hands.length>0&&!!S.hands[S.hands.length-1].open;
   const canChange=boundaryOk()&&!lastOpen; // solange ein Spiel läuft (Ergebnis offen) kein Wechsel; // Spielerwechsel nur zwischen Runden, nicht mitten in Bock-/Ramsch- oder Malenko-Runde
-  return {canChange,rows,totals,rounds,pos,slot,nextLevel,dealer:d,mal,ramschLeft,forcedRamsch,forcedInfo,done,seat,play,N,info,pending};
+  return {canChange,rows,totals,rounds,queued,pos,slot,nextLevel,dealer:d,mal,ramschLeft,forcedRamsch,forcedInfo,done,seat,play,N,info,pending};
 }
 
 /* ---------- Anzeige ---------- */
@@ -415,8 +465,8 @@ function goApp(){closeModal();HOME=false;render();window.scrollTo(0,0)}
 function home(){
   const it=(ic,t,fn,cls)=>`<button class="menu-item ${cls||''}" onclick="${fn}"><span>${ic}</span>${t}</button>`;
   const main=S.started?it('▶','Spieltag fortsetzen ('+S.hands.length+' Spiele)','goApp()','prim'):it('＋','Neuer Spieltag','goApp()','prim');
-  const items=[...(S.started?[it('⚙','Einstellungen','openSettings()'),it('✅','Spieltag abschließen','closeDay()')]:[]),it('📋','Gesamtansicht','openOverview()'),it('📊','Statistik','openStats()'),it('🏆','Saisons','openSeasons()'),it('📅','Termine','openAppts()'),it('📤','Export / Senden','openExport()'),it('📥','Import','openImport()'),it('🔍','Suche','openSearch()'),it('❓','Hilfe','openHelp()'),it('ℹ','Info','openInfo()')];
-  return `<div class="home"><div style="display:flex;justify-content:flex-end">${NB_X}</div><div class="homelogo" onclick="openInfo()">${logoSvg(S.logo,240)}</div><h1 class="hometitle">${APP_NAME}</h1><div class="muted" style="text-align:center;margin-bottom:14px">${APP_TAG}<br><small>Version ${APP_VERSION}</small></div><div class="homemain">${main}</div>${nextApptLine()}<div class="menu-grid">${items.join('')}</div></div>`;
+  const items=[...(S.started?[it('⚙','Einstellungen','openSettings()'),it('✅','Spieltag abschließen','closeDay()')]:[]),...(reopenable()?[it('↩','Letzten Spieltag wieder öffnen','reopenLastDay()')]:[]),it('📋','Gesamtansicht','openOverview()'),it('📊','Statistik','openStats()'),it('🏆','Saisons','openSeasons()'),it('📅','Termine','openAppts()'),it('📤','Export / Senden','openExport()'),it('📥','Import','openImport()'),it('🔍','Suche','openSearch()'),it('❓','Hilfe','openHelp()'),it('ℹ','Info','openInfo()')];
+  return `<div class="home">${navBar(null,true)}<div class="homelogo" onclick="openInfo()">${logoSvg(S.logo,240)}</div><h1 class="hometitle">${APP_NAME}</h1><div class="muted" style="text-align:center;margin-bottom:14px">${APP_TAG}<br><small>Version ${APP_VERSION}</small></div><div class="homemain">${main}</div>${nextApptLine()}<div class="menu-grid">${items.join('')}</div></div>`;
 }
 function render(){
   document.getElementById('app').innerHTML=HOME?home():S.started?board():setup();
@@ -426,8 +476,25 @@ function fixSticky(){
   const t=document.getElementById('topbar'),h1=document.querySelector('tr.h1'),r=document.documentElement.style;
   r.setProperty('--topH',t?t.offsetHeight+'px':'0px');
   r.setProperty('--h1H',h1?h1.offsetHeight+'px':'0px');
+  const h2=document.querySelector('tr.h2'),b1=document.querySelector('tr.big1');
+  r.setProperty('--h2H',h2?h2.offsetHeight+'px':'0px');
+  r.setProperty('--p1H',b1?b1.offsetHeight+'px':'0px');
 }
 window.addEventListener('resize',fixSticky);
+// Bildschirmschoner/Bildschirm-Aus am PC unterdrücken, solange die App sichtbar ist (Screen Wake Lock; auf Handys nicht, dort sorgt das Gerät für Akku-Schonung)
+let _wl=null;
+async function keepAwake(){
+  try{
+    if(!('wakeLock' in navigator)||!matchMedia('(min-width:901px) and (hover:hover)').matches)return;
+    if(_wl&&!_wl.released)return;
+    _wl=await navigator.wakeLock.request('screen');
+    _wl.addEventListener('release',()=>{_wl=null});
+  }catch(e){}
+}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')keepAwake()});
+window.addEventListener('focus',keepAwake);
+document.addEventListener('click',keepAwake);
+keepAwake();
 // Name per Auswahlmenü (Guido, Karsten, Martin, Peter, früher benutzte Namen) oder frei eingeben
 function nameField(i){
   const cur=S.players[i],list=S.nameList,custom=!list.includes(cur);
@@ -441,13 +508,15 @@ function pickName(i,v){
 function startDay(){
   for(let i=0;i<S.n;i++){if(!S.players[i])S.players[i]=NAMES[i]}
   S.startDealer=0; // der 1. eingetragene Spieler gibt zuerst
+  S.startRounds=3; // neuer Spieltag: immer 3 Bock-/Ramschrunden, unabhängig von der Spieleranzahl
+  S.malQueue=true; // erspielte Runde mitten im Malenko startet erst nach dem Malenko
   S.players.slice(0,S.n).forEach(p=>{if(!S.nameList.includes(p))S.nameList.push(p)});
   S.players=S.players.slice(0,S.n);S.events=[];S.started=true;HOME=false;save();render();
 }
 function setup(){
   const n=S.n;padPlayers();
-  return `<h1 style="display:flex;align-items:center;gap:10px;cursor:pointer" onclick="goHome()" title="Startbildschirm">${logoSvg(S.logo,40)} ${APP_NAME}</h1>
-  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px;align-items:center">${NB_BACK}${undoBtn()}<button class="btn sec menu-btn" onclick="openMenu()">☰ Menü</button><span class="dsk"><button class="btn sec" onclick="openOverview()">📋 Gesamtansicht</button><button class="btn sec" onclick="openStats()">📊 Statistik</button><button class="btn sec" onclick="openSeasons()">🏆 Saisons</button><button class="btn sec" onclick="openExport()">📤 Export / Senden</button>${helpBtns()}<button class="btn sec" onclick="openImport()">📥 Import</button></span>${NB_X}</div>
+  return `${navBar('goHome()',true)}<h1 style="display:flex;align-items:center;gap:10px;cursor:pointer" onclick="goHome()" title="Startbildschirm">${logoSvg(S.logo,40)} ${APP_NAME}</h1>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px;align-items:center">${undoBtn()}<button class="btn sec menu-btn" onclick="openMenu()">☰ Menü</button><span class="dsk"><button class="btn sec" onclick="openOverview()">📋 Gesamtansicht</button><button class="btn sec" onclick="openStats()">📊 Statistik</button><button class="btn sec" onclick="openSeasons()">🏆 Saisons</button><button class="btn sec" onclick="openExport()">📤 Export / Senden</button>${helpBtns()}<button class="btn sec" onclick="openImport()">📥 Import</button></span></div>
   <div class="card">
   <label>Anzahl Spieler</label>
   <div class="seg"><button class="${n===3?'on':''}" onclick="S.n=3;render()">3 Spieler</button><button class="${n===4?'on':''}" onclick="S.n=4;render()">4 Spieler (Geber setzt aus)</button></div>
@@ -456,7 +525,7 @@ function setup(){
   <p class="muted">Der erste eingetragene Spieler ist der erste Geber.</p>
   <div class="row2"><div><label>Grundeinsatz (€)</label><input type="number" min="0" step="0.5" value="${S.stake.base}" onchange="setStake('base',this.value)"></div>
   <div><label>Wert von 100 Punkten (€)</label><input type="number" min="0" step="0.1" value="${S.stake.per100}" onchange="setStake('per100',this.value)"></div></div>
-  <p class="muted">Der Spieltag beginnt mit ${n} Bock-/Ramschrunden. Jede Runde besteht aus ${n} Bock-Spielen (doppelte Wertung) und ${n} Ramsch-Spielen. Ein mit Kontra (oder höher) verlorenes Spiel und ein mit genau 60 Augen verlorenes Spiel hängen je eine weitere Runde an (mit Hinweis, den du bestätigst). Sind keine Runden mehr offen, läuft Malenko.</p>
+  <p class="muted">Der Spieltag beginnt mit 3 Bock-/Ramschrunden. Jede Runde besteht aus ${n} Bock-Spielen (doppelte Wertung) und ${n} Ramsch-Spielen. Ein mit Kontra (oder höher) verlorenes Spiel und ein mit genau 60 Augen verlorenes Spiel hängen je eine weitere Runde an (mit Hinweis, den du bestätigst). Sind keine Runden mehr offen, läuft Malenko.</p>
   ${(()=>{const nms=S.players.slice(0,n).map(x=>x.trim()),dup=nms.some((x,i)=>x&&nms.indexOf(x)!==i);return `${dup?'<p class="lost">Ein Name kommt doppelt vor.</p>':''}<button class="btn" ${dup?'disabled':''} onclick="startDay()">Spiel starten</button>`})()}
   </div>`;
 }
@@ -464,12 +533,13 @@ function board(){
   const R=replay(),n=S.players.length,nn=R.N;
   const all=[...Array(n).keys()];
   const hh=[],tt=[]; // Überschriften (Namen) und Gesamtsummen direkt darunter
+  const rkOf={},anyDone=R.rows.some(r=>!r.c.open);R.seat.forEach(i=>{rkOf[i]=1+R.seat.filter(j=>R.totals[j]<R.totals[i]).length}); // aktuelle Platzierung (1. = wenigste Punkte)
   all.forEach(i=>{
     const isD=i===R.dealer,inGame=R.seat.includes(i),inf=R.info[i];
     if(!inGame&&R.pending.includes(i)){hh.push(`<th class="pc gone"><div class="nm">${nm(i)}</div><div class="tag">steigt nach der Runde ein</div></th>`);tt.push(`<th class="pc tot gone">–</th>`);return}
     if(!inGame){hh.push(`<th class="pc gone"><div class="nm">${nm(i)}</div><div class="tag">ging nach Spiel ${inf.leaveAt}${inf.proj!=null?' · Ende '+(R.totals[i]+inf.proj)+' ('+(inf.proj>=0?'+':'')+inf.proj+')':''}</div></th>`);tt.push(`<th class="pc tot gone">${R.totals[i]}</th>`);return}
-    const gl=R.rounds>0?'':[['grand','G','Grand'],['ramsch','R','Ramsch'],['farbe','F','Farbspiel']].map(([g,l,t])=>`<span class="gl ${R.done[i].has(g)?'red':'green'}" title="${t}: ${R.done[i].has(g)?'schon gespielt':'noch offen'}">${l}</span>`).join('');
-    hh.push(`<th class="pc ${isD?'deal':''}">${gl?`<div class="gls"><span class="mlabel">MALENKO:</span>${gl}</div>`:''}<div class="nm">${nm(i)}</div><div class="tag">${isD?(nn===4?'Geber (setzt aus)':'Geber'):(inf.start!=null?'Start '+inf.start+' (Schnitt)':'')}</div></th>`);
+    const gl=(R.rounds>0&&!R.done.some(d=>d.size>0))?'':[['grand','G','Grand'],['ramsch','R','Ramsch'],['farbe','F','Farbspiel']].map(([g,l,t])=>`<span class="gl ${R.done[i].has(g)?'red':'green'}" title="${t}: ${R.done[i].has(g)?'schon gespielt':'noch offen'}">${l}</span>`).join('');
+    hh.push(`<th class="pc ${isD?'deal':''}${anyDone?' rk':''}">${anyDone?`<span class="rnk" title="Aktuelle Platzierung">${rkOf[i]}</span>`:''}${gl?`<div class="gls"><span class="mlabel">MALENKO:</span>${gl}</div>`:''}<div class="nm">${nm(i)}</div><div class="tag">${isD?(nn===4?'Geber (setzt aus)':'Geber'):(inf.start!=null?'Start '+inf.start+' (Schnitt)':'')}</div></th>`);
     tt.push(`<th class="pc tot">${R.totals[i]}</th>`);
   });
   let ban='';
@@ -480,11 +550,13 @@ function board(){
   }else{
     ban='';
   }
+  if(R.queued>0)ban+=`<div class="banner orange">Neue Bock-/Ramschrunde erspielt (<b>${R.queued}</b>): sie startet, sobald die laufende <b>Malenko-Runde zu Ende</b> gespielt ist.</div>`;
   if(R.ramschLeft>0&&R.slot!=='ramsch')ban+=`<div class="banner bock"><b>Ramsch-Pflicht:</b> noch <b>${R.ramschLeft}</b> Ramsch-Spiel(e) (alle haben gepasst)${R.nextLevel>0?' · zählen mit Bock-Faktor':''}</div>`;
   if(!R.canChange&&!R.mal&&R.rounds===0)ban+=`<div class="banner mal"><b>Malenko:</b> das letzte Spiel der Runde läuft · 🔒 Spielerwechsel erst danach möglich</div>`;
   if(R.mal)ban+=`<div class="banner mal"><b>Malenko:</b> ${nm(R.mal.player)} muss spielen · offen: ${R.mal.remaining.map(g=>GROUPN[g]).join(' / ')}${R.canChange?'':' · 🔒 Spielerwechsel bis Ende der Malenko-Runde gesperrt'}</div>`;
   let svSum=0;
-  const rows=R.rows.slice().reverse().map(r=>{
+  const pinN=R.rows.length&&R.rows[R.rows.length-1].c.open?2:1; // laufendes Spiel und danach das letzte abgeschlossene; ohne laufendes Spiel nur das letzte
+  const rows=R.rows.slice().reverse().map((r,ix)=>{
     const h=r.h,c=r.c;
     const cells=all.map(i=>{const v=c.pts[i];if(!r.seat.includes(i))return `<td class="pc muted"></td>`;return v==null?`<td class="pc muted">-</td>`:`<td class="pc ${v>0?'lost':'won'}" title="${v>0?'+':''}${v} in diesem Spiel">${r.cum[i]}</td>`}).join('');
     let sv='-';
@@ -492,14 +564,14 @@ function board(){
     else if(c.kind==='game'){
       const sf=STAGEF[stageOf(h)],bf=r.lv>0?levelF(r.lv):1,lf=c.won?1:S.settings.lossFactor;
       const fs=[sf,lf,bf].filter(x=>x>1);
-      sv=c.value*sf*lf*bf;
+      sv=c.value*sf*lf*bf*schF(h);
     }
     else if(h.durchmarsch!=null&&h.durchmarsch!=='')sv=120;
     else{sv=Math.max(...Object.values(c.pts).concat([0]))} // Ramsch: Wert inkl. Jungfrau und Bock = verlorene Punkte des Verlierers
     if(typeof sv==='number')svSum+=sv;
     // dicker Strich vor jedem Spiel, das der 1. Geber gibt (Beginn einer neuen Geberrunde)
-    return `<tr class="row ${r.dealer===R.rows[0].dealer?'cyc':''}" onclick="openForm(${r.i})"><td>${r.i+1}</td><td><span class="rn">${r.i+1}.</span> ${descr(r)}</td>${cells}<td class="num"><b>${sv}</b></td></tr>`}).join('');
-  return `<div class="top" id="topbar"><div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">${NB_BACK}<span class="tlogo" onclick="goHome()" style="cursor:pointer;display:inline-flex" title="Startbildschirm">${logoSvg(S.logo,34)}</span>${undoBtn()}<button class="btn sec menu-btn" onclick="openMenu()">☰ Menü</button><span class="dsk"><button class="btn sec" onclick="openSettings()">⚙ Einstellungen</button><button class="btn sec" onclick="openOverview()">📋 Gesamtansicht</button><button class="btn sec" onclick="openStats()">📊 Statistik</button><button class="btn sec" onclick="openSeasons()">🏆 Saisons</button><button class="btn sec" onclick="closeDay()">✅ Spieltag abschließen</button><button class="btn sec" onclick="openExport()">📤 Export / Senden</button>${helpBtns()}</span>${NB_X}</div>${ban}</div>
+    return `<tr class="row ${r.dealer===R.rows[0].dealer?'cyc':''}${ix<pinN?' big big'+(ix+1)+(ix===pinN-1?' bigLast':''):''}" onclick="rowTap(${r.i})" title="${c.open?'Antippen: Ergebnis eintragen':'Doppelklick: Spiel öffnen'}"><td>${r.i+1}</td><td><span class="rn">${r.i+1}.</span> ${descr(r)}</td>${cells}<td class="num"><b>${sv}</b></td></tr>`}).join('');
+  return `<div class="top" id="topbar">${navBar('goHome()',true)}<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><span class="tlogo" onclick="goHome()" style="cursor:pointer;display:inline-flex" title="Startbildschirm">${logoSvg(S.logo,34)}</span>${undoBtn()}<button class="btn sec menu-btn" onclick="openMenu()">☰ Menü</button><span class="dsk"><button class="btn sec" onclick="openSettings()">⚙ Einstellungen</button><button class="btn sec" onclick="openOverview()">📋 Gesamtansicht</button><button class="btn sec" onclick="openStats()">📊 Statistik</button><button class="btn sec" onclick="openSeasons()">🏆 Saisons</button><button class="btn sec" onclick="closeDay()">✅ Spieltag abschließen</button><button class="btn sec" onclick="openExport()">📤 Export / Senden</button>${helpBtns()}</span></div>${ban}</div>
   <div class="card"><table class="gt" style="--np:${n}"><thead><tr class="h1"><th>#</th><th>Spiel</th>${hh.join('')}<th class="num">Spielwert</th></tr>
   <tr class="h2"><th></th><th>Summe verlorene Punkte</th>${tt.join('')}<th class="num" title="Summe aller Spielwerte">Σ ${svSum}</th></tr></thead>
   <tbody>${rows||`<tr><td colspan="${n+3}" class="muted">Noch kein Spiel eingetragen.</td></tr>`}</tbody></table></div>
@@ -512,7 +584,8 @@ function wertTxt(r){
   if(sf>1)parts.push(sf);
   if(lf>1)parts.push(lf);
   if(bf>1)parts.push(bf);
-  const total=parts.length>1||!c.mult?c.value*sf*lf*bf:c.value;
+  if(schF(h)>1)parts.push(schF(h)); // Schiebe: ×2 je Schiebendem
+  const total=parts.length>1||!c.mult?c.value*sf*lf*bf*schF(h):c.value;
   return parts.length>1?`${total} (${parts.join(' × ')})`:`${total}`;
 }
 function descr(r){
@@ -522,11 +595,15 @@ function descr(r){
   if(h.malPlayer!=null&&h.malPlayer!=='')chips.push('Malenko');
   if(h.type==='ramsch'){
     if(h.passe)chips.push('alle gepasst');
+    if(stageOf(h))chips.push(STAGEN[stageOf(h)]+' ×'+STAGEF[stageOf(h)]+' ('+h.contra.map(i=>esc(S.players[i])).join(', ')+')');
+    if((h.schiebe||[]).length)chips.push('Schiebe ×'+schF(h)+' ('+h.schiebe.map(i=>esc(S.players[i])).join(', ')+')');
     const av=r.play.map(i=>esc(S.players[i])+' '+((h.augen||{})[i]??'?')).join(' · ');
     return `<b>Ramsch</b> ${chips.map(x=>`<span class="chip">${x}</span>`).join('')}<br><span class="muted">Augen: ${av}<br>${esc(c.text)}</span>`;
   }
   if(h.type!=='null'&&!c.open){chips.push((h.mo==='mit'?'mit ':'ohne ')+h.n+' gespielt '+(h.n+1))}
   if(h.veto)chips.push('Veto im Ramsch');
+  if((h.schiebe||[]).length)chips.push('Schiebe ×'+schF(h)+' ('+h.schiebe.map(i=>esc(S.players[i])).join(', ')+')');
+  if(h.sixty)chips.push('genau 60 Augen');
   if(h.spitze&&S.settings.spitze&&h.type!=='null')chips.push('Spitze ×2');
   if(h.hand&&(!h.ouvert||h.ouvertFree))chips.push('Hand +1');if(h.ouvert)chips.push('Ouvert');if(h.schnAng)chips.push('Schn. ang.');if(h.schwarzAng)chips.push('Schw. ang.');
   if(stageOf(h))chips.push(STAGEN[stageOf(h)]+' ×'+STAGEF[stageOf(h)]+' ('+h.contra.map(i=>esc(S.players[i])).join(', ')+')');
@@ -538,8 +615,8 @@ function descr(r){
 /* ---------- Eingabeformular ---------- */
 function newF(R){
   const act=R.play;
-  const f={type:'kreuz',declarer:act[0],reiz:null,mo:'mit',n:1,hand:false,schnAng:false,schwarzAng:false,ouvert:false,
-    outcome:'W',contra:[],stage:1,levelOverride:null,augen:{},jungfrau:false,durchmarsch:null,malPlayer:null};
+  const f={type:'kreuz',declarer:null,reiz:null,mo:'mit',n:1,hand:false,schnAng:false,schwarzAng:false,ouvert:false,
+    outcome:'W',contra:[],stage:1,levelOverride:null,augen:{},jungfrau:false,durchmarsch:null,malPlayer:null,schiebe:[],sixty:false};
   if(R.forcedRamsch){f.type='ramsch'}
   else if(R.mal){f.malPlayer=R.mal.player;f.declarer=R.mal.player;f.type=R.mal.remaining.includes('farbe')?'kreuz':R.mal.remaining[0]==='grand'?'grand':'ramsch'}
   return f;
@@ -555,26 +632,34 @@ function openForm(i){
     F.ouvertFree=true}
   drawForm();
 }
-function closeModal(){document.getElementById('modal').innerHTML='';F=null;SHEETSTACK=[]}
+function closeModal(){document.getElementById('modal').innerHTML='';F=null;SHEETSTACK=[];SETONLY=false}
 /* ---------- Navigation: ← zurück (oben links), ✕ Anwendung schließen (oben rechts) ---------- */
 let SHEETSTACK=[]; // zuvor geöffnete Fenster (z. B. Gesamtansicht → Statistik → zurück zur Gesamtansicht)
 function sheetBack(){const p=SHEETSTACK.pop();if(p)document.getElementById('modal').innerHTML=p;else closeModal()}
 function quitApp(){
-  if(androidApp()&&androidApp().closeApp){androidApp().closeApp();return}
-  window.close();
-  setTimeout(()=>toast('Hier lässt sich das Fenster nicht per Knopf schließen – bitte den Tab bzw. die App selbst schließen. Alle Daten sind gespeichert.',6000),500);
+  if(androidApp()&&androidApp().closeApp){androidApp().closeApp();return} // Android: ganze App schließen
+  // Windows-Programm: der Host beendet alle Fenster und sich selbst (auch wenn mehrere Fenster offen sind)
+  fetch('/quit',{method:'POST'}).then(r=>{if(!r.ok)throw 0}).catch(()=>{
+    window.close();
+    setTimeout(()=>toast('Hier lässt sich das Fenster nicht per Knopf schließen – bitte den Tab bzw. die App selbst schließen. Alle Daten sind gespeichert.',6000),500);
+  });
 }
-function navBar(back){return `<div class="navbar">${back?`<button class="nb" onclick="${back}" title="Zurück" aria-label="Zurück">←</button>`:'<span></span>'}<button class="nb" onclick="quitApp()" title="Anwendung schließen" aria-label="Anwendung schließen">✕</button></div>`}
-const NB_BACK='<button class="nb" onclick="goHome()" title="Zurück zum Startbildschirm" aria-label="Zurück">←</button>',NB_X='<button class="nb x" onclick="quitApp()" title="Anwendung schließen" aria-label="Anwendung schließen">✕</button>';
+// ← links, ⚙ (nur Import-/Export-Ordner) in der Mitte, ✕ rechts (schließt das aktuelle Fenster, auf dem Startbildschirm die App); page=true für Seiten (nicht schwebend in Fenstern)
+function navBar(back,page){
+  // 🏠 (Startbildschirm) steht auf jeder Seite ganz links, auch auf dem Startbildschirm selbst; ← (ein Fenster zurück) daneben, wo es sinnvoll ist
+  // ✕ schließt nur das aktuelle Fenster (Fenster: zurück zur Seite darunter; Spielseite/Einrichtung: zurück zum Start); nur auf der ersten Seite (Startbildschirm) beendet es die App
+  const x=page?(back?'goHome()':'quitApp()'):'closeModal()',xt=page&&!back?'Anwendung schließen':'Fenster schließen';
+  const bk=back&&!page?`<button class="nb" onclick="${back}" title="Zurück" aria-label="Zurück">←</button>`:'';
+  return `<div class="navbar${page?' pg':''}"><span class="nbl"><button class="nb" onclick="goHome()" title="Startbildschirm" aria-label="Startbildschirm">🏠</button>${bk}</span><span class="nbio"><button class="nb" onclick="openFolderSettings()" title="Einstellungen: Ordner für Import und Export" aria-label="Einstellungen">⚙</button></span><button class="nb" onclick="${x}" title="${xt}" aria-label="${xt}">✕</button></div>`}
 function toggleVeto(v){
   F.veto=v;F.passe=v?F.passe:F.passe;
   if(v){
-    F.type='grand';F.hand=true;F.outcome='W';F.augenSp=null;
+    F.type='grand';F.hand=true;F.outcome='W';F.augenSp=null;F.contra=[];F.stage=1;F.schiebe=[];
     const mp=ctx.mal&&!ctx.free&&editIdx==null?ctx.mal.player:null;
     // Malenko: Aufgabe des Malenko-Spielers (Ramsch) gilt als erledigt, er selbst darf kein Veto einlegen
     F.malPlayer=mp;F.declarer=null; // der Spieler mit Grand Hand muss ausgewählt werden
   }
-  else{F.type='ramsch';F.hand=false;if(ctx.mal&&!ctx.free){F.malPlayer=ctx.mal.player}}
+  else{F.type='ramsch';F.hand=false;F.contra=[];F.stage=1;F.schiebe=[];if(ctx.mal&&!ctx.free){F.malPlayer=ctx.mal.player}}
   drawForm();
 }
 function allowed(t){
@@ -585,18 +670,21 @@ function allowed(t){
   const g=groupOf(t);return ctx.mal.remaining.includes(g);
 }
 function setF(k,v){
+  const oldType=F.type;
   F[k]=v;
   if(k==='outcome')F.outcomeSet=true;
   if(k==='jungfrau'&&v)F.durchmarsch=null;           // Jungfrau und Durchmarsch schließen sich aus
   if(k==='durchmarsch'&&v!=null)F.jungfrau=false;
   if(k==='type'&&v!=='ramsch')F.passe=false;
+  if(k==='type'&&(v==='ramsch')!==(oldType==='ramsch')){F.contra=[];F.stage=1;F.schiebe=[]} // Ansagen gelten je nach Spielart anders
+  if(k==='passe'&&v){F.contra=[];F.stage=1;F.schiebe=[]} // wenn alle gepasst haben: kein Kontra, Re, Hirsch, Schiebe
   if(k==='type'&&ctx.mal&&!ctx.free){F.malPlayer=ctx.mal.player;F.declarer=ctx.mal.player}
   if(k==='type'&&F.type==='grand'&&F.n>4)F.n=4;
   F.ouvertFree=true;
   // Ouvert setzt keine weiteren Ansagen automatisch (Hand, Schneider, Schwarz wählst du selbst)
   if(k==='schwarzAng'&&v)F.schnAng=true;
   if(k==='schnAng'&&!v)F.schwarzAng=false;
-  if(k==='declarer'){F.contra=F.contra.filter(x=>x!==v)}
+  if(k==='declarer'){F.contra=F.contra.filter(x=>x!==v);if(F.schiebe&&F.schiebe.length)F.schiebe=[v]}
   if(k==='type')F.outcome=(F.augenSp!==''&&F.augenSp!=null&&v!=='null'&&v!=='ramsch')?outFrom(F.augenSp,false):(F.outcome[0]==='W'?'W':'L');
   drawForm();
 }
@@ -631,6 +719,30 @@ function outFrom(v,sw){
   return v<=30?(sw?'LSW':'LS'):'L';
 }
 function setSchwarz(b){F.outcome=outFrom(F.augenSp,b);drawForm()}
+// Ergebnis nur markieren (kein Augenfeld): Gewonnen/Verloren, Schneider, Schwarz, mit genau 60 Augen verloren
+function setRes(w){const sw=F.outcome.endsWith('SW'),sn=F.outcome.includes('S');F.outcome=(w?'W':'L')+(F.type==='null'?'':sw?'SW':sn?'S':'');F.outcomeSet=true;F.augenSp=null;if(w)F.sixty=false;drawForm()}
+function setSn(b){F.outcome=F.outcome[0]+(b?'S':'');F.outcomeSet=true;F.augenSp=null;drawForm()}
+function setSw(b){F.outcome=F.outcome[0]+(b?'SW':'S');F.outcomeSet=true;F.augenSp=null;drawForm()}
+function setSixty(b){F.sixty=b;drawForm()}
+function setSchiebe(b){F.schiebe=b&&F.declarer!=null?[F.declarer]:[];drawForm()}
+function toggleSchiebe(i){const k=(F.schiebe||[]).indexOf(i);F.schiebe=F.schiebe||[];k<0?F.schiebe.push(i):F.schiebe.splice(k,1);drawForm()}
+// Ansagen im Ramsch: Kontra, Re, Hirsch (jeder Spieler), Schiebe (Stock nicht aufgenommen); nicht erlaubt, wenn alle gepasst haben
+function ramschAnsagen(act,dis){
+  const st=stageOf(F),d=dis?'disabled':'';
+  return `<label style="${dis?'opacity:.45':''}">Kontra gesagt von (im Ramsch darf jeder Spieler Kontra, Re und Hirsch sagen${dis?' – nicht möglich: alle haben gepasst':''})</label>
+  <div class="seg">${act.map(i=>`<button class="${F.contra.includes(i)?'on':''}" ${d} onclick="toggleContra(${i})">${esc(S.players[i])}</button>`).join('')}</div>
+  <div class="seg"><button class="${st>=1?'on':''}" disabled>Kontra ×2</button>${[[2,'Re ×4'],[3,'Hirsch ×8']].map(([s,l])=>`<button class="${st>=s?'on':''}" ${!dis&&st>=s-1&&F.contra.length?'':'disabled'} onclick="toggleStage(${s})">${l}</button>`).join('')}</div>
+  <label style="${dis?'opacity:.45':''}">Schiebe gesagt von (Stock nicht aufgenommen, jeder Schiebende verdoppelt die Verlustpunkte)</label>
+  <div class="seg">${act.map(i=>`<button class="${(F.schiebe||[]).includes(i)?'on':''}" ${d} onclick="toggleSchiebe(${i})">${esc(S.players[i])}</button>`).join('')}</div>`;
+}
+let LASTTAP={i:-1,t:0};
+// Abgeschlossene Spiele öffnen nur mit Doppelklick bzw. Doppeltipp; ein laufendes Spiel (Ergebnis fehlt) mit einem Klick
+function rowTap(i){
+  const h=S.hands[i];if(!h)return;
+  if(h.open){openForm(i);return}
+  const t=Date.now();
+  if(LASTTAP.i===i&&t-LASTTAP.t<600){LASTTAP={i:-1,t:0};openForm(i)}else LASTTAP={i,t};
+}
 function seg(key,opts,cur){
   return `<div class="seg">${opts.map(([v,l,dis])=>`<button class="${cur===v?'on':''}" ${dis?'disabled':''} onclick="setF('${key}',${JSON.stringify(v).replace(/"/g,'&quot;')})">${l}</button>`).join('')}</div>`;
 }
@@ -641,7 +753,8 @@ function drawForm(){
   const isR=F.type==='ramsch',isN=F.type==='null';
   // Neues oder noch offenes Spiel: erst Reizen/Ansagen eintragen, das Ergebnis folgt (am Ende der Maske)
   const resAtEnd=editIdx==null||!!F.open;let resHTML='';
-  const resLocked=editIdx==null; // Ergebnis wird erst nach dem Spiel eingetragen: ausgegraut
+  const nd=!isR&&F.declarer==null; // ohne Alleinspieler (Farbe, Grand, Null) sind Reizen, Ansagen, Kontra und Ergebnis gesperrt
+  const resLocked=nd;
   const fsOpen=resLocked?'<fieldset disabled style="border:0;padding:0;margin:0;opacity:.4">':'<fieldset style="border:0;padding:0;margin:0">';
   const isMalHand=F.malPlayer!=null&&F.malPlayer!==''; // Malenko: es wird nicht gereizt
   if(isMalHand&&F.reiz)F.reiz=null;
@@ -656,18 +769,18 @@ function drawForm(){
   if(ctx.ramschLeft>0||F.veto||F.type==='ramsch')h+=`<label class="chk" style="${editIdx!=null?'opacity:.45':''}"><input type="checkbox" ${F.veto?'checked':''} ${editIdx!=null?'disabled':''} onchange="toggleVeto(this.checked)"> Ein Spieler sagt Grand Hand an (Veto) – sonst ist nur Ramsch erlaubt; der Spieler wird gewählt, Grand Hand wird automatisch gesetzt (${ctx.mal&&!ctx.free?'Malenko: nicht der Spieler mit der Aufgabe, seine Ramsch-Aufgabe gilt als erledigt':'Ramsch-Spiel wird nachgeholt'})</label>`;
   h+=`<label>Spielart${editIdx!=null?' – festgelegt (nur über „Rückgängig“ änderbar)':''}</label>`;
   h+=seg('type',Object.entries(TYPES).map(([k,v])=>[k,v.n,!allowed(k)]),F.type);
-  h+='@@BTNS@@'; // Knöpfe direkt unter der Spielauswahl
   if(!isR){
     h+=`<div class="row2"><div><label>Alleinspieler</label><select onchange="setF('declarer',+this.value)" ${ctx.mal&&!ctx.free&&editIdx==null&&!F.veto?'disabled':''}>${F.declarer==null?'<option value="" disabled selected>– Spieler wählen –</option>':''}${act.filter(i=>!(F.veto&&F.malPlayer!=null&&F.malPlayer!==''&&i===+F.malPlayer)).map(i=>`<option value="${i}" ${F.declarer===i?'selected':''}>${esc(S.players[i])}</option>`).join('')}</select></div>
-    ${isMalHand?'':`<div><label>Gereizt bis</label><select onchange="setF('reiz',this.value?+this.value:null)"><option value="">– nicht gereizt –</option>${REIZ.map(v=>`<option ${F.reiz===v?'selected':''}>${v}</option>`).join('')}</select></div>`}</div>`;
+    ${isMalHand?'':`<div><label>Gereizt bis</label><select ${nd?'disabled':''} onchange="setF('reiz',this.value?+this.value:null)"><option value="">– nicht gereizt –</option>${REIZ.map(v=>`<option ${F.reiz===v?'selected':''}>${v}</option>`).join('')}</select></div>`}</div>`;
     resHTML='';
-    if(isN)resHTML=`<label>Ergebnis${resAtEnd?' (jetzt oder später)':''}</label>`+seg('outcome',[['W','Gewonnen'],['L','Verloren']],F.outcomeSet?F.outcome:null);
-    else{
-      const av=F.augenSp,has=av!==''&&av!=null,won=F.outcome[0]==='W',sw=F.outcome.endsWith('SW');
-      resHTML=`<label>Augen (Kartenwerte) des Alleinspielers${resAtEnd?' – jetzt oder später, wenn das Spiel gespielt ist':''}</label><input type="number" min="0" max="120" value="${has?av:''}" placeholder="0–120" id="augSp" oninput="augenIn(this.value);">`;
-      if(has){
-        resHTML+=`<div class="prev" style="margin:8px 0">Gegner ${120-av} Augen → <span class="${won?'won':'lost'}">${OUTN[F.outcome].replace(', Schneider',' mit Schneider').replace(', Schwarz',' mit Schwarz')}</span> (ohne Ansagen)</div>`;
-        if(av>=90||av<=30)resHTML+=`<label class="chk"><input type="checkbox" ${sw?'checked':''} onchange="setSchwarz(this.checked)"> Schwarz (${av>=90?'Gegner machen keinen Stich':'Alleinspieler macht keinen Stich'})</label>`;
+    { // Ergebnis wird nur markiert: wer hat verloren, Schneider, Schwarz (Punkte je Spieler gibt es nur im Ramsch)
+      const hasR=!!F.outcomeSet||(F.augenSp!==''&&F.augenSp!=null),won=F.outcome[0]==='W',sn=F.outcome.includes('S'),sw=F.outcome.endsWith('SW');
+      resHTML=`<label>Ergebnis des Alleinspielers${resAtEnd?' (jetzt oder später)':''}</label><div class="seg"><button class="${hasR&&won?'on':''}" onclick="setRes(true)">Gewonnen</button><button class="${hasR&&!won?'on':''}" onclick="setRes(false)">Verloren</button></div>`;
+      if(!isN){
+        resHTML+=`<label class="chk" style="${hasR?'':'opacity:.45'}"><input type="checkbox" ${sn?'checked':''} ${hasR?'':'disabled'} onchange="setSn(this.checked)"> Schneider (${won?'Gegner haben höchstens 30 Augen':'Alleinspieler hat höchstens 30 Augen'})</label>
+        <label class="chk" style="${hasR?'':'opacity:.45'}"><input type="checkbox" ${sw?'checked':''} ${hasR?'':'disabled'} onchange="setSw(this.checked)"> Schwarz (${won?'Gegner machen keinen Stich':'Alleinspieler macht keinen Stich'})</label>`;
+        if(hasR&&!won)resHTML+=`<label class="chk"><input type="checkbox" ${F.sixty||+F.augenSp===60?'checked':''} onchange="setSixty(this.checked)"> Mit genau 60 Augen verloren (hängt eine Bock-/Ramschrunde an)</label>`;
+        if(F.augenSp!==''&&F.augenSp!=null)resHTML+=`<div class="muted">Eingetragene Augen: ${F.augenSp} : ${120-F.augenSp}</div>`;
       }
     }
     if(!isN){ // Buben und Anzahl werden erst zusammen mit dem Ergebnis abgefragt
@@ -677,14 +790,15 @@ function drawForm(){
     }
     resHTML=fsOpen+resHTML+'</fieldset>';
     if(!resAtEnd)h+=resHTML;
-    h+=`<label>Ansagen</label>${S.settings.spitze&&!isN?`<label class="chk"><input type="checkbox" ${F.spitze?'checked':''} onchange="setF('spitze',this.checked)"> Spitze (umgekehrte Rangfolge, 7 Trumpf, Wert ×2)</label>`:''}
+    h+=(nd?'<p class="muted" style="margin:10px 0 0">Zuerst den Alleinspieler wählen – bis dahin sind Ansagen, Kontra und Ergebnis gesperrt.</p><fieldset disabled style="border:0;padding:0;margin:0;opacity:.4">':'<fieldset style="border:0;padding:0;margin:0">')+`<label>Ansagen</label>${S.settings.spitze&&!isN?`<label class="chk"><input type="checkbox" ${F.spitze?'checked':''} onchange="setF('spitze',this.checked)"> Spitze (umgekehrte Rangfolge, 7 Trumpf, Wert ×2)</label>`:''}
     <label class="chk"><input type="checkbox" ${F.hand?'checked':''} ${F.veto?'disabled':''} onchange="setF('hand',this.checked)"> Hand</label>
-    <label class="chk"><input type="checkbox" ${F.ouvert?'checked':''} onchange="setF('ouvert',this.checked)"> Ouvert</label>`;
+    <label class="chk"><input type="checkbox" ${F.ouvert?'checked':''} onchange="setF('ouvert',this.checked)"> Ouvert${F.type==='grand'?' (Grand Ouvert: Grundwert 36)':''}</label>
+    <label class="chk"><input type="checkbox" ${(F.schiebe||[]).length?'checked':''} ${F.declarer==null?'disabled':''} onchange="setSchiebe(this.checked)"> Schiebe (Stock nicht aufgenommen, Spielwert ×2) – nur der Alleinspieler</label>`;
     if(!isN)h+=`<label class="chk"><input type="checkbox" ${F.schnAng||F.schwarzAng?'checked':''} onchange="setF('schnAng',this.checked)"> Schneider angesagt</label>
     <label class="chk"><input type="checkbox" ${F.schwarzAng?'checked':''} onchange="setF('schwarzAng',this.checked)"> Schwarz angesagt</label>`;
     h+=`<label>Kontra gesagt von</label><div class="seg">${act.filter(i=>i!==F.declarer).map(i=>`<button class="${F.contra.includes(i)?'on':''}" onclick="toggleContra(${i})">${esc(S.players[i])}</button>`).join('')}</div>
     <label>Weitere Ansagen (nacheinander: Kontra ×2 → Re ×4 → Hirsch ×8 → Geweih ×16)</label>
-    <div class="seg"><button class="${stageOf(F)>=1?'on':''}" disabled>Kontra ×2 (Gegner)</button>${[[2,'Re ×4 (Alleinspieler)'],[3,'Hirsch ×8 (Gegner)'],[4,'Geweih ×16 (Alleinspieler)']].map(([s,l])=>`<button class="${stageOf(F)>=s?'on':''}" ${stageOf(F)>=s-1&&F.contra.length?'':'disabled'} onclick="toggleStage(${s})">${l}</button>`).join('')}</div>`;
+    <div class="seg"><button class="${stageOf(F)>=1?'on':''}" disabled>Kontra ×2 (Gegner)</button>${[[2,'Re ×4 (Alleinspieler)'],[3,'Hirsch ×8 (Gegner)'],[4,'Geweih ×16 (Alleinspieler)']].map(([s,l])=>`<button class="${stageOf(F)>=s?'on':''}" ${stageOf(F)>=s-1&&F.contra.length?'':'disabled'} onclick="toggleStage(${s})">${l}</button>`).join('')}</div></fieldset>`;
   }else{
     const fa=ramschAugen(act);
     const cur=fa||F.augen,isSet=i=>cur[i]!==''&&cur[i]!=null;
@@ -698,7 +812,8 @@ function drawForm(){
     const noPass=isMalHand||forcedR; // in einem Pflicht-Ramsch kann niemand mehr passen
     if(noPass)F.passe=false;
     h+=`<label class="chk" style="${noPass?'opacity:.45':''}"><input type="checkbox" ${F.passe&&!noPass?'checked':''} ${noPass?'disabled':''} onchange="setF('passe',this.checked)"> Alle haben gepasst – löst ${ctx.seat.length} Ramsch-Spiele aus (dieses mitgerechnet)${isMalHand?' – im Malenko nicht möglich':forcedR?' – im Pflicht-Ramsch nicht möglich':''}</label>`;
-    h+=fsOpen+`<label>Augen (Kartenwerte) je Spieler – jeder kann verlieren (inkl. Skat, Summe 120)${resLocked?' – wird später eingetragen':''}</label><div class="row2">${act.map(i=>`<div><label>${esc(S.players[i])}</label><input type="number" min="0" max="120" id="aug${i}" value="${F.augen[i]??''}" placeholder="${emp.length===1&&emp[0]===i&&sum<=120?120-sum:''}" oninput="F.augen[${i}]=this.value===''?'':Math.min(120,+this.value);redrawKeep('aug${i}')"></div>`).join('')}</div>
+    h+=ramschAnsagen(act,!!F.passe&&!noPass);
+    h+=fsOpen+`<label>Augen (Kartenwerte) je Spieler – jeder kann verlieren (inkl. Skat, Summe 120)${resLocked?' – wird später eingetragen':''}</label><div class="row2">${act.map(i=>`<div><label>${esc(S.players[i])}</label><input type="number" min="0" max="120" id="aug${i}" value="${F.augen[i]??''}" placeholder="${emp.length===1&&emp[0]===i&&sum<=120?120-sum:''}" oninput="ramschIn(${i},this.value)"></div>`).join('')}</div>
     <div class="muted">Summe: ${sum} ${sum===120?'✓':emp.length===1&&sum<=120?'(Rest '+(120-sum)+' wird beim leeren Feld eingetragen)':'(muss 120 sein)'}</div>
     <label class="chk" style="${hasZero&&F.durchmarsch==null?'':'opacity:.45'}"><input type="checkbox" ${F.jungfrau&&hasZero?'checked':''} ${hasZero&&F.durchmarsch==null?'':'disabled'} onchange="setF('jungfrau',this.checked)"> Jungfrau (×${S.settings.jungfrau})${hasZero?' – nur wenn jemand Jungfrau ist':' – nur wählbar, wenn ein Spieler 0 Augen hat'}</label>
     <label class="chk" style="${who120!=null&&!F.jungfrau?'':'opacity:.45'}"><input type="checkbox" ${F.durchmarsch!=null&&who120!=null?'checked':''} ${who120!=null&&!F.jungfrau?'':'disabled'} onchange="setF('durchmarsch',this.checked?${who120}:null)"> Durchmarsch${who120!=null?' ('+esc(S.players[who120])+' hat 120 Augen)':' – nur wenn ein Spieler 120 Augen hat'}</label></fieldset>`;
@@ -708,19 +823,24 @@ function drawForm(){
   h+=`<label style="${isMalHand?'opacity:.45':''}">Bockrunde (wirkt zusätzlich ×${S.settings.bock} auf alle Ansagen)${isMalHand?' – im Malenko gibt es keinen Bock':''}</label><select ${isMalHand?'disabled style="opacity:.45"':''} onchange="setF('levelOverride',this.value===''?null:+this.value)"><option value="">automatisch (${autoLv?'Bock ×'+levelF(1):'normal'})</option><option value="0" ${F.levelOverride===0?'selected':''}>Normal</option><option value="1" ${F.levelOverride>=1?'selected':''}>Bock ×${S.settings.bock}</option></select>`;
   const lv=isMalHand?0:(F.levelOverride!=null?F.levelOverride:autoLv);
   const hasAug=F.augenSp!==''&&F.augenSp!=null;
-  const hasRes=isR?!!ramschAugen(act):isN?!!F.outcomeSet:hasAug;
+  const hasRes=isR?!!ramschAugen(act):(!!F.outcomeSet||hasAug);
   const fx={...F,open:!hasRes};
   const c=calc(isR?{...fx,augen:ramschAugen(act)||F.augen}:fx,lv,act,ctx.seat);
   const c0=hasRes?c:(isR?null:calc({...F,open:false},lv,act,ctx.seat));
   const ptxt=Object.entries(c.pts).map(([k,v])=>`${esc(S.players[k])}: ${v}`).join(' · ')||'keine Punkte';
   if(!hasRes&&!isR&&!isN){h+=`<div class="prev">Spiel wird angelegt${F.reiz?' · gereizt bis '+F.reiz:''} · Buben und Ergebnis (Augen) folgen, dann wird der Spielwert berechnet.</div>`}
   else h+=`<div class="prev">${!isR&&c0?`Spielwert ${c0.value}${c0.mult?` (Grundwert ${c0.base} × ${c0.mult})`:''}${hasRes?(c.cf*(c.won?1:S.settings.lossFactor)>1?` × Faktor ${c.cf*(c.won?1:S.settings.lossFactor)}${c.won?'':' (verloren ×'+S.settings.lossFactor+')'} = ${c.value*c.cf*(c.won?1:S.settings.lossFactor)}`:'')+` · ${c.won?'gewonnen':'verloren'}${c.over?' (überreizt)':''}`:(c0.cf>1?` × Faktor ${c0.cf} (ohne Verlust)`:'')+(F.reiz?` · gereizt ${F.reiz}`:'')+' · läuft, Ergebnis folgt'}<br>`:''}${hasRes?`Verlorene Punkte → ${ptxt}`:'Noch keine Punkte – das Ergebnis wird später eingetragen.'}</div>`;
-  const valid=true;
-  const btns=`<div style="display:flex;gap:8px;flex-wrap:wrap;margin:12px 0"><button class="btn" ${(!isR&&F.declarer==null)||(editIdx!=null&&F.open&&!hasRes)?'disabled':''} onclick="saveHand()">${editIdx==null?'Spiel anlegen':F.open?'Spiel abschließen':'Speichern'}</button><button class="btn sec" onclick="closeModal()">Abbrechen</button>
-  ${editIdx!=null&&editIdx===S.hands.length-1?`<button class="btn bad" onclick="delHand()">Löschen</button>`:''}</div>`;
-  h=h.replace('@@BTNS@@',btns)+`</div></div>`;
+  const noDecl=!isR&&F.declarer==null,openEdit=editIdx!=null&&!!F.open;
+  const btns=`<div class="btnbar">${editIdx!=null&&editIdx===S.hands.length-1?`<button class="btn bad" style="margin-right:auto" onclick="delHand()">Löschen</button>`:''}${editIdx==null||openEdit?`<button class="btn" ${noDecl||(!noDecl&&hasRes)?'disabled':''} onclick="saveHand(true)" title="Spiel merken, das Ergebnis folgt später (grau, sobald das Ergebnis eingetragen ist)">Zwischenspeichern</button><button class="btn" ${noDecl||!hasRes?'disabled':''} onclick="saveHand()" title="Spiel mit Ergebnis speichern (grau, solange noch Eintragungen fehlen)">${editIdx==null?'Ergebnis eintragen':'Spiel abschließen'}</button>`:`<button class="btn" ${noDecl?'disabled':''} onclick="saveHand()">Speichern</button>`}<button class="btn sec" onclick="closeModal()">Abbrechen</button></div>`;
+  h=h+btns+`</div></div>`;
   m.innerHTML=h;
   const ns=m.querySelector('.sheet');if(ns)ns.scrollTop=top;
+}
+// Augen im Ramsch eintragen; hat ein Spieler 120, bekommen alle anderen sofort 0 (Durchmarsch/Jungfrau)
+function ramschIn(i,v){
+  F.augen[i]=v===''?'':Math.min(120,+v);
+  if(F.augen[i]===120)ctx.play.forEach(p=>{if(p!==i)F.augen[p]=0});
+  redrawKeep('aug'+i);
 }
 function ramschAugen(act){
   const a={};let sum=0,emp=[];
@@ -730,56 +850,75 @@ function ramschAugen(act){
   if(emp.length===1&&sum<=120){a[emp[0]]=120-sum;return a}
   return null;
 }
-function saveHand(){
+function saveHand(keepOpen){
   const h=JSON.parse(JSON.stringify(F));
-  if(h.type==='ramsch'){h.declarer=null;h.reiz=null;h.augen=ramschAugen(ctx.play);if(ctx.ramschLeft>0)h.passe=false}
+  if(h.type==='ramsch'){h.declarer=null;h.reiz=null;h.augen=keepOpen?(Object.keys(F.augen||{}).length?F.augen:null):ramschAugen(ctx.play);if(ctx.ramschLeft>0)h.passe=false}
   // Bei 4 Spielern setzt der Geber aus und kann nie Alleinspieler sein
   else if(h.declarer!=null&&!ctx.play.includes(+h.declarer)){toast('Der Geber spielt bei 4 Spielern nicht mit und kann nicht Alleinspieler sein.',5000);return}
   // offen = Spiel angelegt (gereizt/angesagt), Ergebnis noch nicht eingetragen
-  h.open=h.type==='ramsch'?!h.augen:h.type==='null'?!h.outcomeSet:!(h.augenSp!==''&&h.augenSp!=null);
+  h.open=keepOpen?true:h.type==='ramsch'?!h.augen:!(h.outcomeSet||(h.augenSp!==''&&h.augenSp!=null));
   if(!h.open)delete h.open;
   const idx=editIdx==null?S.hands.length:editIdx;
   const was=editIdx!=null&&!!replay().rows[idx].c.newRound;
   if(editIdx==null)S.hands.push(h);else S.hands[editIdx]=h;
   const R=replay(),c=R.rows[idx]&&R.rows[idx].c;
   save();closeModal();render();
-  if(c&&c.newRound&&!was)roundPopup(c,R);
+  if(c&&c.newRound&&!was)roundPopup(c,R,R.rows[idx]&&R.rows[idx].queuedRound);
 }
 // Hinweis: durch dieses Spiel ist eine neue Bock-/Ramschrunde entstanden - muss als gelesen bestätigt werden
-function roundPopup(c,R){
+function roundPopup(c,R,queued){
   const why=c.contraWon?'Ein Spiel wurde mit Kontra (oder höher) gewonnen.':'Ein Spiel wurde mit genau 60 Augen verloren.';
-  document.getElementById('modal').innerHTML=`<div class="modal"><div class="sheet" id="roundPop"><h1>🔔 Neue Bock-/Ramschrunde</h1><p>${why}</p><p>Es kommt eine <b>neue Bock-/Ramschrunde</b> dazu (${R.N} Bock- und ${R.N} Ramsch-Spiele). Offene Runden jetzt: <b>${R.rounds}</b>.</p><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" id="roundOk" onclick="closeModal()">✔ Gelesen</button></div></div></div>`;
+  document.getElementById('modal').innerHTML=`<div class="modal"><div class="sheet" id="roundPop"><h1>🔔 Neue Bock-/Ramschrunde</h1><p>${why}</p><p>Es kommt eine <b>neue Bock-/Ramschrunde</b> dazu (${R.N} Bock- und ${R.N} Ramsch-Spiele). ${queued?'<b>Sie startet erst, wenn die laufende Malenko-Runde zu Ende gespielt ist.</b> Erst danach beginnt die Bock-/Ramschrunde.':`Offene Runden jetzt: <b>${R.rounds}</b>.`}</p><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" id="roundOk" onclick="closeModal()">✔ Gelesen</button></div></div></div>`;
 }
 function delHand(){
-  ask('Letztes Spiel wirklich löschen?','Ja, löschen',()=>{S.hands.pop();S.events=S.events.filter(e=>e.at<=S.hands.length);save();render()});
+  const lh=S.hands[S.hands.length-1];
+  ask(`Letztes Spiel (Nr. ${S.hands.length}${lh?', '+(TYPES[lh.type]||{n:'?'}).n:''}) wirklich löschen?`,'Ja, löschen',()=>{S.hands.pop();S.events=S.events.filter(e=>e.at<=S.hands.length);save();render()});
 }
 
 /* ---------- Einstellungen ---------- */
+let SETONLY=false; // true: ⚙ aus der Leiste zeigt nur die Ordnerwahl für Import und Export
+function openFolderSettings(){SETONLY=true;openSettings()}
+// E-Mail-Adresse je Name (für den Versand des Ergebnisses); wird nur in den Daten/der Exportdatei gespeichert
+function setEmail(i,v){const n=S.nameList[i];if(n==null)return;v=String(v||'').trim();if(v)S.emails[n]=v;else delete S.emails[n];save()}
+const mailList=()=>[...new Set(S.nameList.map(n=>String((S.emails||{})[n]||'').trim()).filter(x=>/.@./.test(x)))];
+function emailSection(){
+  return `<label>E-Mail-Adressen (zum Versand des Ergebnisses; stehen in der Exportdatei)</label>${S.nameList.map((n,i)=>`<div class="row2" style="margin-bottom:6px;align-items:center"><span>${esc(n)}</span><input type="email" inputmode="email" autocomplete="off" placeholder="name@beispiel.de" value="${esc((S.emails||{})[n]||'')}" onchange="setEmail(${i},this.value)"></div>`).join('')}`;
+}
 function openSettings(){
+  if(SETONLY){
+    document.getElementById('modal').innerHTML=`<div class="modal"><div class="sheet">${navBar('closeModal()')}<h1>Einstellungen</h1>
+  <label>Ablageordner für Import und Export</label>
+  <div class="prev" style="margin:4px 0;font-weight:400">${folderLabel()?'Ordner: <b>'+esc(folderLabel())+'</b> – Export speichert dort, Import zeigt die Dateien dort.':'Nicht festgelegt – Standardordner des Geräts (Android: Downloads/SkatLog) bzw. Download-Ordner des Browsers.'}</div>
+  ${canPickDir()?`<p class="muted">Tipp: Wähle einen eigenen Unterordner (z. B. „Skat“), nicht „Dokumente“, „Downloads“ oder „Desktop“ selbst – die sperrt der Browser.</p><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn sec" onclick="pickDir()">Ordner wählen …</button>${folderLabel()?'<button class="btn sec" onclick="clearDir()">Ordner entfernen</button>':''}</div>`:'<p class="muted">Ein fester Ordner lässt sich nur in Chrome oder Edge am PC wählen. Auf dem Handy und in anderen Browsern bestimmt der Browser den Speicherort (meist „Downloads“).</p>'}
+  ${emailSection()}
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px"><button class="btn sec" onclick="closeModal()">Schließen</button></div></div></div>`;
+    return;
+  }
   const st=S.settings;
   const chk=(k,l)=>`<label class="chk"><input type="checkbox" ${st[k]?'checked':''} onchange="S.settings['${k}']=this.checked;save();render()"> ${l}</label>`;
   document.getElementById('modal').innerHTML=`<div class="modal"><div class="sheet">${navBar('closeModal()')}<h1>Einstellungen</h1>
-  <label>Namen</label>${S.players.map((p,i)=>`<input type="text" value="${esc(p)}" style="margin-bottom:6px" onchange="S.players[${i}]=this.value.trim()||'Spieler ${i+1}';save();render()">`).join('')}
+  ${S.started?`<label>Namen</label>${S.players.map((p,i)=>`<input type="text" value="${esc(p)}" style="margin-bottom:6px" onchange="S.players[${i}]=this.value.trim()||'Spieler ${i+1}';save();render()">`).join('')}
   <label>Mitspieler (wirkt ab dem nächsten Spiel)</label>
   ${(()=>{const R=replay();
     if(!R.canChange)return `<div class="banner orange">🔒 Während einer Bock-/Ramschrunde oder Malenko-Runde kann niemand gehen oder kommen. Ein Wechsel ist erst nach Ende der laufenden Runde möglich.</div>`;
     const gone=R.seat.length>3?R.seat.map(p=>`<button class="btn sec" onclick="leavePlayer(${p})">${nm(p)} geht</button>`).join(''):'<span class="muted">Mindestens 3 Spieler nötig.</span>';
     const add=R.seat.length+R.pending.length<4?`<div class="row2" style="margin-top:8px">${(()=>{const av=S.nameList.filter(x=>!S.players.includes(x));return `<select id="newSel" onchange="document.getElementById('newName').style.display=this.value==='__new'?'':'none'">${av.map(x=>`<option value="${esc(x)}">${esc(x)}</option>`).join('')}<option value="__new">Anderer Name …</option></select>`})()}<input type="text" id="newName" placeholder="Neuer Name" style="display:${S.nameList.filter(x=>!S.players.includes(x)).length?'none':''}"></div><button class="btn" style="margin-top:8px" onclick="joinPlayer()">Neuer Mitspieler</button><div class="muted">Einstieg erst nach der laufenden Bock-/Ramsch- bzw. Malenko-Runde. Startpunkte = Schnitt der Spieler (ganz rechts angefügt). Offene, noch nicht begonnene Runden gelten dann mit 4 Bock- und 4 Ramsch-Spielen.</div>`:'<span class="muted">Es sind schon 4 Spieler dabei (oder vorgemerkt).</span>';
-    return `<div class="seg">${gone}</div>${add}`})()}
+    return `<div class="seg">${gone}</div>${add}`})()}`:'<p class="muted">Namen und Mitspieler lassen sich einstellen, sobald ein Spieltag läuft.</p>'}
   <div class="row2"><div><label>Grundeinsatz (€)</label><input type="number" min="0" step="0.5" value="${S.stake.base}" onchange="setStake('base',this.value)"></div>
   <div><label>Wert von 100 Punkten (€)</label><input type="number" min="0" step="0.1" value="${S.stake.per100}" onchange="setStake('per100',this.value)"></div></div>
   <p class="muted">Beim Abschließen: Punkte ÷ 100 × Wert, aufgerundet auf volle €, plus Grundeinsatz. Die zuletzt eingegebenen Werte bleiben für den nächsten Spieltag erhalten.</p>
   <label>Ablageordner für Import und Export</label>
   <div class="prev" style="margin:4px 0;font-weight:400">${folderLabel()?'Ordner: <b>'+esc(folderLabel())+'</b> – Export speichert dort, Import zeigt die Dateien dort.':'Nicht festgelegt – Standardordner des Geräts (Android: Downloads/SkatLog) bzw. Download-Ordner des Browsers.'}</div>
   ${canPickDir()?`<p class="muted">Tipp: Wähle einen eigenen Unterordner (z. B. „Skat“), nicht „Dokumente“, „Downloads“ oder „Desktop“ selbst – die sperrt der Browser.</p><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn sec" onclick="pickDir()">Ordner wählen …</button>${folderLabel()?'<button class="btn sec" onclick="clearDir()">Ordner entfernen</button>':''}</div>`:'<p class="muted">Ein fester Ordner lässt sich nur in Chrome oder Edge am PC wählen. Auf dem Handy und in anderen Browsern bestimmt der Browser den Speicherort (meist „Downloads“).</p>'}
+  ${emailSection()}
   ${chk('contraPays','Gewonnenes Spiel: alle anderen Mitspieler bekommen den Spielwert')}
   ${chk('round10','Ramsch: Verlust-Augen auf nächste 10 runden (55 → 60, 54 → 50)')}
   ${chk('startBock','Spieltag beginnt mit Bock-/Ramschrunde')}
   ${chk('malenko','Malenko aktiv, wenn keine Bockrunde läuft')}
   ${chk('spitze','Spitze (umgekehrte Rangfolge, 7 Trumpf, verdoppelt den Spielwert)')}
   <div class="prev" style="margin:8px 0;font-weight:400">🔒 Fest: Bei 4 Spielern setzt der Geber aus und kann <b>nie Alleinspieler</b> sein. Er steht bei „Alleinspieler“ nicht zur Auswahl, und ein Spiel mit dem Geber als Alleinspieler wird nicht gespeichert.</div>
-  <p class="muted" style="margin-top:14px">Spieleranzahl ändern oder neu beginnen:</p>
-  <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn bad" onclick="newGame()">Spieltag beenden …</button><button class="btn sec" onclick="openImport()">📥 Import</button><button class="btn sec" onclick="closeModal()">Schließen</button><button class="btn sec" onclick="goHome()">🏠 Startbildschirm</button></div></div></div>`;
+  ${S.started?'<p class="muted" style="margin-top:14px">Spieleranzahl ändern oder neu beginnen:</p>':''}
+  <div style="display:flex;gap:8px;flex-wrap:wrap">${S.started?'<button class="btn bad" onclick="newGame()">Spieltag beenden …</button>':''}<button class="btn sec" onclick="openImport()">📥 Import</button><button class="btn sec" onclick="closeModal()">Schließen</button></div></div></div>`;
 }
 function joinPlayer(){
   if(!replay().canChange)return;
@@ -799,7 +938,7 @@ function ask(text,yes,fn){
   window._ask=fn;
   document.getElementById('modal').innerHTML=`<div class="modal"><div class="sheet"><h1>${text}</h1><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn bad" onclick="closeModal();window._ask()">${yes}</button><button class="btn sec" onclick="closeModal()">Abbrechen</button></div></div></div>`;
 }
-function resetDay(){S.hands=[];S.events=[];S.started=false;S.n=4;S.startDealer=0;S.players=[...NAMES];S.settings={...DEF}}
+function resetDay(){S.hands=[];S.events=[];S.startRounds=null;S.malQueue=null;S.dayDate=null;S.started=false;S.n=4;S.startDealer=0;S.players=[...NAMES];S.settings={...DEF}}
 function newGame(){
   closeDay();
 }
@@ -812,9 +951,33 @@ const eur=v=>(Math.round(v*100)/100).toLocaleString('de-DE',{minimumFractionDigi
 const payOf=(pts,stake)=>{const e=Math.ceil(pts*stake.per100/100-1e-9);return {euro:Math.max(0,e),total:Math.max(0,e)+(+stake.base||0)}};
 function setStake(k,v){const x=parseFloat(String(v).replace(',','.'));S.stake[k]=isNaN(x)||x<0?0:x;save()}
 const fmtDate=d=>new Date(d).toLocaleDateString('de-DE');
-function curDay(){return {id:'cur',current:true,season:S.season.id,date:new Date().toISOString(),players:S.players,hands:S.hands,events:S.events,startDealer:S.startDealer,n:S.n,settings:S.settings}}
+function curDay(){return {id:'cur',current:true,season:S.season.id,date:S.dayDate||new Date().toISOString(),players:S.players,hands:S.hands,events:S.events,startDealer:S.startDealer,startRounds:S.startRounds,malQueue:S.malQueue,n:S.n,settings:S.settings}}
 // Spieltag beenden: speichern (Abrechnung) oder löschen (mit zweiter Rückfrage) - geht immer, auch ohne Spiele oder mit laufendem Spiel
 function savableHands(){return S.hands.filter(h=>!h.open)}
+// Laufender Spieltag ohne Kennzeichen (aus älterer Version oder wieder geöffnet): die neue Malenko-Regel gilt nur, wenn sie die vorhandenen Spiele nicht verändert
+function ensureMalRule(){
+  if(!S.started||S.malQueue!=null)return;
+  const keep=S.malQueue,sig=()=>replay().rows.map(r=>r.lv+r.slot).join();
+  S.malQueue=false;const a=sig();S.malQueue=true;const b=sig();
+  S.malQueue=(a===b);
+}
+// Letzten abgeschlossenen Spieltag wieder als laufenden öffnen (geht nur, solange kein Spieltag mit Spielen läuft; „↶ Rückgängig“ nimmt es zurück)
+const reopenable=()=>{const d=S.days[S.days.length-1];return d&&!d.imp&&Array.isArray(d.hands)&&d.hands.length&&!(S.started&&S.hands.length)?d:null};
+function reopenLastDay(){
+  const d=reopenable();
+  if(!d){toast(S.started&&S.hands.length?'Es läuft schon ein Spieltag – erst abschließen oder beenden.':'Kein abgeschlossener Spieltag mit Einzelspielen vorhanden.',5000);return}
+  closeModal();
+  ask(`Letzten Spieltag wieder laufend setzen?<br><small>${esc(fmtDate(d.date))} · ${esc(seasonName(d.season??S.season.id))} · ${d.hands.length} Spiele. Er verschwindet aus den abgeschlossenen Spieltagen, bis du ihn erneut abschließt (er behält sein altes Datum). Mit „↶ Rückgängig“ lässt es sich zurücknehmen.</small>`,'Ja, wieder laufend setzen',doReopenLastDay);
+}
+function doReopenLastDay(){
+  const d=reopenable();if(!d)return;
+  S.days.pop();
+  const c=JSON.parse(JSON.stringify(d));
+  S.started=true;S.n=c.n;S.players=c.players;S.hands=c.hands;S.events=c.events||[];S.startDealer=c.startDealer||0;S.startRounds=c.startRounds!=null?c.startRounds:null;S.malQueue=c.malQueue!=null?c.malQueue:null;S.dayDate=c.date||null; // altes Datum bleibt erhalten
+  S.settings={...DEF,...(c.settings||{}),...FIX};if(c.stake)S.stake=c.stake;
+  padPlayers();ensureMalRule();
+  save();HOME=false;render();toast('Spieltag läuft wieder – „↶ Rückgängig“ nimmt es zurück',6000);
+}
 function closeDay(){
   const open=S.hands.filter(h=>h.open).length,done=savableHands();
   const del=`<button class="btn bad" onclick="confirmDeleteDay()">🗑 Spieltag löschen</button>`;
@@ -837,7 +1000,7 @@ function doDeleteDay(){resetDay();save();closeModal();HOME=true;render()}
 function doCloseDay(send){
   S.hands=savableHands();
   const text=send?summaryText(curDay()):null; // vor dem Zurücksetzen berechnen
-  const d=JSON.parse(JSON.stringify({id:Date.now(),season:S.season.id,date:new Date().toISOString(),players:S.players,hands:S.hands,events:S.events,startDealer:S.startDealer,n:S.n,settings:S.settings,stake:S.stake}));
+  const d=JSON.parse(JSON.stringify({id:Date.now(),season:S.season.id,date:S.dayDate||new Date().toISOString(),players:S.players,hands:S.hands,events:S.events,startDealer:S.startDealer,startRounds:S.startRounds,malQueue:S.malQueue,n:S.n,settings:S.settings,stake:S.stake}));
   S.days.push(d);resetDay();save();closeModal();HOME=true;render();
   if(send==='wa')waDialog({title:'Nachricht mit den Zahlungen',text,name:exportName(),content:JSON.stringify(S,null,1),mime:'application/json'});
   else if(send)shareAll(text);
@@ -856,8 +1019,8 @@ function analyze(day){
   let R,part,end,pay;
   if(day.imp)({R,part,end,pay}=analyzeImp(day,stake));
   else{
-    const bak={players:S.players,hands:S.hands,events:S.events,n:S.n,startDealer:S.startDealer,settings:S.settings};
-    Object.assign(S,{players:day.players,hands:day.hands,events:day.events||[],n:day.n,startDealer:day.startDealer,settings:{...S.settings,...(day.settings||{}),...FIX}});
+    const bak={players:S.players,hands:S.hands,events:S.events,n:S.n,startDealer:S.startDealer,startRounds:S.startRounds,malQueue:S.malQueue,settings:S.settings};
+    Object.assign(S,{players:day.players,hands:day.hands,events:day.events||[],n:day.n,startDealer:day.startDealer,startRounds:day.startRounds,malQueue:day.malQueue,settings:{...S.settings,...(day.settings||{}),...FIX}});
     try{R=replay()}finally{Object.assign(S,bak)}
     part=[];day.players.forEach((_,i)=>{if(i<day.n||R.info[i].joinAt!=null)part.push(i)});
     end=R.totals.map((t,i)=>t+(R.info[i].proj||0));
@@ -892,7 +1055,7 @@ function seasonSelect(fn){
 function showSheet(html){
   const m=document.getElementById('modal'),h1=t=>(String(t).match(/<h1>(.*?)<\/h1>/)||[])[1];
   if(!m.innerHTML.trim())SHEETSTACK=[];else if(h1(m.innerHTML)!==h1(html)&&h1(m.innerHTML)!=null)SHEETSTACK.push(m.innerHTML);
-  m.innerHTML=`<div class="modal"><div class="sheet wide">${navBar('sheetBack()')}${html}${HOME?'':'<div class="homebar"><button class="btn sec" onclick="goHome()">🏠 Startbildschirm</button></div>'}</div></div>`}
+  m.innerHTML=`<div class="modal"><div class="sheet wide">${navBar('sheetBack()')}${html}</div></div>`}
 
 // Gleichstand: Anzahl der Spieler auf demselben Platz (2–4), sonst 0
 function tieK(names,rk,n){return Math.min(4,names.filter(o=>rk[o]===rk[n]).length)<2?0:Math.min(4,names.filter(o=>rk[o]===rk[n]).length)}
@@ -945,8 +1108,9 @@ function openOverview(){
       return a.day.imp?`<td class="pc"><b style="white-space:nowrap">${eur(e.pay.total)}</b> ${rk}<div class="tag">≈${e.end}</div></td>`:`<td class="pc"><b>${e.end}</b> ${rk}<div class="tag">${eur(e.pay.total)}</div></td>`;
     }).join('');
     const label=a.day.current?'läuft':fmtDate(a.day.date);
-    const act=`<button class="btn sec sm" onclick="openStats('${a.day.current?'cur':'d'+a.day.id}')">Statistik</button>${a.day.current?'':` <button class="btn sec sm" title="Spieltag löschen" onclick="delDay(${a.day.id})">🗑</button>`}`; // Löschen nur mit doppelter Rückfrage
-    return `<tr class="${zx%2?'z':''}"><td>${label}<div class="muted">${a.day.imp?[a.day.host?'bei '+esc(a.day.host):'',esc(a.day.note||'nur Beträge')].filter(Boolean).join(' · '):a.day.hands.length+' Spiele'}</div></td>${cells}<td class="pc"><b>${eur(dayTot)}</b></td><td>${act}</td></tr>`;
+    const act=`<button class="btn sec sm" onclick="openStats('${a.day.current?'cur':'d'+a.day.id}')">Statistik</button>${a.day.current?'':` <button class="btn sec sm" title="Spieltag löschen" onclick="delDay(${a.day.id})">🗑</button>`}${!a.day.current&&reopenable()&&reopenable().id===a.day.id?` <button class="btn sec sm" title="Diesen Spieltag wieder als laufenden öffnen" onclick="reopenLastDay()">↩ laufend</button>`:''}`; // Löschen nur mit doppelter Rückfrage
+    const pin=zx<(list.some(x=>x.day.current)?2:1)?` pin pin${zx+1}`:''; // laufender Spieltag und danach der letzte abgeschlossene bleiben fest, darunter wird gescrollt
+    return `<tr class="${zx%2?'z':''}${pin}"><td>${label}<div class="muted">${a.day.imp?[a.day.host?'bei '+esc(a.day.host):'',esc(a.day.note||'nur Beträge')].filter(Boolean).join(' · '):a.day.hands.length+' Spiele'}</div></td>${cells}<td class="pc"><b>${eur(dayTot)}</b></td><td>${act}</td></tr>`;
   }).join('');
   names.filter(n=>cnt[n]>0).forEach(n=>{ovRank[n]=1+names.filter(o=>cnt[o]>0&&sum[o]<sum[n]).length}); // 1. = wenigste verlorene Punkte, Gleichstand = gleicher Platz
   showSheet(`<h1>Gesamtansicht</h1>${seasonSelect('openOverview')}${list.length?`<div class="statwrap ov"><table><thead><tr><th>Spieltag</th>${names.map(n=>`<th class="pc">${ovRank[n]?podiumIcon(ovRank[n],72,tieK(names.filter(o=>ovRank[o]),ovRank,n),isMartin(n)):''}${esc(n)}</th>`).join('')}<th class="pc">Alle Zahlungen</th><th></th></tr>
@@ -954,7 +1118,17 @@ function openOverview(){
   ${anyImp?'<p class="muted"><b>Spieltage „nur Beträge“</b> (ohne Einzelspiele, z. B. aus Excel): oben steht der gezahlte Betrag (echter Wert), darunter die daraus zurückgerechneten Punkte (<b>≈</b>). Die Summe zeigt dann zuerst die Zahlungen.</p>':''}
   <p class="muted">Zahl = verlorene Punkte am Spielende (Spieler, die früher gegangen sind, inkl. Schnitt; „Ø“ = nicht anwesender Stammspieler bei nur 3 Spielern, er bekommt den Schnitt), danach der Platz (1. = wenigste Punkte), darunter der zu zahlende Betrag (Punktwert aufgerundet + Grundeinsatz).</p>`:'<p class="muted">Noch kein Spieltag vorhanden.</p>'}
   <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" onclick="openStats('all')">Statistik aller Spieltage</button><button class="btn sec" onclick="openSeasons()">🏆 Saisons</button><button class="btn sec" onclick="closeModal()">Schließen</button></div>`);
+  fixOv();
 }
+// Höhen der festen Kopfzeilen und der festgeklebten Spieltage der Gesamtansicht messen
+function fixOv(){
+  const w=document.querySelector('#modal .statwrap.ov');if(!w)return;
+  const th=w.querySelector('thead'),r1=th&&th.querySelector('tr'),p1=w.querySelector('tbody tr.pin1');
+  w.style.setProperty('--r1H',(r1?r1.offsetHeight:38)+'px');
+  w.style.setProperty('--hdH',(th?th.offsetHeight:76)+'px');
+  w.style.setProperty('--p1H',(p1?p1.offsetHeight:56)+'px');
+}
+window.addEventListener('resize',()=>{try{fixOv()}catch(e){}});
 
 /* ---------- Löschen von Spieltagen und Saisons (immer mit zwei Rückfragen) ---------- */
 function delDay(id){
@@ -1286,12 +1460,38 @@ async function shareAll(text){
   exportData();
   window.open('https://wa.me/?text='+encodeURIComponent(text),'_blank');
 }
+// Ergebnis per E-Mail: neue E-Mail mit allen Empfängern aus den Einstellungen, Betreff „Ergebnis Skatabend <Datum>“, Text mit den Verlusten und der Exportdatei im Anhang
+const b64=t=>btoa(unescape(encodeURIComponent(t)));
+const b64lines=t=>(b64(t).match(/.{1,76}/g)||[]).join('\r\n');
+function buildEml(to,subject,body,fname,json){
+  const bd='skatlog_'+Date.now().toString(36);
+  return ['X-Unsent: 1','To: '+to.join(', '),'Subject: =?UTF-8?B?'+b64(subject)+'?=','MIME-Version: 1.0','Content-Type: multipart/mixed; boundary="'+bd+'"','',
+    '--'+bd,'Content-Type: text/plain; charset=utf-8','Content-Transfer-Encoding: base64','',b64lines(body),
+    '--'+bd,'Content-Type: application/json; name="'+fname+'"','Content-Transfer-Encoding: base64','Content-Disposition: attachment; filename="'+fname+'"','',b64lines(json),
+    '--'+bd+'--',''].join('\r\n');
+}
+async function mailResult(){
+  const day=S.hands.length?curDay():S.days[S.days.length-1];
+  if(!day){toast('Es gibt noch keinen Spieltag zum Senden.');return}
+  const to=mailList(),subject='Ergebnis Skatabend '+fmtDate(day.date),body=summaryText(day),fname=exportName(),json=JSON.stringify(S,null,1);
+  if(!to.length)toast('Keine E-Mail-Adressen hinterlegt (⚙ Einstellungen) – die E-Mail hat dann keine Empfänger.',5000);
+  if(androidApp()&&typeof androidApp().sendMail!=='undefined'){androidApp().sendMail(to.join(','),subject,body,fname,json);return}
+  const emlName='Ergebnis-Skatabend-'+new Date(day.date).toISOString().slice(0,10)+'.eml',eml=buildEml(to,subject,body,fname,json);
+  try{const r=await fetch('/openeml?name='+encodeURIComponent(emlName),{method:'POST',body:eml});if(r.ok){toast('Das E-Mail-Programm öffnet eine neue E-Mail …');return}}catch(e){} // Windows-Programm: öffnet den Entwurf im Standard-Mailprogramm
+  try{ // iPhone/iPad: Teilen-Menü mit der Datei (Empfänger werden in die Zwischenablage kopiert)
+    const file=new File([json],fname,{type:'application/json'});
+    if(navigator.canShare&&navigator.canShare({files:[file]})){
+      try{await navigator.clipboard.writeText(to.join(', '));toast('Empfänger in die Zwischenablage kopiert – in der E-Mail einfügen.',5000)}catch(e){}
+      await navigator.share({files:[file],title:subject,text:subject+'\n\n'+body});return}
+  }catch(e){if(e&&e.name==='AbortError')return}
+  await saveText(emlName,eml,'message/rfc822'); // sonst: E-Mail-Entwurf als Datei; ein Doppelklick öffnet die neue E-Mail mit Anhang
+  toast('E-Mail-Entwurf gespeichert: „'+emlName+'“ öffnen, dann ist die E-Mail mit Empfängern, Text und Anhang fertig.',7000);
+}
 function sendTextWhatsApp(text){if(androidApp()){androidApp().shareText(text);return}window.open('https://wa.me/?text='+encodeURIComponent(text),'_blank')}
 function openExport(){
   showSheet(`<h1>Export / Senden</h1><p class="muted">Enthält alle Daten: alle Saisons, alle Spieltage, den laufenden Spieltag sowie alle Termine mit ihrem Änderungsverlauf.</p>
-  <div style="display:flex;gap:8px;flex-wrap:wrap;margin:8px 0"><button class="btn" onclick="waDialog({title:'Nachricht mit den Zahlungen',text:lastSummary(),name:exportName(),content:JSON.stringify(S,null,1),mime:'application/json'})">💬 An WhatsApp senden (Text + Datei)</button><button class="btn" onclick="exportData()">Als Datei speichern</button>
-  <button class="btn" onclick="shareAll(lastSummary())">Senden an … (z. B. WhatsApp-Gruppe)</button>
-  <button class="btn sec" onclick="sendTextWhatsApp(lastSummary())">Nur Ergebnis als Text an WhatsApp</button></div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin:8px 0"><button class="btn" onclick="waDialog({title:'Nachricht mit den Zahlungen',text:lastSummary(),name:exportName(),content:JSON.stringify(S,null,1),mime:'application/json'})">💬 An WhatsApp senden (Text + Datei)</button>
+  <button class="btn" onclick="mailResult()" title="Neue E-Mail mit allen Empfängern aus den Einstellungen, Ergebnis-Text und Datei">✉ Per E-Mail senden</button></div>
   <label>Vorschau des Textes</label><pre style="white-space:pre-wrap;background:var(--chip);padding:10px;border-radius:8px;font:13px/1.4 inherit">${esc(lastSummary())}</pre>
   <button class="btn sec" onclick="closeModal()">Schließen</button>`);
 }
@@ -1358,9 +1558,10 @@ function loadImport(text){
 function applyImport(){
   const nS=_pendingImport;if(!nS)return;
   try{
+    const oldEmails=S.emails||{};
     S=nS;S.settings={...DEF,...S.settings,...FIX};S.events=S.events||[];S.days=S.days||[];S.stake=S.stake||{base:25,per100:0.5};
     S.season=S.season||{id:1,name:'Saison 1',start:new Date().toISOString()};S.pastSeasons=S.pastSeasons||[];
-    S.days.forEach(d=>{if(d.season==null)d.season=S.season.id});S.nameList=S.nameList||[...NAMES];apptEnsure();
+    S.days.forEach(d=>{if(d.season==null)d.season=S.season.id});S.nameList=S.nameList||[...NAMES];S.emails=(S.emails&&Object.keys(S.emails).length)?S.emails:oldEmails;apptEnsure(); // Adressen aus der Datei, sonst die bisherigen behalten
     _pendingImport=null;
     save();closeModal();render();toast('Daten importiert – „↶ Rückgängig“ nimmt es zurück',6000);
   }catch(e){toast('Datei ungültig – nichts geändert')}
@@ -1369,7 +1570,7 @@ function applyImport(){
 function fillDemo(count,np,silent){
   np=np||4;
   let seed=Date.now()%2147483646+1;const rnd=()=>(seed=(seed*16807)%2147483647)/2147483647;const ri=n=>Math.floor(rnd()*n);
-  S.started=true;S.n=np;S.players=NAMES.slice(0,np);S.events=[];S.startDealer=0;S.settings={...DEF,...FIX};S.hands=[];
+  S.started=true;S.n=np;S.players=NAMES.slice(0,np);S.events=[];S.startDealer=0;S.startRounds=3;S.malQueue=true;S.settings={...DEF,...FIX};S.hands=[];
   const farben=['karo','herz','pik','kreuz'];
   const split=play=>{const a=ri(70),b=ri(120-a),c=120-a-b,v=[a,b,c].sort(()=>rnd()-.5);const augen={};play.forEach((p,i)=>augen[p]=v[i]);return augen};
   for(let k=0;k<count;k++){
@@ -1408,7 +1609,7 @@ function fillDemoSeasons(daysPer,minGames){
       fillDemo(minGames+Math.floor(Math.random()*21),np,true);
       if(np===3){const absent=NAMES[(d+s)%4];S.players=NAMES.filter(n=>n!==absent)} // wechselnder Abwesender
       const date=new Date(day0);date.setDate(day0.getDate()+7*week++);
-      S.days.push(JSON.parse(JSON.stringify({id:date.getTime(),season:S.season.id,date:date.toISOString(),players:S.players,hands:S.hands,events:S.events,startDealer:S.startDealer,n:S.n,settings:S.settings,stake:S.stake})));
+      S.days.push(JSON.parse(JSON.stringify({id:date.getTime(),season:S.season.id,date:date.toISOString(),players:S.players,hands:S.hands,events:S.events,startDealer:S.startDealer,startRounds:S.startRounds,malQueue:S.malQueue,n:S.n,settings:S.settings,stake:S.stake})));
     }
     if(s===0){
       const end=new Date(day0);end.setDate(day0.getDate()+7*(week-1));
@@ -1746,7 +1947,7 @@ async function waStep(n){
 }
 
 /* ---------- Logos, Info, Hilfe, Suche ---------- */
-const APP_NAME='Skat-LOGGER',APP_TAG='Spielverlauf aufschreiben + Statistik + mehr',APP_VERSION='1.16.4',APP_BUILD='2026-10-23';
+const APP_NAME='Skat-LOGGER',APP_TAG='Spielverlauf aufschreiben + Statistik + mehr',APP_VERSION='1.24.0',APP_BUILD='2026-10-23';
 const LOGOS=[
   {n:'Kartenfächer',svg:`<svg viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI Symbol,Arial,sans-serif"><rect width="128" height="128" rx="28" fill="#17382a"/><text x="64" y="31" text-anchor="middle" font-family="Georgia,serif" font-size="21" font-weight="700" fill="#f6f1e3" letter-spacing="3">SKAT</text><text x="64" y="118" text-anchor="middle" font-family="Georgia,serif" font-size="19" font-weight="700" fill="#e8b923" letter-spacing="4">LOG</text><g transform="translate(12.8 16) scale(0.8)"><g transform="rotate(-24 64 104)"><rect x="40" y="30" width="48" height="68" rx="6" fill="#fff" stroke="#cfc8b4" stroke-width="1.5"/><text x="47" y="50" font-size="15" fill="#c0392b">♦</text><text x="64" y="80" font-size="32" text-anchor="middle" fill="#c0392b">♦</text></g><g transform="rotate(24 64 104)"><rect x="40" y="30" width="48" height="68" rx="6" fill="#fff" stroke="#cfc8b4" stroke-width="1.5"/><text x="47" y="50" font-size="15" fill="#c0392b">♥</text><text x="64" y="80" font-size="32" text-anchor="middle" fill="#c0392b">♥</text></g><g><rect x="40" y="30" width="48" height="68" rx="6" fill="#fff" stroke="#cfc8b4" stroke-width="1.5"/><text x="47" y="50" font-size="15" fill="#1d2a24">♠</text><text x="64" y="80" font-size="32" text-anchor="middle" fill="#1d2a24">♠</text></g></g></svg>`},
 ];
@@ -1781,12 +1982,16 @@ function openInfo(){
 
 const HELP=[
 {id:'bedienung',t:'Bedienung im Überblick',h:`<ul>
-<li><b>+ Spiel anlegen:</b> Sobald gereizt und angesagt ist, legst du das Spiel an (Spielart, Alleinspieler, Reizwert, Ansagen, Kontra). Das Ergebnis folgt nach dem Spiel.</li>
-<li><b>Ergebnis eintragen:</b> Danach trägst du Augen und Buben ein. „Spiel abschließen“ ist erst mit Ergebnis anwählbar. Die Spielart ist dann festgelegt.</li>
+<li><b>Oben links 🏠</b> führt auf jeder Seite zum Startbildschirm (nur das Symbol). In Fenstern geht <b>←</b> einen Schritt zurück, <b>⚙</b> öffnet die Ordnerwahl für Import/Export und die E-Mail-Adressen, <b>✕</b> schließt das Fenster (auf dem Startbildschirm die App).</li>
+<li><b>+ Spiel anlegen:</b> Zuerst den <b>Alleinspieler</b> wählen (er ist nicht vorgewählt, nur im Malenko steht er fest). Erst danach sind Reizen, Ansagen (Hand, Ouvert, Schiebe, Schneider/Schwarz angesagt), Kontra und das Ergebnis frei. <b>Zwischenspeichern</b> merkt das Spiel, das Ergebnis folgt später. <b>Ergebnis eintragen</b> legt das Spiel an und trägt das Ergebnis in einem Schritt ein. Die Knopfleiste bleibt unten rechts stehen.</li>
+<li><b>Knopffarben:</b> Zuerst ist „Zwischenspeichern“ grün. Sind alle nötigen Eintragungen gemacht, wird „Ergebnis eintragen“ bzw. „Spiel abschließen“ grün und „Zwischenspeichern“ grau. <b>Grau = nicht bedienbar.</b></li>
+<li><b>Ergebnis:</b> Bei Farbe, Grand und Null wird nur <b>markiert</b> (Gewonnen/Verloren, Schneider, Schwarz, genau 60 Augen). Im Ramsch trägst du die Augen je Spieler ein (bei 120 Augen werden die anderen sofort 0).</li>
+<li><b>Spiel öffnen:</b> Ein abgeschlossenes Spiel öffnet nur mit <b>Doppelklick</b> (Doppeltipp). Ein laufendes Spiel öffnet mit einem Klick.</li>
+<li><b>Platzierung:</b> Die runde Nummer oben links im Namensfeld zeigt die aktuelle Platzierung (1 = wenigste Punkte).</li>
 <li><b>↶ Rückgängig:</b> nimmt die letzte gespeicherte Änderung zurück.</li>
-<li><b>Spieltag abschließen:</b> zeigt die Abrechnung in € und speichert den Spieltag in der Gesamtansicht. „Abschließen und senden an …“ schickt das Ergebnis und alle Daten z. B. an eine WhatsApp-Gruppe.</li>
-<li><b>Gesamtansicht, Statistik, Saisons:</b> alle Spieltage, Auswertungen je Spieler und je Saison.</li>
-<li><b>Export / Senden, Import:</b> alle Daten als Datei sichern oder wieder laden. Ein Ablageordner lässt sich in den Einstellungen festlegen (Chrome/Edge am PC).</li></ul>`},
+<li><b>Spieltag abschließen:</b> zeigt die Abrechnung in € und speichert den Spieltag in der Gesamtansicht. <b>↩ Letzten Spieltag wieder öffnen</b> (Startbildschirm oder Gesamtansicht) macht ihn wieder zum laufenden Spieltag, mit dem alten Datum.</li>
+<li><b>Gesamtansicht, Statistik, Saisons:</b> alle Spieltage, Auswertungen je Spieler und je Saison. Die Treppchen-Symbole zeigen die Plätze.</li>
+<li><b>Export / Senden:</b> „An WhatsApp senden (Text + Datei)“ oder „Per E-Mail senden“. <b>Import</b> lädt eine Datei. Ein Ablageordner lässt sich über ⚙ festlegen.</li></ul>`},
 {id:'termine',t:'Termine und Kalender',h:`<ul>
 <li><b>📅 Termine</b> (Startbildschirm oder Menü): geplante Spieltermine mit Titel, Datum, Uhrzeit (Beginn vorbelegt mit 17:00), Ort (Auswahl „bei <Mitspieler>“ oder eigener Ort), Mitspielern (alle vorgewählt), Erinnerung, Wiederholung (wöchentlich, alle 2 Wochen, monatlich) und Notizen.</li>
 <li><b>Datum:</b> im Kalender antippen oder von Hand eingeben (z. B. 24.10.2026). Samstage sind blau, Sonntage und Feiertage rot markiert (regionale Feiertage heller), ein Punkt zeigt, dass schon ein Termin existiert.</li>
@@ -1795,42 +2000,76 @@ const HELP=[
 <li>Termine und Verlauf sind Teil von Export und Import.</li><li><b>WhatsApp:</b> „💬 An WhatsApp senden“ (bei Spieltag beenden, Export und Termin) arbeitet in zwei Schritten: ① die Nachricht (Zahlungen bzw. Einladung) als Text, ② die Datei (Daten bzw. .ics) in denselben Chat.</li></ul>`},
 {id:'spieler',t:'Spieler, Geber, Reihenfolge',h:`<p>3 oder 4 Spieler. Bei 4 Spielern setzt der Geber aus. Der erste eingetragene Spieler gibt zuerst, danach reihum. Ein dicker Strich in der Spielübersicht zeigt, wo der 1. Geber wieder beginnt.</p>`},
 {id:'spielarten',t:'Spielarten und Grundwerte',h:`<table><thead><tr><th>Spiel</th><th>Grundwert</th></tr></thead><tbody>
-<tr><td>Karo</td><td>9</td></tr><tr><td>Herz</td><td>10</td></tr><tr><td>Pik</td><td>11</td></tr><tr><td>Kreuz</td><td>12</td></tr><tr><td>Grand</td><td>24</td></tr>
+<tr><td>Karo</td><td>9</td></tr><tr><td>Herz</td><td>10</td></tr><tr><td>Pik</td><td>11</td></tr><tr><td>Kreuz</td><td>12</td></tr><tr><td>Grand</td><td>24</td></tr><tr><td>Grand Ouvert</td><td>36</td></tr>
 <tr><td>Null</td><td>23</td></tr><tr><td>Null Hand</td><td>35</td></tr><tr><td>Null Ouvert</td><td>46</td></tr><tr><td>Null Ouvert Hand</td><td>59</td></tr></tbody></table>
 <p>Optional „Spitze“ (Einstellungen): umgekehrte Rangfolge, die 7 ist Trumpf. Das verdoppelt den Grundwert, nur bei Farb- und Grandspielen.</p>`},
 {id:'spielwert',t:'Spielwert berechnen',h:`<p><b>Spielwert = Grundwert × Multiplikator</b> (Farbe und Grand).</p>
-<p>Multiplikator = Buben (mit/ohne 1 bis 11, im Grand 1 bis 4) + 1 (Spiel gespielt) + je +1 für: Hand, Schneider, Schneider angesagt, Schwarz, Schwarz angesagt, Ouvert.</p>
+<p>Multiplikator = Buben (mit/ohne 1 bis 11, im Grand 1 bis 4) + 1 (Spiel gespielt) + je +1 für: Hand, Schneider, Schneider angesagt, Schwarz, Schwarz angesagt, Ouvert (nur Farbspiele). <b>Grand Ouvert</b> hat den Grundwert 36, Ouvert zählt dort nicht zusätzlich als +1.</p>
 <p>Beispiel: Kreuz mit 1, Hand: 12 × (1 + 1 + 1) = 36. „Mit 1 gespielt 2“ bedeutet: 1 Bube plus 1 für das Spiel.</p>
 <p>Ansagen und Ouvert werden nur gezählt, wenn du sie ankreuzt. „Schwarz angesagt“ setzt „Schneider angesagt“ automatisch mit.</p>`},
-{id:'gewinn',t:'Gewonnen, verloren, Schneider, Schwarz',h:`<ul><li>Farbe und Grand: Der Alleinspieler gewinnt mit mindestens <b>61 Augen</b>.</li>
+{id:'zaehlwerte',t:'Zählwerte auf einen Blick',h:`<p><b>Kartenwerte (Augen), zusammen 120:</b> Ass 11, Zehn 10, König 4, Dame 3, Bube 2, Neun/Acht/Sieben 0.</p>
+<table><thead><tr><th>Was</th><th>Wert</th></tr></thead><tbody>
+<tr><td>Gewonnen (Farbe, Grand)</td><td>ab 61 Augen</td></tr>
+<tr><td>Schneider</td><td>ab 90 Augen gewonnen / höchstens 30 Augen verloren</td></tr>
+<tr><td>Schwarz</td><td>Gegner (bzw. Alleinspieler) machen keinen Stich</td></tr>
+<tr><td>Grundwerte</td><td>Karo 9, Herz 10, Pik 11, Kreuz 12, Grand 24, Grand Ouvert 36</td></tr>
+<tr><td>Null</td><td>23, Hand 35, Ouvert 46, Ouvert Hand 59</td></tr>
+<tr><td>Multiplikator</td><td>Buben mit/ohne + 1 (Spiel) + je 1: Hand, Schneider, Schneider angesagt, Schwarz, Schwarz angesagt, Ouvert (nicht bei Grand Ouvert)</td></tr>
+<tr><td>Spitze (Option)</td><td>Grundwert ×2</td></tr>
+<tr><td>Kontra / Re / Hirsch / Geweih</td><td>×2 / ×4 / ×8 / ×16 (im Ramsch nur bis Hirsch)</td></tr>
+<tr><td>Bock</td><td>×2</td></tr>
+<tr><td>Verlorenes Spiel</td><td>×2 (Alleinspieler bekommt den Wert)</td></tr>
+<tr><td>Schiebe</td><td>×2 je Schiebendem (einer ×2, zwei ×4, drei ×8)</td></tr>
+<tr><td>Ramsch</td><td>Augen des Verlierers auf 10 gerundet (55 → 60, 54 → 50), Jungfrau ×2, Durchmarsch: alle anderen je 120</td></tr>
+<tr><td>Startrunden</td><td>3 Bock-/Ramschrunden, jede N Bock- und N Ramsch-Spiele</td></tr>
+<tr><td>Euro</td><td>Punkte ÷ 100 × Punktwert, aufgerundet, plus Grundeinsatz</td></tr></tbody></table>
+<p>Ein verlorenes Spiel mit Kontra und ein Spiel, das mit genau 60 Augen verloren wird, hängen je eine Bock-/Ramschrunde an.</p>`},
+{id:'schiebe',t:'Schiebe',h:`<ul><li><b>Schiebe</b> heißt: Der Stock (Skat) wird nicht aufgenommen.</li>
+<li>Wer darf: in Farbe, Grand und Null nur der <b>Alleinspieler</b> (Häkchen „Schiebe“ bei den Ansagen, erst nach der Wahl des Alleinspielers). Im <b>Ramsch jeder Spieler</b> (Knöpfe „Schiebe gesagt von“), außer alle haben gepasst: dann ist Schiebe nicht erlaubt.</li>
+<li><b>Wirkung:</b> Jeder, der schiebt, <b>verdoppelt</b> das Spiel. Schiebt einer, gilt ×2, schieben zwei ×4, drei ×8 (im Ramsch können mehrere schieben). Beispiel mit einem Schiebenden: Kreuz mit 1, verloren, Bock: 12 × 2 × 2 (verloren) × 2 (Schiebe) × 2 (Bock) = 192.</li>
+<li>In der Spielzeile steht der Hinweis „Schiebe ×4 (Name, Name)“ mit dem Gesamtfaktor.</li></ul>`},
+{id:'spitze',t:'Spitze (Option)',h:`<ul><li><b>Spitze</b> schaltest du in den Einstellungen ein (Standard: aus). Dann erscheint beim Anlegen eines Farb- oder Grandspiels das Häkchen „Spitze“.</li>
+<li><b>Regel:</b> umgekehrte Rangfolge, die Sieben ist Trumpf. Das <b>verdoppelt den Grundwert</b> (Karo 18, Herz 20, Pik 22, Kreuz 24, Grand 48). Nicht bei Null und Ramsch.</li>
+<li>Spitze wirkt auch auf den Reizwert (der Spielwert wird mit verdoppeltem Grundwert verglichen) und bei Grand Ouvert (36 × 2 = 72).</li>
+<li>Nicht verwechseln: Die „Spitzen“ der offiziellen Regeln sind die Buben „mit/ohne“. Sie zählen in der App als „Buben“ im Multiplikator.</li></ul>`},
+{id:'ouvert',t:'Hand, Ouvert, Schneider angesagt',h:`<ul><li><b>Hand:</b> Skat nicht aufgenommen, +1 im Multiplikator.</li>
+<li><b>Ouvert:</b> offen gespielt, +1 im Multiplikator (Farbe). <b>Grand Ouvert</b> hat den Grundwert 36 und zählt Ouvert nicht zusätzlich als +1. Hand, Schneider und Schwarz setzt Ouvert nicht automatisch, du wählst sie selbst.</li>
+<li><b>Schneider angesagt / Schwarz angesagt:</b> je +1. Wird die Ansage nicht erreicht, ist das Spiel verloren. „Schwarz angesagt“ setzt „Schneider angesagt“ mit.</li>
+<li><b>Veto:</b> Im Pflicht-Ramsch kann ein Spieler Grand Hand ansagen. Das Ramsch-Spiel wird nachgeholt.</li></ul>`},
+{id:'gewinn',t:'Gewonnen, verloren, Schneider, Schwarz',h:`<ul><li>Beim Eintragen des Ergebnisses wird nur <b>markiert</b>: Gewonnen oder Verloren, Schneider, Schwarz und „mit genau 60 Augen verloren“. Punkte je Spieler werden nur im Ramsch eingetragen.</li>
+<li>Farbe und Grand: Der Alleinspieler gewinnt mit mindestens <b>61 Augen</b>.</li>
 <li>Schneider: ab 90 Augen gewonnen oder höchstens 30 Augen verloren. Schwarz: Gegner machen keinen Stich (oder der Alleinspieler keinen).</li>
 <li>Eine angesagte Stufe, die nicht erreicht wird, bedeutet <b>verloren</b>.</li>
 <li>Null: gewonnen, wenn der Alleinspieler keinen Stich macht.</li>
 <li><b>Überreizen:</b> Ist der Spielwert kleiner als der Reizwert, ist das Spiel verloren. Es zählt das kleinste Vielfache des Grundwerts, das den Reizwert erreicht.</li></ul>`},
 {id:'kontra',t:'Kontra, Re, Hirsch, Geweih',h:`<table><thead><tr><th>Ansage</th><th>Von</th><th>Faktor</th></tr></thead><tbody>
 <tr><td>Kontra</td><td>Gegner</td><td>×2</td></tr><tr><td>Re</td><td>Alleinspieler</td><td>×4</td></tr><tr><td>Hirsch</td><td>Gegner</td><td>×8</td></tr><tr><td>Geweih</td><td>Alleinspieler</td><td>×16</td></tr></tbody></table>
-<p>Sie folgen nacheinander: Re geht erst nach Kontra, Hirsch nach Re, Geweih nach Hirsch. In einer Bockrunde kommt zusätzlich ×2 dazu.</p>`},
+<p>Sie folgen nacheinander: Re geht erst nach Kontra, Hirsch nach Re, Geweih nach Hirsch. In einer Bockrunde kommt zusätzlich ×2 dazu.</p>
+<p><b>Im Ramsch</b> darf jeder Spieler Kontra, Re und Hirsch sagen (×2, ×4, ×8 auf die Verlustpunkte), außer alle haben gepasst.</p>`},
 {id:'wertung',t:'Wertung: verlorene Punkte',h:`<p>Die App schreibt <b>Verlustpunkte</b> auf. Unter jedem Namen steht die Summe.</p>
 <ul><li><b>Alleinspieler verliert:</b> er bekommt Spielwert × 2 × Faktoren (Kontra/Re/…, Bock).</li>
 <li><b>Alleinspieler gewinnt:</b> alle anderen Mitspieler bekommen den Spielwert × Faktoren, bei 4 Spielern auch der aussetzende Geber. Der Alleinspieler bekommt nichts. (Abschaltbar in den Einstellungen.)</li></ul>
 <p>Beispiel: Kreuz mit 1 und Hand (36), verloren, Bockrunde: 36 × 2 (verloren) × 2 (Bock) = 144 Punkte.</p>`},
 {id:'bock',t:'Bock-/Ramschrunden',h:`<ul><li>Eine <b>Bock-/Ramschrunde</b> besteht aus N Bock-Spielen (alle Werte ×2) und danach N Ramsch-Spielen (N = Spieleranzahl).</li>
-<li>Ein Spieltag beginnt mit <b>N solchen Runden</b>, bei 4 Spielern also 4 Runden mit 32 Spielen.</li>
+<li>Ein Spieltag beginnt mit <b>3 solchen Runden</b> (unabhängig von der Spieleranzahl), bei 4 Spielern also 24 Spiele, bei 3 Spielern 18.</li>
 <li>Verliert ein Alleinspieler ein Spiel mit Kontra oder höher, oder verliert er mit genau 60 Augen (auch ohne Kontra, nicht bei Null), wird eine weitere Runde angehängt. Die App weist mit einem Hinweis darauf hin, den du mit „Gelesen“ bestätigst.</li>
 <li>Im Ramsch-Teil darf nur Ramsch gespielt werden, außer ein Spieler sagt Grand Hand an (<b>Veto</b>): Dann spielt dieser Spieler Grand Hand und das Ramsch-Spiel wird nachgeholt.</li>
 <li><b>Alle passen:</b> Dann werden N Ramsch-Spiele gespielt (Pflicht-Ramsch).</li>
-<li>Sind keine Runden mehr offen, läuft Malenko.</li></ul>`},
+<li>Sind keine Runden mehr offen, läuft Malenko.</li>
+<li>Wird <b>mitten im Malenko</b> eine neue Runde erspielt, muss zuerst die laufende Malenko-Runde zu Ende gespielt werden (jeder hat Grand, Ramsch und Farbspiel gespielt). Erst danach startet die Bock-/Ramschrunde. Die App zeigt bis dahin einen Hinweis.</li></ul>`},
 {id:'ramsch',t:'Ramsch',h:`<ul><li>Jeder spielt für sich, nur Buben sind Trumpf. Wer die meisten Augen hat, verliert. Gleichstand: alle Gleichen verlieren voll.</li>
 <li>Die verlorenen Punkte sind die Augen, <b>auf die nächste 10 gerundet</b> (55 → 60, 54 → 50). In der Bockrunde ×2.</li>
 <li><b>Jungfrau:</b> Hat ein Spieler 0 Augen, kann Jungfrau gewählt werden. Dann zählt der Verlust ×2.</li>
 <li><b>Durchmarsch:</b> Ein Spieler hat 120 Augen und alle Stiche. Alle anderen bekommen je 120. Hat der Spieler 120 Augen, aber ein Mitspieler einen Stich mit 0 Punkten, ist es kein Durchmarsch, sondern Jungfrau.</li>
-<li>Die Augen aller Spieler ergeben zusammen 120 (inklusive Skat).</li></ul>`},
+<li>Die Augen aller Spieler ergeben zusammen 120 (inklusive Skat).</li>
+<li><b>Kontra, Re, Hirsch:</b> Jeder Spieler darf sie ansagen (×2, ×4, ×8), außer alle haben gepasst. <b>Schiebe</b> (Stock nicht aufgenommen) darf auch jeder ansagen, außer alle haben gepasst; <b>jeder Schiebende verdoppelt</b> die Verlustpunkte (drei Schiebende: ×8).</li></ul>`},
 {id:'malenko',t:'Malenko',h:`<ul><li>Malenko läuft, wenn keine Bock-/Ramschrunde mehr offen ist.</li>
 <li>Jeder Spieler muss drei verschiedene Spiele spielen: <b>G</b> = Grand, <b>R</b> = Ramsch, <b>F</b> = Farbspiel. Reihum spielt immer ein Spieler ein Spiel. Gespielte Arten sind rot durchkreuzt, offene grün.</li>
 <li>Bei Malenko wird nicht gereizt, es gibt keinen Bock und kein „alle gepasst“.</li>
 <li>Im Malenko-Ramsch dürfen die anderen Spieler Veto einlegen (Grand Hand). Die Ramsch-Aufgabe des Malenko-Spielers gilt dann als erledigt.</li>
 <li>Haben alle alle drei Arten gespielt und ist das letzte Spiel beendet, beginnt die nächste Malenko-Runde.</li>
-<li>Eine eigene Aufgabe zählt als gewonnen, wenn der Spieler keine Punkte bekommt, sonst als verloren.</li></ul>`},
+<li>Eine eigene Aufgabe zählt als gewonnen, wenn der Spieler keine Punkte bekommt, sonst als verloren.</li>
+<li>Eine mitten im Malenko erspielte Bock-/Ramschrunde startet erst nach dem Ende der Malenko-Runde.</li></ul>`},
 {id:'wechsel',t:'Mitspieler kommen und gehen',h:`<ul><li>Ein Wechsel ist nur zwischen den Runden möglich, nicht mitten in einer Bock-/Ramsch- oder Malenko-Runde und nicht, solange ein Spiel läuft.</li>
 <li><b>Neuer Mitspieler:</b> steht ganz rechts, startet mit dem Schnitt der Punkte der anderen und gibt zuletzt. Noch nicht begonnene Runden laufen dann mit 4 Bock- und 4 Ramsch-Spielen.</li>
 <li><b>Spieler geht:</b> sein Stand bleibt stehen. Am Ende kommt der Schnitt der Punkte dazu, die die übrigen seitdem bekommen haben.</li>
@@ -1840,8 +2079,8 @@ const HELP=[
 {id:'auswertung',t:'Saisons, Gesamtansicht, Statistik',h:`<ul><li>Eine <b>Saison</b> fasst viele Spieltage zusammen. Mit „Neue Saison“ (Saisons) beginnst du eine neue mit eigenem Namen, die alte bleibt in der Statistik erhalten.</li>
 <li>Die <b>Gesamtansicht</b> zeigt alle Spieltage mit Punkten, Platz (1. = wenigste Punkte) und Zahlungen. Mit „🗑“ löschst du einen Spieltag, in „Saisons“ mit „🗑 Saison löschen“ eine ganze Saison mit allen ihren Spieltagen. Beides verlangt <b>zwei Rückfragen</b>. Sichere vorher über „Export“.</li>
 <li>Die <b>Statistik</b> zeigt je Spieler: Spiele, Gewinnquote, Grand/Farbe/Null, Ramsch, Buben, Ansagen, Malenko, Geld. Wählbar für einen Spieltag, eine Saison oder alle.</li></ul>`},
-{id:'daten',t:'Daten sichern, senden, rückgängig',h:`<ul><li>Alle Daten liegen lokal im Browser. Sichere sie regelmäßig über <b>Export / Senden → Als Datei speichern</b>.</li>
-<li><b>Senden an …</b> öffnet das Teilen-Menü deines Geräts (z. B. WhatsApp-Gruppe) mit Ergebnis und Datendatei.</li>
+{id:'daten',t:'Daten sichern, senden, rückgängig',h:`<ul><li>Alle Daten liegen lokal im Browser. Sichere sie regelmäßig über <b>Export / Senden</b>: <b>An WhatsApp senden (Text + Datei)</b> oder <b>Per E-Mail senden</b> (neue E-Mail an alle Empfänger aus den Einstellungen, mit Ergebnis-Text und Datei im Anhang). Die Datei enthält alle Daten, auch die E-Mail-Adressen.</li>
+<li><b>🏠</b> oben links führt auf jeder Seite zum Startbildschirm.</li>
 <li><b>Import</b> lädt eine gespeicherte Datei und ersetzt die aktuellen Daten.</li>
 <li><b>↶ Rückgängig</b> gilt, solange die Seite offen ist.</li></ul>`}
 ];
@@ -1904,6 +2143,7 @@ function openSearch(q){
 new MutationObserver(()=>document.body.classList.toggle('lock',!!document.getElementById('modal').firstChild)).observe(document.getElementById('modal'),{childList:true});
 lastSnap=JSON.stringify(S);
 applyFavicon();
+try{ensureMalRule()}catch(e){}
 if(location.hash==='#demo62'){HOME=false;fillDemo(62);history.replaceState(null,'',location.pathname)}
 if(location.hash==='#demoSaisons'){HOME=false;fillDemoSeasons(13,100);history.replaceState(null,'',location.pathname)}
 render();
