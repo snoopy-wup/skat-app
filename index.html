@@ -1573,8 +1573,16 @@ function mailDialogMobile(o){
 }
 async function mailEml(){
   const o=_ml;if(!o)return;mailRecipients(o);
-  await saveText(o.emlName,buildEml(o.to,o.subject,o.body,o.fname,o.json),'message/rfc822');
-  toast('Entwurf gespeichert: „'+o.emlName+'“. Im Download-Hinweis des Browsers auf „Datei öffnen“ klicken, dann öffnet sich die fertige E-Mail (Empfänger, Betreff, Text, Anhang).',9000);
+  // immer ein echter Browser-Download (nicht in den gewählten Ablageordner schreiben), sonst erscheint kein Download-Hinweis
+  const b=new Blob([buildEml(o.to,o.subject,o.body,o.fname,o.json)],{type:'message/rfc822'});
+  const u=URL.createObjectURL(b),a=document.createElement('a');a.href=u;a.download=o.emlName;a.style.display='none';document.body.appendChild(a);a.click();
+  setTimeout(()=>{a.remove();URL.revokeObjectURL(u)},60000);
+  showSheet(`<h1>Entwurf gespeichert</h1>
+  <p>Die Datei <b>${esc(o.emlName)}</b> wurde heruntergeladen (Ordner <b>Downloads</b>). So öffnest du die fertige E-Mail:</p>
+  <ol><li>Im Browser oben rechts den <b>Download-Hinweis</b> öffnen und auf <b>„Datei öffnen“</b> klicken, oder</li>
+  <li>kommt kein Hinweis: <b>Strg + J</b> drücken (Download-Liste) und auf die Datei klicken, oder im Explorer den Ordner <b>Downloads</b> öffnen und die Datei <b>doppelklicken</b>.</li></ol>
+  <p class="muted">Empfänger: ${o.to.length?esc(o.to.join(', ')):'keine'} · Die E-Mail enthält Betreff, Text und die Datendatei als Anhang.</p>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px"><button class="btn" onclick="mailEml()">Nochmal speichern</button><button class="btn sec" onclick="closeModal()">Schließen</button></div>`);
 }
 async function mailShare(){
   const o=_ml;if(!o)return;mailRecipients(o);
@@ -2074,7 +2082,7 @@ async function waStep(n){
 }
 
 /* ---------- Logos, Info, Hilfe, Suche ---------- */
-const APP_NAME='Skat-LOGGER',APP_TAG='Spielverlauf aufschreiben + Statistik + mehr',APP_VERSION='1.26.1',APP_BUILD='2026-10-23';
+const APP_NAME='Skat-LOGGER',APP_TAG='Spielverlauf aufschreiben + Statistik + mehr',APP_VERSION='1.26.2',APP_BUILD='2026-10-23';
 const LOGOS=[
   {n:'Kartenfächer',svg:`<svg viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI Symbol,Arial,sans-serif"><rect width="128" height="128" rx="28" fill="#17382a"/><text x="64" y="31" text-anchor="middle" font-family="Georgia,serif" font-size="21" font-weight="700" fill="#f6f1e3" letter-spacing="3">SKAT</text><text x="64" y="118" text-anchor="middle" font-family="Georgia,serif" font-size="19" font-weight="700" fill="#e8b923" letter-spacing="4">LOG</text><g transform="translate(12.8 16) scale(0.8)"><g transform="rotate(-24 64 104)"><rect x="40" y="30" width="48" height="68" rx="6" fill="#fff" stroke="#cfc8b4" stroke-width="1.5"/><text x="47" y="50" font-size="15" fill="#c0392b">♦</text><text x="64" y="80" font-size="32" text-anchor="middle" fill="#c0392b">♦</text></g><g transform="rotate(24 64 104)"><rect x="40" y="30" width="48" height="68" rx="6" fill="#fff" stroke="#cfc8b4" stroke-width="1.5"/><text x="47" y="50" font-size="15" fill="#c0392b">♥</text><text x="64" y="80" font-size="32" text-anchor="middle" fill="#c0392b">♥</text></g><g><rect x="40" y="30" width="48" height="68" rx="6" fill="#fff" stroke="#cfc8b4" stroke-width="1.5"/><text x="47" y="50" font-size="15" fill="#1d2a24">♠</text><text x="64" y="80" font-size="32" text-anchor="middle" fill="#1d2a24">♠</text></g></g></svg>`},
 ];
