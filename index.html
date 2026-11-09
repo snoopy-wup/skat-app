@@ -1522,7 +1522,8 @@ function mailDialogIOS(o){
   showSheet(`<h1>E-Mail senden</h1><p class="muted">Auf dem iPhone kann eine Web-App keine E-Mail mit Empfängern, Betreff <b>und</b> Anhang gleichzeitig öffnen. Wähle den Weg:</p>
   <div style="display:flex;flex-direction:column;gap:8px;margin:10px 0">
   <button class="btn" onclick="mailIosText()">✉ Empfänger, Betreff und Ergebnis-Text (ohne Datei)</button>
-  <button class="btn" onclick="mailIosFile()">📎 Mit Datei im Anhang (Teilen-Menü)</button></div>
+  <button class="btn" onclick="mailIosFile()">📎 Mit Datei im Anhang (Teilen-Menü)</button>
+  <button class="btn" onclick="copyData()">📋 Datei-Inhalt kopieren (in die E-Mail einfügen)</button></div>
   <p class="muted">Beim zweiten Weg wählst du im Teilen-Menü „Mail“. Empfänger und Betreff fügst du dort selbst ein, du kannst sie hier kopieren:</p>
   <label>Betreff</label><div class="row2"><input type="text" readonly value="${esc(o.subject)}"><button class="btn sec" onclick="mailCopy('subject')">Kopieren</button></div>
   <label>Empfänger</label><div class="row2"><input type="text" readonly value="${esc(o.to.join(', '))}"><button class="btn sec" onclick="mailCopy('to')">Kopieren</button></div>
@@ -1536,6 +1537,12 @@ async function mailIosFile(){
     if(navigator.canShare&&navigator.canShare({files:[file]}))await navigator.share({files:[file],title:o.subject,text:o.subject+'\n\n'+o.body});
     else toast('Auf diesem Gerät ist das Teilen von Dateien nicht möglich – bitte den Weg ohne Datei wählen.',6000);
   }catch(e){}
+}
+// Alle Daten als Text in die Zwischenablage kopieren (z. B. in eine E-Mail oder Notiz einfügen; zurück per Import → „Inhalt einfügen“)
+async function copyData(){
+  const json=JSON.stringify(S,null,1);
+  try{await navigator.clipboard.writeText(json);toast('Alle Daten kopiert ('+Math.round(json.length/1024)+' KB). In E-Mail oder Notiz einfügen; zurück über Import → „Inhalt einfügen“.',7000)}
+  catch(e){toast('Kopieren nicht möglich (Zugriff auf die Zwischenablage verweigert).',5000)}
 }
 async function mailCopy(what){
   if(!_ml)return;const t=what==='to'?_ml.to.join(', '):_ml.subject;
@@ -1563,7 +1570,7 @@ function sendTextWhatsApp(text){if(androidApp()){androidApp().shareText(text);re
 function openExport(){
   showSheet(`<h1>Export / Senden</h1><p class="muted">Enthält alle Daten: alle Saisons, alle Spieltage, den laufenden Spieltag sowie alle Termine mit ihrem Änderungsverlauf.</p>
   <div style="display:flex;gap:8px;flex-wrap:wrap;margin:8px 0"><button class="btn" onclick="waDialog({title:'Nachricht mit den Zahlungen',text:lastSummary(),name:exportName(),content:JSON.stringify(S,null,1),mime:'application/json'})">💬 An WhatsApp senden (Text + Datei)</button>
-  <button class="btn" onclick="mailResult()" title="Neue E-Mail mit allen Empfängern aus den Einstellungen, Ergebnis-Text und Datei">✉ Per E-Mail senden</button></div>
+  <button class="btn" onclick="mailResult()" title="Neue E-Mail mit allen Empfängern aus den Einstellungen, Ergebnis-Text und Datei">✉ Per E-Mail senden</button>${androidApp()?'':'<button class="btn sec" onclick="copyData()" title="Alle Daten als Text in die Zwischenablage">📋 Datei-Inhalt kopieren</button>'}</div>
   <label>Vorschau des Textes</label><pre style="white-space:pre-wrap;background:var(--chip);padding:10px;border-radius:8px;font:13px/1.4 inherit">${esc(lastSummary())}</pre>
   <button class="btn sec" onclick="closeModal()">Schließen</button>`);
 }
@@ -2019,7 +2026,7 @@ async function waStep(n){
 }
 
 /* ---------- Logos, Info, Hilfe, Suche ---------- */
-const APP_NAME='Skat-LOGGER',APP_TAG='Spielverlauf aufschreiben + Statistik + mehr',APP_VERSION='1.25.1',APP_BUILD='2026-10-23';
+const APP_NAME='Skat-LOGGER',APP_TAG='Spielverlauf aufschreiben + Statistik + mehr',APP_VERSION='1.25.2',APP_BUILD='2026-10-23';
 const LOGOS=[
   {n:'Kartenfächer',svg:`<svg viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI Symbol,Arial,sans-serif"><rect width="128" height="128" rx="28" fill="#17382a"/><text x="64" y="31" text-anchor="middle" font-family="Georgia,serif" font-size="21" font-weight="700" fill="#f6f1e3" letter-spacing="3">SKAT</text><text x="64" y="118" text-anchor="middle" font-family="Georgia,serif" font-size="19" font-weight="700" fill="#e8b923" letter-spacing="4">LOG</text><g transform="translate(12.8 16) scale(0.8)"><g transform="rotate(-24 64 104)"><rect x="40" y="30" width="48" height="68" rx="6" fill="#fff" stroke="#cfc8b4" stroke-width="1.5"/><text x="47" y="50" font-size="15" fill="#c0392b">♦</text><text x="64" y="80" font-size="32" text-anchor="middle" fill="#c0392b">♦</text></g><g transform="rotate(24 64 104)"><rect x="40" y="30" width="48" height="68" rx="6" fill="#fff" stroke="#cfc8b4" stroke-width="1.5"/><text x="47" y="50" font-size="15" fill="#c0392b">♥</text><text x="64" y="80" font-size="32" text-anchor="middle" fill="#c0392b">♥</text></g><g><rect x="40" y="30" width="48" height="68" rx="6" fill="#fff" stroke="#cfc8b4" stroke-width="1.5"/><text x="47" y="50" font-size="15" fill="#1d2a24">♠</text><text x="64" y="80" font-size="32" text-anchor="middle" fill="#1d2a24">♠</text></g></g></svg>`},
 ];
@@ -2211,7 +2218,7 @@ const HELP=[
 {id:'mail',t:'5. E-Mail-Programm für den Versand festlegen',h:`<p>Die App wählt kein E-Mail-Programm selbst, sie übergibt die neue E-Mail (<b>Export / Senden → Per E-Mail senden</b>) an das Standardprogramm des Geräts. Dort legst du es einmal fest:</p>
 <ul><li><b>Windows:</b> Die App öffnet den Entwurf als <b>.eml-Datei</b>. Einstellungen → Apps → Standard-Apps → „.eml“ suchen → Programm wählen (Outlook oder Thunderbird). Oder: eine .eml-Datei mit Rechtsklick → „Öffnen mit“ → „Andere App auswählen“ → Programm wählen und „Immer diese App“. Die einfache Windows-App „Mail“ öffnet den Entwurf eventuell nur als gelesene Nachricht, dann ist Outlook oder Thunderbird besser. <b>Falsch gewählt?</b> Dieselben Schritte mit dem richtigen Programm wiederholen.</li>
 <li><b>Android:</b> Beim Senden erscheint „E-Mail senden mit …“. Dort die E-Mail-App antippen und <b>„Immer“</b> wählen, dann wird sie künftig direkt benutzt. <b>Falsch gewählt?</b> Einstellungen → Apps → Standard-Apps (bzw. Apps → die gewählte E-Mail-App → „Standardmäßig öffnen“ → „Standardeinstellungen löschen“). Beim nächsten Senden fragt Android wieder.</li>
-<li><b>iPhone / iPad:</b> Einstellungen → Apps → Mail → „Standard-Mail-App“. Eine Web-App kann hier keine E-Mail mit Empfängern, Betreff <b>und</b> Anhang zugleich öffnen. Deshalb fragt die App nach dem Weg: <b>„Empfänger, Betreff und Ergebnis-Text“</b> öffnet eine neue E-Mail mit Empfängern, Betreff und Text (ohne Datei). <b>„Mit Datei im Anhang“</b> öffnet das Teilen-Menü: dort „Mail“ wählen, Empfänger und Betreff kannst du im Fenster vorher kopieren und einfügen.</li></ul>
+<li><b>iPhone / iPad:</b> Einstellungen → Apps → Mail → „Standard-Mail-App“. Eine Web-App kann hier keine E-Mail mit Empfängern, Betreff <b>und</b> Anhang zugleich öffnen. Deshalb fragt die App nach dem Weg: <b>„Empfänger, Betreff und Ergebnis-Text“</b> öffnet eine neue E-Mail mit Empfängern, Betreff und Text (ohne Datei). <b>„Mit Datei im Anhang“</b> öffnet das Teilen-Menü: dort „Mail“ wählen, Empfänger und Betreff kannst du im Fenster vorher kopieren und einfügen. <b>„Datei-Inhalt kopieren“</b> legt alle Daten als Text in die Zwischenablage, du fügst sie in die E-Mail oder eine Notiz ein; zurück geht es über <b>Import → „Inhalt einfügen“</b>.</li></ul>
 <p>Empfänger, Betreff („Ergebnis Skatabend &lt;Datum&gt;“), Ergebnis-Text und Datei kommen immer aus der App. Die Adressen trägst du unter <b>⚙</b> zu jedem Namen ein, eine falsche änderst du dort im Feld des Namens.</p>`},
 {id:'bedienung-teil',t:'6. Bedienung des Programms',h:subHTML(['bedienung','spieler','wechsel','termine','auswertung','geld','daten'])},
 {id:'regeln',t:'7. Skatregeln',h:`<p class="muted">Offizielle Regeln (ISkO) und Hausregeln der Runde. Bock, Hirsch, Geweih, Ramsch, Schiebe, Spitze und Malenko sind Hausregeln.</p>`+subHTML(['spielarten','spielwert','zaehlwerte','spitze','ouvert','schiebe','gewinn','kontra','wertung','bock','ramsch','malenko'])}
