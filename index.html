@@ -118,6 +118,8 @@ th.gone{opacity:.7}
 .hit{padding:8px 10px;border:1px solid var(--line);border-radius:8px;margin:6px 0;cursor:pointer;background:var(--card);font-size:14px}
 .hit:hover{border-color:var(--accent)}
 .help h3{margin:16px 0 4px;font-size:16px}
+.help h4.hsub{margin:14px 0 4px;font-size:15px;border-top:1px solid var(--line);padding-top:8px}
+.htoc{display:flex;flex-direction:column;gap:2px;margin:8px 0;padding:8px 12px;background:var(--chip);border-radius:10px}.htoc a{color:var(--ink);padding:3px 0;font-weight:600;text-decoration:none}
 .help ul{padding-left:20px;margin:6px 0}.help li{margin:4px 0}
 .help table{font-size:14px;margin:6px 0}
 .sheet h3{margin:14px 0 4px;font-size:15px}
@@ -1987,7 +1989,7 @@ async function waStep(n){
 }
 
 /* ---------- Logos, Info, Hilfe, Suche ---------- */
-const APP_NAME='Skat-LOGGER',APP_TAG='Spielverlauf aufschreiben + Statistik + mehr',APP_VERSION='1.24.3',APP_BUILD='2026-10-23';
+const APP_NAME='Skat-LOGGER',APP_TAG='Spielverlauf aufschreiben + Statistik + mehr',APP_VERSION='1.25.0',APP_BUILD='2026-10-23';
 const LOGOS=[
   {n:'Kartenfächer',svg:`<svg viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI Symbol,Arial,sans-serif"><rect width="128" height="128" rx="28" fill="#17382a"/><text x="64" y="31" text-anchor="middle" font-family="Georgia,serif" font-size="21" font-weight="700" fill="#f6f1e3" letter-spacing="3">SKAT</text><text x="64" y="118" text-anchor="middle" font-family="Georgia,serif" font-size="19" font-weight="700" fill="#e8b923" letter-spacing="4">LOG</text><g transform="translate(12.8 16) scale(0.8)"><g transform="rotate(-24 64 104)"><rect x="40" y="30" width="48" height="68" rx="6" fill="#fff" stroke="#cfc8b4" stroke-width="1.5"/><text x="47" y="50" font-size="15" fill="#c0392b">♦</text><text x="64" y="80" font-size="32" text-anchor="middle" fill="#c0392b">♦</text></g><g transform="rotate(24 64 104)"><rect x="40" y="30" width="48" height="68" rx="6" fill="#fff" stroke="#cfc8b4" stroke-width="1.5"/><text x="47" y="50" font-size="15" fill="#c0392b">♥</text><text x="64" y="80" font-size="32" text-anchor="middle" fill="#c0392b">♥</text></g><g><rect x="40" y="30" width="48" height="68" rx="6" fill="#fff" stroke="#cfc8b4" stroke-width="1.5"/><text x="47" y="50" font-size="15" fill="#1d2a24">♠</text><text x="64" y="80" font-size="32" text-anchor="middle" fill="#1d2a24">♠</text></g></g></svg>`},
 ];
@@ -2044,7 +2046,7 @@ function openInfo(){
   <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px"><button class="btn" onclick="openHelp()">Hilfe und Regeln</button>${webMode()?'<button class="btn sec" onclick="checkUpdate(true)">Nach Update suchen</button>':''}<button class="btn sec" onclick="closeModal()">Schließen</button></div>`);
 }
 
-const HELP=[
+const HELPSUB=[ // Unterabschnitte; HELP (unten) fasst sie zu 7 Hauptabschnitten zusammen
 {id:'bedienung',t:'Bedienung im Überblick',h:`<ul>
 <li><b>Oben links 🏠</b> führt auf jeder Seite zum Startbildschirm (nur das Symbol). In Fenstern geht <b>←</b> einen Schritt zurück, <b>⚙</b> öffnet die Ordnerwahl für Import/Export und die E-Mail-Adressen, <b>✕</b> schließt das Fenster (auf dem Startbildschirm die App).</li>
 <li><b>+ Spiel anlegen:</b> Zuerst den <b>Alleinspieler</b> wählen (er ist nicht vorgewählt, nur im Malenko steht er fest). Erst danach sind Reizen, Ansagen (Hand, Ouvert, Schiebe, Schneider/Schwarz angesagt), Kontra und das Ergebnis frei. <b>Zwischenspeichern</b> merkt das Spiel, das Ergebnis folgt später. <b>Ergebnis eintragen</b> legt das Spiel an und trägt das Ergebnis in einem Schritt ein. Die Knopfleiste bleibt unten rechts stehen.</li>
@@ -2146,13 +2148,45 @@ const HELP=[
 {id:'daten',t:'Daten sichern, senden, rückgängig',h:`<ul><li>Alle Daten liegen lokal im Browser. Sichere sie regelmäßig über <b>Export / Senden</b>: <b>An WhatsApp senden (Text + Datei)</b> oder <b>Per E-Mail senden</b> (neue E-Mail an alle Empfänger aus den Einstellungen, mit Ergebnis-Text und Datei im Anhang). Die Datei enthält alle Daten, auch die E-Mail-Adressen.</li>
 <li><b>🏠</b> oben links führt auf jeder Seite zum Startbildschirm.</li>
 <li><b>Import</b> lädt eine gespeicherte Datei und ersetzt die aktuellen Daten.</li>
-<li><b>↶ Rückgängig</b> gilt, solange die Seite offen ist.</li></ul>`},
-{id:'speicher',t:'Wo die Daten liegen',h:`<p>Importierte Daten und Einstellungen stehen <b>nicht in der EXE oder APK selbst</b>, sondern im Speicher des Browsers, den die App benutzt:</p>
+<li><b>↶ Rückgängig</b> gilt, solange die Seite offen ist.</li></ul>`}
+];
+// Hilfe in 7 Hauptabschnitten: 1 Betriebssysteme, 2 Installation und Updates, 3 Grundeinstellungen, 4 Wo die Daten liegen, 5 E-Mail-Programm, 6 Bedienung, 7 Skatregeln
+const subHTML=ids=>ids.map(id=>{const s=HELPSUB.find(x=>x.id===id);return s?`<h4 class="hsub" id="h-${s.id}">${s.t}</h4>${s.h}`:''}).join('');
+const HELP=[
+{id:'os',t:'1. Betriebssysteme und Versionen',h:`<p>Aktueller Stand der App: <b>Version ${APP_VERSION}</b> (${new Date(APP_BUILD).toLocaleDateString('de-DE',{day:'2-digit',month:'long',year:'numeric'})}). Es ist immer dieselbe App, sie läuft auf:</p>
+<table><thead><tr><th>System</th><th>Version</th><th>Form</th></tr></thead><tbody>
+<tr><td>Windows</td><td>Windows 10 und 11 (64 Bit), getestet unter Windows 11. Benötigt Microsoft Edge oder Google Chrome (Edge ist in Windows meist vorhanden) und das in Windows enthaltene .NET Framework 4.</td><td>Programm <b>SkatLog.exe</b></td></tr>
+<tr><td>Android</td><td>ab Android 7.0 (getestet auf Huawei P10 mit Android 9)</td><td>App <b>SkatLog.apk</b> oder Web-App</td></tr>
+<tr><td>iPhone / iPad</td><td>aktuelles iOS bzw. iPadOS mit Safari (auf einem echten iPhone noch nicht getestet)</td><td>Web-App („Zum Home-Bildschirm“)</td></tr>
+<tr><td>Browser</td><td>aktuelles Chrome, Edge, Safari oder Firefox auf PC, Handy und Tablet</td><td>Web-App</td></tr></tbody></table>
+<p>Unterschiede: Die <b>Ordnerwahl</b> für Import/Export und das Unterdrücken des Bildschirmschoners gibt es nur im Windows-Programm bzw. in Chrome/Edge am PC, der direkte <b>E-Mail-Versand</b> mit Anhang und eingetragenen Empfängern nur in der Android-App und im Windows-Programm. Die Ansicht passt sich der Bildschirmgröße an (Handy/Tablet kompakt, PC mit großer Spielseite).</p>`},
+{id:'install',t:'2. Installation und Updates',h:`<ul><li><b>Windows:</b> <b>SkatLog.exe</b> in einen beliebigen Ordner kopieren und doppelklicken, es gibt keinen Installer. Warnt Windows (SmartScreen), auf „Weitere Informationen“ und „Trotzdem ausführen“ klicken. <b>Update:</b> Programm beenden und die neue SkatLog.exe über die alte kopieren. Die Daten bleiben erhalten (siehe 4).</li>
+<li><b>Android (APK):</b> <b>SkatLog.apk</b> aufs Handy kopieren (USB, E-Mail, Download), antippen und „Installation aus dieser Quelle zulassen“ bestätigen. <b>Update:</b> die neue APK einfach über die alte installieren, die Daten bleiben. Meldet Android „App nicht installiert“, ist die alte App mit einem anderen Schlüssel signiert: dann zuerst in der alten App über <b>Export</b> sichern, die alte App deinstallieren, die neue installieren und mit <b>Import</b> zurückholen.</li>
+<li><b>Web-App (iPhone, iPad, Android, Browser):</b> die Adresse <b>https://snoopy-wup.github.io/skat-app/</b> öffnen. <b>Android (Chrome):</b> Menü ⋮ → „App installieren“ bzw. „Zum Startbildschirm hinzufügen“. <b>iPhone (Safari):</b> Teilen → „Zum Home-Bildschirm“. Die Web-App läuft danach wie eine App, auch ohne Netz.</li>
+<li><b>Updates der Web-App</b> kommen von selbst: Beim Öffnen prüft die App, ob eine neuere Version auf dem Server liegt, und zeigt „Neue Version … verfügbar – jetzt laden“. Deine Daten bleiben dabei erhalten. Mit <b>Info → Nach Update suchen</b> prüfst du von Hand. Zeigt die App nach einem Update noch die alte Version, die Seite zweimal neu laden oder die App ganz schließen und neu öffnen.</li>
+<li>Die Versionsnummer steht auf dem Startbildschirm unter dem Titel und unter ℹ Info.</li></ul>`},
+{id:'grund',t:'3. Grundeinstellungen einrichten',h:`<ol><li><b>Neuer Spieltag</b> (Startbildschirm): <b>3 oder 4 Spieler</b> wählen und die <b>Namen</b> eintragen (Auswahl Guido, Karsten, Martin, Peter oder „Anderer Name …“). Der erste Spieler gibt zuerst.</li>
+<li><b>Grundeinsatz</b> (Standard 25 €) und <b>Wert von 100 Punkten</b> (Standard 0,50 €) eintragen. Mit 0,50 € zahlt man <b>1 € je angefangene 200 Punkte</b> (1–200 Punkte = 1 €, 201–400 = 2 € …) plus Grundeinsatz. Der zuletzt eingegebene Wert bleibt für den nächsten Spieltag erhalten.</li>
+<li><b>Spiel starten.</b> Danach erreichst du die <b>⚙ Einstellungen</b> über den Knopf in der oberen Leiste. Dort stehen:
+<ul><li>Namen, Mitspieler kommen/gehen, Grundeinsatz und Punktwert,</li>
+<li>die Häkchen: „Gewonnenes Spiel: alle anderen Mitspieler bekommen den Spielwert“, „Ramsch: Verlust-Augen auf nächste 10 runden“, „Spieltag beginnt mit Bock-/Ramschrunde“, „Malenko aktiv“, „Spitze“ (Option).</li></ul></li>
+<li><b>⚙ in der Mitte der Leiste</b> (auf jeder Seite): der <b>Ablageordner für Import und Export</b> („Ordner wählen …“, am besten einen eigenen Unterordner wie „Skat“) und die <b>E-Mail-Adresse zu jedem Namen</b> für den Versand des Ergebnisses.</li>
+<li>Optional unter <b>📅 Termine</b> die Spieltermine mit Ort und Mitspielern anlegen.</li></ol>
+<p>Sichere danach über <b>Export / Senden</b> einmal alle Daten (siehe 4).</p>`},
+{id:'speicher',t:'4. Wo die Daten liegen',h:`<p>Importierte Daten und Einstellungen stehen <b>nicht in der EXE oder APK selbst</b>, sondern im Speicher des Browsers, den die App benutzt:</p>
 <ul><li><b>Windows (SkatLog.exe):</b> im Profil des Edge- oder Chrome-Fensters unter <b>%LOCALAPPDATA%\\SkatLog\\profile</b>. Die EXE öffnet nur ein Browserfenster mit diesem Profil. Dort liegen alle Spieltage, Saisons, E-Mail-Adressen und Einstellungen im lokalen Speicher. Der gewählte Ablageordner steckt im selben Profil. Neue Versionen der EXE behalten die Daten, solange du den Ordner <b>SkatLog</b> nicht löschst.</li>
 <li><b>Android (APK):</b> im privaten Speicher der App (WebView). Der Ablageordner steht in den App-Einstellungen. Die Daten bleiben bei einem Update der App erhalten und gehen beim <b>Deinstallieren verloren</b>, deshalb vorher exportieren.</li>
 <li><b>Web-Version (iPhone, Browser):</b> im Speicher des jeweiligen Browsers, getrennt von EXE und APK.</li></ul>
-<p>Jedes Gerät hat also einen <b>eigenen Datenbestand</b>. Zum Abgleich dienen <b>Export und Import</b>. Eine Exportdatei enthält alle Daten und auch die E-Mail-Adressen, aber <b>nicht</b> den Ablageordner und nicht das E-Mail-Programm (beides ist geräteindividuell).</p>`}
+<p>Jedes Gerät hat also einen <b>eigenen Datenbestand</b>. Zum Abgleich dienen <b>Export und Import</b>. Eine Exportdatei enthält alle Daten und auch die E-Mail-Adressen, aber <b>nicht</b> den Ablageordner und nicht das E-Mail-Programm (beides ist geräteindividuell).</p>`},
+{id:'mail',t:'5. E-Mail-Programm für den Versand festlegen',h:`<p>Die App wählt kein E-Mail-Programm selbst, sie übergibt die neue E-Mail (<b>Export / Senden → Per E-Mail senden</b>) an das Standardprogramm des Geräts. Dort legst du es einmal fest:</p>
+<ul><li><b>Windows:</b> Die App öffnet den Entwurf als <b>.eml-Datei</b>. Einstellungen → Apps → Standard-Apps → „.eml“ suchen → Programm wählen (Outlook oder Thunderbird). Oder: eine .eml-Datei mit Rechtsklick → „Öffnen mit“ → „Andere App auswählen“ → Programm wählen und „Immer diese App“. Die einfache Windows-App „Mail“ öffnet den Entwurf eventuell nur als gelesene Nachricht, dann ist Outlook oder Thunderbird besser. <b>Falsch gewählt?</b> Dieselben Schritte mit dem richtigen Programm wiederholen.</li>
+<li><b>Android:</b> Beim Senden erscheint „E-Mail senden mit …“. Dort die E-Mail-App antippen und <b>„Immer“</b> wählen, dann wird sie künftig direkt benutzt. <b>Falsch gewählt?</b> Einstellungen → Apps → Standard-Apps (bzw. Apps → die gewählte E-Mail-App → „Standardmäßig öffnen“ → „Standardeinstellungen löschen“). Beim nächsten Senden fragt Android wieder.</li>
+<li><b>iPhone / iPad:</b> Einstellungen → Apps → Mail → „Standard-Mail-App“. Die App zeigt das Teilen-Menü mit allen Apps; die <b>Empfänger</b> werden dabei in die Zwischenablage kopiert und müssen in der E-Mail eingefügt werden.</li></ul>
+<p>Empfänger, Betreff („Ergebnis Skatabend &lt;Datum&gt;“), Ergebnis-Text und Datei kommen immer aus der App. Die Adressen trägst du unter <b>⚙</b> zu jedem Namen ein, eine falsche änderst du dort im Feld des Namens.</p>`},
+{id:'bedienung-teil',t:'6. Bedienung des Programms',h:subHTML(['bedienung','spieler','wechsel','termine','auswertung','geld','daten'])},
+{id:'regeln',t:'7. Skatregeln',h:`<p class="muted">Offizielle Regeln (ISkO) und Hausregeln der Runde. Bock, Hirsch, Geweih, Ramsch, Schiebe, Spitze und Malenko sind Hausregeln.</p>`+subHTML(['spielarten','spielwert','zaehlwerte','spitze','ouvert','schiebe','gewinn','kontra','wertung','bock','ramsch','malenko'])}
 ];
+
 const plainText=h=>h.replace(/<[^>]+>/g,' ').replace(/&[a-z]+;/g,' ').replace(/\s+/g,' ');
 const matchTerms=(text,terms)=>{const t=text.toLowerCase();return terms.every(x=>t.includes(x))};
 let HELPQ='';
@@ -2162,6 +2196,7 @@ function openHelp(id,q){
   const list=HELP.filter(s=>!terms.length||matchTerms(s.t+' '+plainText(s.h),terms));
   showSheet(`<h1>Hilfe und Regeln</h1><p class="muted">So rechnet die App und diese Regeln werden angewendet.</p>
   <input type="text" id="helpIn" placeholder="In der Hilfe suchen …" value="${esc(HELPQ)}" oninput="openHelp(undefined,this.value)">
+  ${terms.length?'':`<div class="htoc">${HELP.map(x=>`<a href="#" onclick="document.getElementById('h-${x.id}').scrollIntoView();return false">${x.t}</a>`).join('')}</div>`}
   <div class="help">${list.length?list.map(s=>`<div class="hsec" id="h-${s.id}"><h3>${s.t}</h3>${s.h}</div>`).join(''):'<p class="muted">Nichts gefunden.</p>'}</div>
   <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px"><button class="btn sec" onclick="openSearch(HELPQ)">🔍 In allen Daten suchen</button><button class="btn sec" onclick="closeModal()">Schließen</button></div>`);
   const el=document.getElementById('helpIn');
