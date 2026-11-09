@@ -1521,11 +1521,12 @@ const mailtoUrl=(to,subject,body)=>'mailto:'+to.map(x=>x.replace(/[%?&#\s]/g,enc
 // Handy-Web: Eine Web-App kann keine E-Mail mit Anhang öffnen. Deshalb: Datei wird im Download-Ordner erzeugt, die E-Mail (Empfänger, Betreff, Text) ohne Anhang geöffnet; den Anhang hängt man selbst an.
 function mailDialogMobile(o){
   _ml=o;
+  const ort=(typeof dirHandle!=='undefined'&&dirHandle)?'im Ordner „'+esc(dirHandle.name)+'“ (dein Ablageordner)':'im <b>Download-Ordner</b> deines Geräts';
   showSheet(`<h1>E-Mail senden</h1>
   <div class="banner orange" style="margin:8px 0"><b>Bitte beachten:</b> Die E-Mail wird <b>ohne Anhang</b> erstellt. Den Anhang hängst du <b>selbst an</b>.</div>
-  <ol><li>Die Datei <b>${esc(o.fname)}</b> wird im <b>Download-Ordner</b> deines Geräts gespeichert.</li>
-  <li>Danach öffnet sich eine neue E-Mail mit <b>Empfängern</b>, <b>Betreff</b> („${esc(o.subject)}“) und <b>Text</b> (wer wie viel verloren hat).</li>
-  <li>In der E-Mail die <b>Büroklammer</b> bzw. „Anhang hinzufügen“ wählen → <b>Dateien / Downloads</b> → <b>${esc(o.fname)}</b> auswählen und senden.</li></ol>
+  <ol><li>Die Datei <b>${esc(o.fname)}</b> wird ${ort} gespeichert.</li>
+  <li>Danach öffnet sich dein Mailprogramm mit einer neuen E-Mail mit <b>Empfängern</b>, <b>Betreff</b> („${esc(o.subject)}“) und <b>Text</b> (wer wie viel verloren hat).</li>
+  <li>In der E-Mail die <b>Büroklammer</b> bzw. „Anhang hinzufügen“ wählen → <b>Download-Ordner</b> → <b>${esc(o.fname)}</b> auswählen und senden.</li></ol>
   <p class="muted">Empfänger: ${o.to.length?esc(o.to.join(', ')):'keine hinterlegt (⚙ Einstellungen)'}</p>
   <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px"><button class="btn" onclick="mailMobileGo()">✉ E-Mail erstellen und Datei speichern</button><button class="btn sec" onclick="closeModal()">Abbrechen</button></div>`);
 }
@@ -1547,12 +1548,12 @@ async function mailResult(){
   const to=mailList(),subject='Ergebnis Skatabend '+fmtDate(day.date),body=summaryText(day),fname=exportName(),json=JSON.stringify(S,null,1);
   if(!to.length)toast('Keine E-Mail-Adressen hinterlegt (⚙ Einstellungen) – die E-Mail hat dann keine Empfänger.',5000);
   if(androidApp()&&typeof androidApp().sendMail!=='undefined'){androidApp().sendMail(to.join(','),subject,body,fname,json);return}
-  if(isMobileWeb()){mailDialogMobile({to,subject,body,fname,json});return} // iPhone/iPad/Android-Browser: E-Mail ohne Anhang + Datei im Download-Ordner
-  const emlName='Ergebnis-Skatabend-'+new Date(day.date).toISOString().slice(0,10)+'.eml',eml=buildEml(to,subject,body,fname,json);
-  try{const r=await fetch('/openeml?name='+encodeURIComponent(emlName),{method:'POST',body:eml});if(r.ok){toast('Das E-Mail-Programm öffnet eine neue E-Mail …');return}}catch(e){} // Windows-Programm: öffnet den Entwurf im Standard-Mailprogramm
-  // PC im Browser: E-Mail-Entwurf (.eml mit Empfängern, Betreff, Text UND Anhang) speichern; Doppelklick öffnet die fertige neue E-Mail im Mailprogramm
-  await saveText(emlName,eml,'message/rfc822');
-  toast('E-Mail-Entwurf gespeichert: „'+emlName+'“ öffnen (Doppelklick), dann ist die E-Mail mit Empfängern, Betreff, Text und Anhang fertig.',8000);
+  if(/^(127\.0\.0\.1|localhost)$/.test(location.hostname)){ // Windows-Programm: der Host öffnet den Entwurf (.eml mit Anhang) direkt im Standard-Mailprogramm
+    const emlName='Ergebnis-Skatabend-'+new Date(day.date).toISOString().slice(0,10)+'.eml',eml=buildEml(to,subject,body,fname,json);
+    try{const r=await fetch('/openeml?name='+encodeURIComponent(emlName),{method:'POST',body:eml});if(r.ok){toast('Das E-Mail-Programm öffnet eine neue E-Mail …');return}}catch(e){}
+  }
+  // Web-Version (PC und Handy): Die E-Mail öffnet sich von selbst (mailto:), aber ohne Anhang; die Datei wird gespeichert und selbst angehängt
+  mailDialogMobile({to,subject,body,fname,json});
 }
 function sendTextWhatsApp(text){if(androidApp()){androidApp().shareText(text);return}window.open('https://wa.me/?text='+encodeURIComponent(text),'_blank')}
 function openExport(){
@@ -2014,7 +2015,7 @@ async function waStep(n){
 }
 
 /* ---------- Logos, Info, Hilfe, Suche ---------- */
-const APP_NAME='Skat-LOGGER',APP_TAG='Spielverlauf aufschreiben + Statistik + mehr',APP_VERSION='1.25.3',APP_BUILD='2026-10-23';
+const APP_NAME='Skat-LOGGER',APP_TAG='Spielverlauf aufschreiben + Statistik + mehr',APP_VERSION='1.25.4',APP_BUILD='2026-10-23';
 const LOGOS=[
   {n:'Kartenfächer',svg:`<svg viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI Symbol,Arial,sans-serif"><rect width="128" height="128" rx="28" fill="#17382a"/><text x="64" y="31" text-anchor="middle" font-family="Georgia,serif" font-size="21" font-weight="700" fill="#f6f1e3" letter-spacing="3">SKAT</text><text x="64" y="118" text-anchor="middle" font-family="Georgia,serif" font-size="19" font-weight="700" fill="#e8b923" letter-spacing="4">LOG</text><g transform="translate(12.8 16) scale(0.8)"><g transform="rotate(-24 64 104)"><rect x="40" y="30" width="48" height="68" rx="6" fill="#fff" stroke="#cfc8b4" stroke-width="1.5"/><text x="47" y="50" font-size="15" fill="#c0392b">♦</text><text x="64" y="80" font-size="32" text-anchor="middle" fill="#c0392b">♦</text></g><g transform="rotate(24 64 104)"><rect x="40" y="30" width="48" height="68" rx="6" fill="#fff" stroke="#cfc8b4" stroke-width="1.5"/><text x="47" y="50" font-size="15" fill="#c0392b">♥</text><text x="64" y="80" font-size="32" text-anchor="middle" fill="#c0392b">♥</text></g><g><rect x="40" y="30" width="48" height="68" rx="6" fill="#fff" stroke="#cfc8b4" stroke-width="1.5"/><text x="47" y="50" font-size="15" fill="#1d2a24">♠</text><text x="64" y="80" font-size="32" text-anchor="middle" fill="#1d2a24">♠</text></g></g></svg>`},
 ];
@@ -2204,9 +2205,9 @@ const HELP=[
 <li><b>Web-Version (iPhone, Browser):</b> im Speicher des jeweiligen Browsers, getrennt von EXE und APK.</li></ul>
 <p>Jedes Gerät hat also einen <b>eigenen Datenbestand</b>. Zum Abgleich dienen <b>Export und Import</b>. Eine Exportdatei enthält alle Daten und auch die E-Mail-Adressen, aber <b>nicht</b> den Ablageordner und nicht das E-Mail-Programm (beides ist geräteindividuell).</p>`},
 {id:'mail',t:'5. E-Mail-Programm für den Versand festlegen',h:`<p>Die App wählt kein E-Mail-Programm selbst, sie übergibt die neue E-Mail (<b>Export / Senden → Per E-Mail senden</b>) an das Standardprogramm des Geräts. Dort legst du es einmal fest:</p>
-<ul><li><b>Windows (Programm und Web-Version):</b> Die App öffnet bzw. speichert den Entwurf als <b>.eml-Datei</b> (mit Empfängern, Betreff, Text und Anhang). In der Web-Version im Browser öffnest du die gespeicherte Datei per Doppelklick. Einstellungen → Apps → Standard-Apps → „.eml“ suchen → Programm wählen (Outlook oder Thunderbird). Oder: eine .eml-Datei mit Rechtsklick → „Öffnen mit“ → „Andere App auswählen“ → Programm wählen und „Immer diese App“. Die einfache Windows-App „Mail“ öffnet den Entwurf eventuell nur als gelesene Nachricht, dann ist Outlook oder Thunderbird besser. <b>Falsch gewählt?</b> Dieselben Schritte mit dem richtigen Programm wiederholen.</li>
+<ul><li><b>Windows:</b> Das <b>Programm SkatLog.exe</b> öffnet den Entwurf als <b>.eml-Datei</b> (mit Empfängern, Betreff, Text und Anhang). Einstellungen → Apps → Standard-Apps → „.eml“ suchen → Programm wählen (Outlook oder Thunderbird). Oder: eine .eml-Datei mit Rechtsklick → „Öffnen mit“ → „Andere App auswählen“ → Programm wählen und „Immer diese App“. Die einfache Windows-App „Mail“ öffnet den Entwurf eventuell nur als gelesene Nachricht, dann ist Outlook oder Thunderbird besser. <b>Falsch gewählt?</b> Dieselben Schritte mit dem richtigen Programm wiederholen.</li>
 <li><b>Android:</b> Beim Senden erscheint „E-Mail senden mit …“. Dort die E-Mail-App antippen und <b>„Immer“</b> wählen, dann wird sie künftig direkt benutzt. <b>Falsch gewählt?</b> Einstellungen → Apps → Standard-Apps (bzw. Apps → die gewählte E-Mail-App → „Standardmäßig öffnen“ → „Standardeinstellungen löschen“). Beim nächsten Senden fragt Android wieder.</li>
-<li><b>iPhone, iPad und Android im Browser (Web-App):</b> Die Web-App kann keine E-Mail mit Anhang öffnen. Bei „Per E-Mail senden“ erklärt ein Fenster den Ablauf: Die <b>Datei wird im Download-Ordner gespeichert</b> und die <b>E-Mail ohne Anhang</b> mit Empfängern, Betreff und Text geöffnet. <b>Den Anhang hängst du selbst an</b> (Büroklammer → Dateien/Downloads). Das Standard-Mailprogramm legst du am iPhone unter Einstellungen → Apps → Mail → „Standard-Mail-App“ fest. Die Android-<b>App</b> (APK) hängt die Datei dagegen selbst an. „Datei-Inhalt kopieren“ im Export legt alle Daten als Text in die Zwischenablage.</li></li></ul>
+<li><b>Web-Version (PC, iPhone, iPad, Android im Browser):</b> Eine Web-App kann keine E-Mail mit Anhang öffnen. Bei „Per E-Mail senden“ erklärt ein Fenster den Ablauf: Die <b>Datei wird im Download-Ordner</b> (bzw. im gewählten Ablageordner) <b>gespeichert</b> und dein <b>Mailprogramm öffnet sich von selbst</b> mit einer <b>E-Mail ohne Anhang</b> (Empfänger, Betreff, Text). Am PC fragt der Browser beim ersten Mal, ob das Mailprogramm geöffnet werden darf; ein Standard-Mailprogramm muss eingerichtet sein. <b>Den Anhang hängst du selbst an</b> (Büroklammer → Dateien/Downloads). Das Standard-Mailprogramm legst du am iPhone unter Einstellungen → Apps → Mail → „Standard-Mail-App“ fest. Die Android-<b>App</b> (APK) hängt die Datei dagegen selbst an. „Datei-Inhalt kopieren“ im Export legt alle Daten als Text in die Zwischenablage.</li></li></ul>
 <p>Empfänger, Betreff („Ergebnis Skatabend &lt;Datum&gt;“), Ergebnis-Text und Datei kommen immer aus der App. Die Adressen trägst du unter <b>⚙</b> zu jedem Namen ein, eine falsche änderst du dort im Feld des Namens.</p>`},
 {id:'bedienung-teil',t:'6. Bedienung des Programms',h:subHTML(['bedienung','spieler','wechsel','termine','auswertung','geld','daten'])},
 {id:'regeln',t:'7. Skatregeln',h:`<p class="muted">Offizielle Regeln (ISkO) und Hausregeln der Runde. Bock, Hirsch, Geweih, Ramsch, Schiebe, Spitze und Malenko sind Hausregeln.</p>`+subHTML(['spielarten','spielwert','zaehlwerte','spitze','ouvert','schiebe','gewinn','kontra','wertung','bock','ramsch','malenko'])}
