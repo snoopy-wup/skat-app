@@ -1516,6 +1516,9 @@ const isIOS=()=>/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platfor
 // Web-Version auf dem Handy (iPhone/iPad/Android-Browser, nicht die APK): E-Mail ohne Anhang + Datei im Download-Ordner
 const isMobileWeb=()=>(isIOS()||/Android/i.test(navigator.userAgent))&&!androidApp();
 let _ml=null;
+// Empfängerfeld im E-Mail-Fenster: vorbelegt mit den Adressen aus den Einstellungen, vor dem Senden änderbar oder (falls keine hinterlegt sind) einzutragen
+const mailToField=o=>`<label>Empfänger (mit Komma trennen)</label><input type="text" id="mlTo" value="${esc(o.to.join(', '))}" placeholder="name@beispiel.de, name2@beispiel.de" autocomplete="off">${o.to.length?'':'<p class="muted">In den Einstellungen (⚙) sind für dieses Gerät noch keine E-Mail-Adressen hinterlegt. Trage sie hier ein oder dort bei jedem Namen.</p>'}`;
+function mailRecipients(o){const el=document.getElementById('mlTo');if(!el)return o.to;o.to=[...new Set(el.value.split(/[,;\s]+/).map(x=>x.trim()).filter(x=>/.@./.test(x)))];return o.to}
 const openMailto=u=>{location.href=u}; // eigene Funktion, damit sie sich testen lässt
 const mailtoUrl=(to,subject,body)=>'mailto:'+to.map(x=>x.replace(/[%?&#\s]/g,encodeURIComponent)).join(',')+'?subject='+encodeURIComponent(subject)+'&body='+encodeURIComponent(body).replace(/%0A/g,'%0D%0A');
 // Handy-Web: Eine Web-App kann keine E-Mail mit Anhang öffnen. Deshalb: Datei wird im Download-Ordner erzeugt, die E-Mail (Empfänger, Betreff, Text) ohne Anhang geöffnet; den Anhang hängt man selbst an.
@@ -1533,10 +1536,10 @@ function mailDialogIOS(o){
   <button class="btn" onclick="mailShare()">📎 E-Mail mit Datei (Teilen-Menü → Mail)</button>`:'<p class="muted">Das Teilen von Dateien ist auf diesem Gerät nicht verfügbar.</p>'}
   <p style="margin-top:16px"><b>${sh?'Weg 2':'Weg'} – nur Text, ohne Datei:</b> Es öffnet sich Mail mit <b>Empfängern, Betreff und Ergebnis-Text</b> (wer wie viel verloren hat). Die Datei hängt nicht an.</p>
   <button class="btn${sh?' sec':''}" onclick="mailTextOnly()">✉ E-Mail ohne Datei erstellen</button>
-  <p class="muted" style="margin-top:12px">Empfänger: ${o.to.length?esc(o.to.join(', ')):'keine hinterlegt (⚙ Einstellungen)'}</p>
+  <div style="margin-top:12px">${mailToField(o)}</div>
   <div style="margin-top:10px"><button class="btn sec" onclick="closeModal()">Abbrechen</button></div>`);
 }
-function mailTextOnly(){const o=_ml;if(!o)return;closeModal();setTimeout(()=>openMailto(mailtoUrl(o.to,o.subject,o.body)),300)}
+function mailTextOnly(){const o=_ml;if(!o)return;mailRecipients(o);closeModal();setTimeout(()=>openMailto(mailtoUrl(o.to,o.subject,o.body)),300)}
 // Windows im Browser: Das Teilen-Fenster („Freigeben“) und mailto bieten nur das NEUE Outlook an. Der .eml-Entwurf öffnet dagegen das Programm, das für .eml-Dateien eingestellt ist (z. B. klassisches Outlook) und enthält Empfänger, Betreff, Text und Anhang.
 const isWindowsPC=()=>!isMobileWeb()&&/Windows/i.test(navigator.userAgent);
 function mailDialogWindows(o){
@@ -1546,7 +1549,8 @@ function mailDialogWindows(o){
   <ol><li>Auf <b>„Entwurf speichern“</b> klicken.</li>
   <li>Im Download-Hinweis des Browsers auf <b>„Datei öffnen“</b> klicken. In Edge: beim Download ⋯ → <b>„Dateien dieses Typs immer öffnen“</b>, dann öffnet sich die E-Mail künftig von selbst.</li>
   <li>Die E-Mail ist fertig: nur noch senden.</li></ol>
-  <p class="muted">Empfänger: ${o.to.length?esc(o.to.join(', ')):'keine hinterlegt (⚙ Einstellungen)'} · Das Windows-Programm <b>SkatLog.exe</b> öffnet die E-Mail ohne diese Schritte direkt.</p>
+  ${mailToField(o)}
+  <p class="muted">Das Windows-Programm <b>SkatLog.exe</b> öffnet die E-Mail ohne diese Schritte direkt.</p>
   <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px"><button class="btn" onclick="mailEml()">📨 Entwurf speichern (.eml)</button><button class="btn sec" onclick="closeModal()">Abbrechen</button></div>`);
 }
 function mailDialogMobile(o){
@@ -1564,16 +1568,16 @@ function mailDialogMobile(o){
   <ol><li>Die Datei <b>${esc(o.fname)}</b> wird ${ort} gespeichert.</li>
   <li>Danach öffnet sich dein Mailprogramm mit einer neuen E-Mail mit <b>Empfängern</b>, <b>Betreff</b> („${esc(o.subject)}“) und <b>Text</b> (wer wie viel verloren hat).</li>
   <li>In der E-Mail die <b>Büroklammer</b> bzw. „Anhang hinzufügen“ wählen → <b>Download-Ordner</b> → <b>${esc(o.fname)}</b> auswählen und senden.</li></ol>
-  <p class="muted">Empfänger: ${o.to.length?esc(o.to.join(', ')):'keine hinterlegt (⚙ Einstellungen)'}</p>
+  ${mailToField(o)}
   <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px"><button class="btn${sh?' sec':''}" onclick="mailMobileGo()">✉ E-Mail erstellen und Datei speichern</button><button class="btn sec" onclick="closeModal()">Abbrechen</button></div>`);
 }
 async function mailEml(){
-  const o=_ml;if(!o)return;
+  const o=_ml;if(!o)return;mailRecipients(o);
   await saveText(o.emlName,buildEml(o.to,o.subject,o.body,o.fname,o.json),'message/rfc822');
   toast('Entwurf gespeichert: „'+o.emlName+'“. Im Download-Hinweis des Browsers auf „Datei öffnen“ klicken, dann öffnet sich die fertige E-Mail (Empfänger, Betreff, Text, Anhang).',9000);
 }
 async function mailShare(){
-  const o=_ml;if(!o)return;
+  const o=_ml;if(!o)return;mailRecipients(o);
   try{
     const file=shareFile(o);
     try{navigator.clipboard.writeText(o.to.join(', ')).then(()=>toast('Empfänger in die Zwischenablage kopiert – in der E-Mail einfügen.',6000)).catch(()=>{})}catch(e){}
@@ -1584,7 +1588,7 @@ async function mailShare(){
   }
 }
 async function mailMobileGo(){
-  const o=_ml;if(!o)return;
+  const o=_ml;if(!o)return;mailRecipients(o);
   await saveText(o.fname,o.json,'application/json'); // Datei im Download-Ordner
   closeModal();
   setTimeout(()=>openMailto(mailtoUrl(o.to,o.subject,o.body+String.fromCharCode(10,10)+'Anhang: '+o.fname)),900);
@@ -2070,7 +2074,7 @@ async function waStep(n){
 }
 
 /* ---------- Logos, Info, Hilfe, Suche ---------- */
-const APP_NAME='Skat-LOGGER',APP_TAG='Spielverlauf aufschreiben + Statistik + mehr',APP_VERSION='1.26.0',APP_BUILD='2026-10-23';
+const APP_NAME='Skat-LOGGER',APP_TAG='Spielverlauf aufschreiben + Statistik + mehr',APP_VERSION='1.26.1',APP_BUILD='2026-10-23';
 const LOGOS=[
   {n:'Kartenfächer',svg:`<svg viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI Symbol,Arial,sans-serif"><rect width="128" height="128" rx="28" fill="#17382a"/><text x="64" y="31" text-anchor="middle" font-family="Georgia,serif" font-size="21" font-weight="700" fill="#f6f1e3" letter-spacing="3">SKAT</text><text x="64" y="118" text-anchor="middle" font-family="Georgia,serif" font-size="19" font-weight="700" fill="#e8b923" letter-spacing="4">LOG</text><g transform="translate(12.8 16) scale(0.8)"><g transform="rotate(-24 64 104)"><rect x="40" y="30" width="48" height="68" rx="6" fill="#fff" stroke="#cfc8b4" stroke-width="1.5"/><text x="47" y="50" font-size="15" fill="#c0392b">♦</text><text x="64" y="80" font-size="32" text-anchor="middle" fill="#c0392b">♦</text></g><g transform="rotate(24 64 104)"><rect x="40" y="30" width="48" height="68" rx="6" fill="#fff" stroke="#cfc8b4" stroke-width="1.5"/><text x="47" y="50" font-size="15" fill="#c0392b">♥</text><text x="64" y="80" font-size="32" text-anchor="middle" fill="#c0392b">♥</text></g><g><rect x="40" y="30" width="48" height="68" rx="6" fill="#fff" stroke="#cfc8b4" stroke-width="1.5"/><text x="47" y="50" font-size="15" fill="#1d2a24">♠</text><text x="64" y="80" font-size="32" text-anchor="middle" fill="#1d2a24">♠</text></g></g></svg>`},
 ];
