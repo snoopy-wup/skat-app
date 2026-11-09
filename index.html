@@ -1526,17 +1526,24 @@ const canShareFile=o=>{try{return !isMobileWeb()&&!!(navigator.canShare&&navigat
 function mailDialogMobile(o){
   _ml=o;
   const ort=(typeof dirHandle!=='undefined'&&dirHandle)?'im Ordner „'+esc(dirHandle.name)+'“ (dein Ablageordner)':'im <b>Download-Ordner</b> deines Geräts';
-  const sh=canShareFile(o);
+  const sh=canShareFile(o),pc=!isMobileWeb();
   showSheet(`<h1>E-Mail senden</h1>
   ${sh?`<p><b>Weg 1 – mit Anhang:</b> Der Teilen-Dialog von Windows öffnet sich, dort <b>„Mail“</b> wählen. Die Datei <b>${esc(shareFile(o).name)}</b> (Inhalt wie die .json-Datei, nur mit der Endung .txt, der Import nimmt sie an) hängt dann <b>schon an</b>. Die <b>Empfänger</b> werden in die Zwischenablage kopiert (in der E-Mail einfügen), den Betreff „${esc(o.subject)}“ übernimmt das Mailprogramm meist selbst.</p>
-  <button class="btn" onclick="mailShare()">📎 E-Mail mit Anhang (Teilen-Dialog → Mail)</button>
-  <p style="margin-top:16px"><b>Weg 2 – ohne Anhang:</b></p>`:''}
+  <button class="btn" onclick="mailShare()">📎 E-Mail mit Anhang (Teilen-Dialog → Mail)</button>`:''}
+  ${pc?`<p style="margin-top:16px"><b>${sh?'Weg 2':'Weg 1'} – fertiger Entwurf mit Anhang (.eml):</b> Speichert einen Entwurf mit <b>Empfängern, Betreff, Text und Anhang</b>. Ein Klick auf <b>„Datei öffnen“</b> im Download-Hinweis des Browsers öffnet ihn in dem Programm, das bei Windows für <b>.eml-Dateien</b> eingestellt ist (Edge: ⋯ beim Download → „Dateien dieses Typs immer öffnen“, dann geht es künftig von selbst).</p>
+  <button class="btn" onclick="mailEml()">📨 Entwurf mit Anhang speichern (.eml)</button>`:''}
+  ${pc?`<p style="margin-top:16px"><b>${sh?'Weg 3':'Weg 2'} – ohne Anhang:</b></p>`:''}
   <div class="banner orange" style="margin:8px 0"><b>Bitte beachten:</b> Die E-Mail wird <b>ohne Anhang</b> erstellt. Den Anhang hängst du <b>selbst an</b>.</div>
   <ol><li>Die Datei <b>${esc(o.fname)}</b> wird ${ort} gespeichert.</li>
   <li>Danach öffnet sich dein Mailprogramm mit einer neuen E-Mail mit <b>Empfängern</b>, <b>Betreff</b> („${esc(o.subject)}“) und <b>Text</b> (wer wie viel verloren hat).</li>
   <li>In der E-Mail die <b>Büroklammer</b> bzw. „Anhang hinzufügen“ wählen → <b>Download-Ordner</b> → <b>${esc(o.fname)}</b> auswählen und senden.</li></ol>
   <p class="muted">Empfänger: ${o.to.length?esc(o.to.join(', ')):'keine hinterlegt (⚙ Einstellungen)'}</p>
   <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px"><button class="btn${sh?' sec':''}" onclick="mailMobileGo()">✉ E-Mail erstellen und Datei speichern</button><button class="btn sec" onclick="closeModal()">Abbrechen</button></div>`);
+}
+async function mailEml(){
+  const o=_ml;if(!o)return;
+  await saveText(o.emlName,buildEml(o.to,o.subject,o.body,o.fname,o.json),'message/rfc822');
+  toast('Entwurf gespeichert: „'+o.emlName+'“. Im Download-Hinweis des Browsers auf „Datei öffnen“ klicken, dann öffnet sich die fertige E-Mail (Empfänger, Betreff, Text, Anhang).',9000);
 }
 async function mailShare(){
   const o=_ml;if(!o)return;
@@ -1567,12 +1574,13 @@ async function mailResult(){
   const to=mailList(),subject='Ergebnis Skatabend '+fmtDate(day.date),body=summaryText(day),fname=exportName(),json=JSON.stringify(S,null,1);
   if(!to.length)toast('Keine E-Mail-Adressen hinterlegt (⚙ Einstellungen) – die E-Mail hat dann keine Empfänger.',5000);
   if(androidApp()&&typeof androidApp().sendMail!=='undefined'){androidApp().sendMail(to.join(','),subject,body,fname,json);return}
+  const emlName='Ergebnis-Skatabend-'+new Date(day.date).toISOString().slice(0,10)+'.eml';
   if(/^(127\.0\.0\.1|localhost)$/.test(location.hostname)){ // Windows-Programm: der Host öffnet den Entwurf (.eml mit Anhang) direkt im Standard-Mailprogramm
-    const emlName='Ergebnis-Skatabend-'+new Date(day.date).toISOString().slice(0,10)+'.eml',eml=buildEml(to,subject,body,fname,json);
+    const eml=buildEml(to,subject,body,fname,json);
     try{const r=await fetch('/openeml?name='+encodeURIComponent(emlName),{method:'POST',body:eml});if(r.ok){toast('Das E-Mail-Programm öffnet eine neue E-Mail …');return}}catch(e){}
   }
   // Web-Version (PC und Handy): Die E-Mail öffnet sich von selbst (mailto:), aber ohne Anhang; die Datei wird gespeichert und selbst angehängt
-  mailDialogMobile({to,subject,body,fname,json});
+  mailDialogMobile({to,subject,body,fname,json,emlName});
 }
 function sendTextWhatsApp(text){if(androidApp()){androidApp().shareText(text);return}window.open('https://wa.me/?text='+encodeURIComponent(text),'_blank')}
 function openExport(){
@@ -2034,7 +2042,7 @@ async function waStep(n){
 }
 
 /* ---------- Logos, Info, Hilfe, Suche ---------- */
-const APP_NAME='Skat-LOGGER',APP_TAG='Spielverlauf aufschreiben + Statistik + mehr',APP_VERSION='1.25.6',APP_BUILD='2026-10-23';
+const APP_NAME='Skat-LOGGER',APP_TAG='Spielverlauf aufschreiben + Statistik + mehr',APP_VERSION='1.25.7',APP_BUILD='2026-10-23';
 const LOGOS=[
   {n:'Kartenfächer',svg:`<svg viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI Symbol,Arial,sans-serif"><rect width="128" height="128" rx="28" fill="#17382a"/><text x="64" y="31" text-anchor="middle" font-family="Georgia,serif" font-size="21" font-weight="700" fill="#f6f1e3" letter-spacing="3">SKAT</text><text x="64" y="118" text-anchor="middle" font-family="Georgia,serif" font-size="19" font-weight="700" fill="#e8b923" letter-spacing="4">LOG</text><g transform="translate(12.8 16) scale(0.8)"><g transform="rotate(-24 64 104)"><rect x="40" y="30" width="48" height="68" rx="6" fill="#fff" stroke="#cfc8b4" stroke-width="1.5"/><text x="47" y="50" font-size="15" fill="#c0392b">♦</text><text x="64" y="80" font-size="32" text-anchor="middle" fill="#c0392b">♦</text></g><g transform="rotate(24 64 104)"><rect x="40" y="30" width="48" height="68" rx="6" fill="#fff" stroke="#cfc8b4" stroke-width="1.5"/><text x="47" y="50" font-size="15" fill="#c0392b">♥</text><text x="64" y="80" font-size="32" text-anchor="middle" fill="#c0392b">♥</text></g><g><rect x="40" y="30" width="48" height="68" rx="6" fill="#fff" stroke="#cfc8b4" stroke-width="1.5"/><text x="47" y="50" font-size="15" fill="#1d2a24">♠</text><text x="64" y="80" font-size="32" text-anchor="middle" fill="#1d2a24">♠</text></g></g></svg>`},
 ];
@@ -2227,6 +2235,7 @@ const HELP=[
 <ul><li><b>Windows:</b> Das <b>Programm SkatLog.exe</b> öffnet den Entwurf als <b>.eml-Datei</b> (mit Empfängern, Betreff, Text und Anhang). Einstellungen → Apps → Standard-Apps → „.eml“ suchen → Programm wählen (Outlook oder Thunderbird). Oder: eine .eml-Datei mit Rechtsklick → „Öffnen mit“ → „Andere App auswählen“ → Programm wählen und „Immer diese App“. Die einfache Windows-App „Mail“ öffnet den Entwurf eventuell nur als gelesene Nachricht, dann ist Outlook oder Thunderbird besser. <b>Falsch gewählt?</b> Dieselben Schritte mit dem richtigen Programm wiederholen.</li>
 <li><b>Android:</b> Beim Senden erscheint „E-Mail senden mit …“. Dort die E-Mail-App antippen und <b>„Immer“</b> wählen, dann wird sie künftig direkt benutzt. <b>Falsch gewählt?</b> Einstellungen → Apps → Standard-Apps (bzw. Apps → die gewählte E-Mail-App → „Standardmäßig öffnen“ → „Standardeinstellungen löschen“). Beim nächsten Senden fragt Android wieder.</li>
 <li><b>Web-Version (PC, iPhone, iPad, Android im Browser):</b> Eine Web-App kann keine E-Mail mit Anhang und Empfängern zugleich öffnen. Bei „Per E-Mail senden“ erklärt ein Fenster den Ablauf. <b>Am PC mit Teilen-Dialog (Windows)</b> gibt es zusätzlich <b>Weg 1 mit Anhang</b>: Teilen → „Mail“, die Datei (Endung .txt, Inhalt wie die .json-Datei) hängt schon an, die Empfänger werden kopiert. Der andere Weg: Die <b>Datei wird im Download-Ordner</b> (bzw. im gewählten Ablageordner) <b>gespeichert</b> und dein <b>Mailprogramm öffnet sich von selbst</b> mit einer <b>E-Mail ohne Anhang</b> (Empfänger, Betreff, Text). Am PC fragt der Browser beim ersten Mal, ob das Mailprogramm geöffnet werden darf; ein Standard-Mailprogramm muss eingerichtet sein. <b>Den Anhang hängst du selbst an</b> (Büroklammer → Dateien/Downloads). Das Standard-Mailprogramm legst du am iPhone unter Einstellungen → Apps → Mail → „Standard-Mail-App“ fest. Die Android-<b>App</b> (APK) hängt die Datei dagegen selbst an. „Datei-Inhalt kopieren“ im Export legt alle Daten als Text in die Zwischenablage.</li></li></ul>
+<p><b>Es öffnet sich das falsche Outlook?</b> Auf manchen PCs sind das <b>neue Outlook</b> („Outlook for Windows“) und das <b>klassische Outlook</b> (Office) gleichzeitig installiert, beide heißen in der Liste „Outlook“. Windows hat getrennte Standards für <b>Links „mailto“</b> (so öffnet sich die E-Mail ohne Anhang) und für <b>Dateien „.eml“</b> (so öffnet sich der Entwurf mit Anhang). Prüfe beide: Einstellungen → Apps → Standard-Apps → „Outlook“ suchen, dort das richtige der beiden Outlook wählen und bei <b>MAILTO</b> sowie <b>.eml</b> jeweils dieses eintragen (neues Outlook: „Outlook“ mit dem neuen Symbol, klassisches: „Outlook (klassisch)“). Im klassischen Outlook geht das auch über Datei → Optionen → Erweitert → „Als Standard festlegen“. Edge hat zusätzlich eigene Einstellungen für Links: Adresszeile <b>edge://settings/content/handlers</b> aufrufen und eingetragene Mail-Dienste entfernen. Mit dem <b>.eml-Entwurf</b> umgehst du das Problem, er öffnet sich im Programm für .eml-Dateien.</p>
 <p>Empfänger, Betreff („Ergebnis Skatabend &lt;Datum&gt;“), Ergebnis-Text und Datei kommen immer aus der App. Die Adressen trägst du unter <b>⚙</b> zu jedem Namen ein, eine falsche änderst du dort im Feld des Namens.</p>`},
 {id:'bedienung-teil',t:'6. Bedienung des Programms',h:subHTML(['bedienung','spieler','wechsel','termine','auswertung','geld','daten'])},
 {id:'regeln',t:'7. Skatregeln',h:`<p class="muted">Offizielle Regeln (ISkO) und Hausregeln der Runde. Bock, Hirsch, Geweih, Ramsch, Schiebe, Spitze und Malenko sind Hausregeln.</p>`+subHTML(['spielarten','spielwert','zaehlwerte','spitze','ouvert','schiebe','gewinn','kontra','wertung','bock','ramsch','malenko'])}
