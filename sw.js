@@ -1,11 +1,12 @@
 // Service Worker für Skat-LOGGER (Offline-Betrieb als Web-App).
 // Strategie: Seite und Programm immer zuerst aus dem Netz (damit Updates sofort ankommen), ohne Netz aus dem Zwischenspeicher.
+// Wichtig: Abruf mit cache:'no-store' bzw. 'reload', sonst liefert der HTTP-Cache des Browsers (GitHub Pages: 10 Minuten) noch die alte Seite.
 // Die Spieldaten liegen NICHT hier, sondern im localStorage der App und bleiben bei Updates erhalten.
-const CACHE = 'skatlogger-1.24.0';
+const CACHE = 'skatlogger-1.24.1';
 const FILES = ['./', './index.html', './manifest.webmanifest', './icon-180.png', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', e => {
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES)).then(() => self.skipWaiting()));
+  e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES.map(f => new Request(f, { cache: 'reload' })))).then(() => self.skipWaiting()));
 });
 
 self.addEventListener('activate', e => {
@@ -16,7 +17,7 @@ self.addEventListener('fetch', e => {
   const req = e.request;
   if (req.method !== 'GET' || new URL(req.url).origin !== location.origin) return;
   e.respondWith(
-    fetch(req).then(res => {
+    fetch(req.url, { cache: 'no-store', credentials: 'same-origin' }).then(res => {
       if (res && res.ok) { const copy = res.clone(); caches.open(CACHE).then(c => c.put(req, copy)); }
       return res;
     }).catch(() => caches.match(req).then(r => r || caches.match('./index.html')))

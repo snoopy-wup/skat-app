@@ -1947,13 +1947,37 @@ async function waStep(n){
 }
 
 /* ---------- Logos, Info, Hilfe, Suche ---------- */
-const APP_NAME='Skat-LOGGER',APP_TAG='Spielverlauf aufschreiben + Statistik + mehr',APP_VERSION='1.24.0',APP_BUILD='2026-10-23';
+const APP_NAME='Skat-LOGGER',APP_TAG='Spielverlauf aufschreiben + Statistik + mehr',APP_VERSION='1.24.1',APP_BUILD='2026-10-23';
 const LOGOS=[
   {n:'Kartenfächer',svg:`<svg viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI Symbol,Arial,sans-serif"><rect width="128" height="128" rx="28" fill="#17382a"/><text x="64" y="31" text-anchor="middle" font-family="Georgia,serif" font-size="21" font-weight="700" fill="#f6f1e3" letter-spacing="3">SKAT</text><text x="64" y="118" text-anchor="middle" font-family="Georgia,serif" font-size="19" font-weight="700" fill="#e8b923" letter-spacing="4">LOG</text><g transform="translate(12.8 16) scale(0.8)"><g transform="rotate(-24 64 104)"><rect x="40" y="30" width="48" height="68" rx="6" fill="#fff" stroke="#cfc8b4" stroke-width="1.5"/><text x="47" y="50" font-size="15" fill="#c0392b">♦</text><text x="64" y="80" font-size="32" text-anchor="middle" fill="#c0392b">♦</text></g><g transform="rotate(24 64 104)"><rect x="40" y="30" width="48" height="68" rx="6" fill="#fff" stroke="#cfc8b4" stroke-width="1.5"/><text x="47" y="50" font-size="15" fill="#c0392b">♥</text><text x="64" y="80" font-size="32" text-anchor="middle" fill="#c0392b">♥</text></g><g><rect x="40" y="30" width="48" height="68" rx="6" fill="#fff" stroke="#cfc8b4" stroke-width="1.5"/><text x="47" y="50" font-size="15" fill="#1d2a24">♠</text><text x="64" y="80" font-size="32" text-anchor="middle" fill="#1d2a24">♠</text></g></g></svg>`},
 ];
 const logoSvg=(i,px)=>LOGOS[0].svg.replace('<svg ',`<svg width="${px}" height="${px}" `);
 // Web-App (iPhone/Android Home-Bildschirm): Offline-Zwischenspeicher nur auf einer echten https-Adresse (nicht in der EXE, nicht in der Android-App)
 try{if('serviceWorker' in navigator&&(location.protocol==='https:'||/[?&]pwa=1/.test(location.search))&&!androidApp())navigator.serviceWorker.register('sw.js').catch(()=>{})}catch(e){}
+// Web-Version: prüft, ob auf dem Server eine neuere Version liegt (ohne Zwischenspeicher) und bietet das Neuladen an; Daten bleiben erhalten
+const webMode=()=>(location.protocol==='https:'||/[?&]pwa=1/.test(location.search))&&!androidApp();
+async function checkUpdate(manual){
+  if(!webMode()){if(manual)toast('Diese Version wird nicht über die Webseite aktualisiert.');return}
+  try{
+    const base=location.pathname.replace(/[^/]*$/,'');
+    const r=await fetch(base+'index.html?v='+Date.now(),{cache:'no-store'}),t=await r.text(),m=/APP_VERSION='([0-9.]+)'/.exec(t);
+    if(m&&m[1]!==APP_VERSION)showUpdate(m[1]);
+    else if(manual)toast('Die App ist auf dem neuesten Stand (Version '+APP_VERSION+').');
+  }catch(e){if(manual)toast('Update-Prüfung nicht möglich (kein Netz?).')}
+}
+function showUpdate(v){
+  if(document.getElementById('updBar'))return;
+  const d=document.createElement('div');d.id='updBar';d.className='toast';d.style.cssText='pointer-events:auto;cursor:pointer';
+  d.innerHTML='Neue Version '+esc(v)+' verfügbar – <b style="text-decoration:underline">jetzt laden</b> (deine Daten bleiben erhalten)';
+  d.onclick=reloadApp;document.body.appendChild(d);
+}
+// Zwischenspeicher der Web-App leeren und neu laden
+async function reloadApp(){
+  try{const ks=await caches.keys();await Promise.all(ks.map(k=>caches.delete(k)));const rg=await navigator.serviceWorker.getRegistrations();await Promise.all(rg.map(x=>x.update().catch(()=>{})))}catch(e){}
+  location.reload();
+}
+setTimeout(()=>checkUpdate(false),2500);
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')checkUpdate(false)});
 function applyFavicon(){
   let l=document.getElementById('fav');if(!l){l=document.createElement('link');l.id='fav';l.rel='icon';document.head.appendChild(l)}
   l.href='data:image/svg+xml,'+encodeURIComponent(LOGOS[0].svg);
@@ -1977,7 +2001,7 @@ function openInfo(){
   <tr><td>Hersteller</td><td><b>Martin mit Claude</b></td></tr>
   <tr><td>Gespeicherte Daten</td><td>${st} abgeschlossene Spieltage in ${S.pastSeasons.length+1} Saison(s)<br><span class="muted">liegen lokal in diesem Browser</span></td></tr>
   </tbody></table>
-  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px"><button class="btn" onclick="openHelp()">Hilfe und Regeln</button><button class="btn sec" onclick="closeModal()">Schließen</button></div>`);
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px"><button class="btn" onclick="openHelp()">Hilfe und Regeln</button>${webMode()?'<button class="btn sec" onclick="checkUpdate(true)">Nach Update suchen</button>':''}<button class="btn sec" onclick="closeModal()">Schließen</button></div>`);
 }
 
 const HELP=[
