@@ -2,7 +2,7 @@
 // Strategie: Seite und Programm immer zuerst aus dem Netz (damit Updates sofort ankommen), ohne Netz aus dem Zwischenspeicher.
 // Wichtig: Abruf mit cache:'no-store' bzw. 'reload', sonst liefert der HTTP-Cache des Browsers (GitHub Pages: 10 Minuten) noch die alte Seite.
 // Die Spieldaten liegen NICHT hier, sondern im localStorage der App und bleiben bei Updates erhalten.
-const CACHE = 'skatlogger-1.25.7';
+const CACHE = 'skatlogger-1.25.8';
 const FILES = ['./', './index.html', './manifest.webmanifest', './icon-180.png', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', e => {
