@@ -1947,7 +1947,7 @@ async function waStep(n){
 }
 
 /* ---------- Logos, Info, Hilfe, Suche ---------- */
-const APP_NAME='Skat-LOGGER',APP_TAG='Spielverlauf aufschreiben + Statistik + mehr',APP_VERSION='1.24.1',APP_BUILD='2026-10-23';
+const APP_NAME='Skat-LOGGER',APP_TAG='Spielverlauf aufschreiben + Statistik + mehr',APP_VERSION='1.24.2',APP_BUILD='2026-10-23';
 const LOGOS=[
   {n:'Kartenfächer',svg:`<svg viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI Symbol,Arial,sans-serif"><rect width="128" height="128" rx="28" fill="#17382a"/><text x="64" y="31" text-anchor="middle" font-family="Georgia,serif" font-size="21" font-weight="700" fill="#f6f1e3" letter-spacing="3">SKAT</text><text x="64" y="118" text-anchor="middle" font-family="Georgia,serif" font-size="19" font-weight="700" fill="#e8b923" letter-spacing="4">LOG</text><g transform="translate(12.8 16) scale(0.8)"><g transform="rotate(-24 64 104)"><rect x="40" y="30" width="48" height="68" rx="6" fill="#fff" stroke="#cfc8b4" stroke-width="1.5"/><text x="47" y="50" font-size="15" fill="#c0392b">♦</text><text x="64" y="80" font-size="32" text-anchor="middle" fill="#c0392b">♦</text></g><g transform="rotate(24 64 104)"><rect x="40" y="30" width="48" height="68" rx="6" fill="#fff" stroke="#cfc8b4" stroke-width="1.5"/><text x="47" y="50" font-size="15" fill="#c0392b">♥</text><text x="64" y="80" font-size="32" text-anchor="middle" fill="#c0392b">♥</text></g><g><rect x="40" y="30" width="48" height="68" rx="6" fill="#fff" stroke="#cfc8b4" stroke-width="1.5"/><text x="47" y="50" font-size="15" fill="#1d2a24">♠</text><text x="64" y="80" font-size="32" text-anchor="middle" fill="#1d2a24">♠</text></g></g></svg>`},
 ];
@@ -2106,7 +2106,12 @@ const HELP=[
 {id:'daten',t:'Daten sichern, senden, rückgängig',h:`<ul><li>Alle Daten liegen lokal im Browser. Sichere sie regelmäßig über <b>Export / Senden</b>: <b>An WhatsApp senden (Text + Datei)</b> oder <b>Per E-Mail senden</b> (neue E-Mail an alle Empfänger aus den Einstellungen, mit Ergebnis-Text und Datei im Anhang). Die Datei enthält alle Daten, auch die E-Mail-Adressen.</li>
 <li><b>🏠</b> oben links führt auf jeder Seite zum Startbildschirm.</li>
 <li><b>Import</b> lädt eine gespeicherte Datei und ersetzt die aktuellen Daten.</li>
-<li><b>↶ Rückgängig</b> gilt, solange die Seite offen ist.</li></ul>`}
+<li><b>↶ Rückgängig</b> gilt, solange die Seite offen ist.</li></ul>`},
+{id:'speicher',t:'Wo die Daten liegen',h:`<p>Importierte Daten und Einstellungen stehen <b>nicht in der EXE oder APK selbst</b>, sondern im Speicher des Browsers, den die App benutzt:</p>
+<ul><li><b>Windows (SkatLog.exe):</b> im Profil des Edge- oder Chrome-Fensters unter <b>%LOCALAPPDATA%\\SkatLog\\profile</b>. Die EXE öffnet nur ein Browserfenster mit diesem Profil. Dort liegen alle Spieltage, Saisons, E-Mail-Adressen und Einstellungen im lokalen Speicher. Der gewählte Ablageordner steckt im selben Profil. Neue Versionen der EXE behalten die Daten, solange du den Ordner <b>SkatLog</b> nicht löschst.</li>
+<li><b>Android (APK):</b> im privaten Speicher der App (WebView). Der Ablageordner steht in den App-Einstellungen. Die Daten bleiben bei einem Update der App erhalten und gehen beim <b>Deinstallieren verloren</b>, deshalb vorher exportieren.</li>
+<li><b>Web-Version (iPhone, Browser):</b> im Speicher des jeweiligen Browsers, getrennt von EXE und APK.</li></ul>
+<p>Jedes Gerät hat also einen <b>eigenen Datenbestand</b>. Zum Abgleich dienen <b>Export und Import</b>. Eine Exportdatei enthält alle Daten und auch die E-Mail-Adressen, aber <b>nicht</b> den Ablageordner und nicht das E-Mail-Programm (beides ist geräteindividuell).</p>`}
 ];
 const plainText=h=>h.replace(/<[^>]+>/g,' ').replace(/&[a-z]+;/g,' ').replace(/\s+/g,' ');
 const matchTerms=(text,terms)=>{const t=text.toLowerCase();return terms.every(x=>t.includes(x))};
