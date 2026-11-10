@@ -1482,12 +1482,14 @@ async function dirOk(){
 function toast(t,ms){
   const d=document.createElement('div');d.className='toast';d.textContent=t;d.onclick=()=>d.remove();document.body.appendChild(d);setTimeout(()=>d.remove(),ms||4000);
 }
-// Augenfelder (Kartenwerte 0–120): bei angewähltem Feld ändert das Mausrad den Wert (hoch = mehr, Umschalt = ±10); ein weiterer Linksklick ins Feld bestätigt (Feld wird verlassen)
+// Augenfelder (Kartenwerte 0–120): bei angewähltem Feld ändert das Mausrad den Wert (hoch = mehr; bei gedrückter rechter Maustaste ±10); ein weiterer Linksklick ins Feld bestätigt (Feld wird verlassen)
 const isAugIn=t=>t&&t.tagName==='INPUT'&&t.type==='number'&&/^aug\d+$/.test(t.id);
 document.addEventListener('wheel',e=>{const t=e.target;if(!isAugIn(t)||document.activeElement!==t)return;
-  e.preventDefault();const d=(e.deltaY<0?1:-1)*(e.shiftKey?10:1);
+  e.preventDefault();const d=(e.deltaY<0?1:-1)*((e.buttons&2)?10:1);
   t.value=Math.max(0,Math.min(120,(t.value===''?0:+t.value)+d));t.dispatchEvent(new Event('input',{bubbles:true}))},{passive:false});
 let _augWas=false;
+document.addEventListener('contextmenu',e=>{if(isAugIn(e.target)&&document.activeElement===e.target)e.preventDefault()}); // rechte Taste + Rad = ±10, kein Kontextmenü
+
 document.addEventListener('mousedown',e=>{_augWas=isAugIn(e.target)&&document.activeElement===e.target},true);
 document.addEventListener('click',e=>{if(_augWas&&isAugIn(e.target)&&e.button===0){e.target.blur()}_augWas=false});
 const androidApp=()=>typeof window.AndroidBridge!=='undefined'&&window.AndroidBridge; // läuft in der Android-App (WebView)
@@ -2106,7 +2108,7 @@ async function waStep(n){
 }
 
 /* ---------- Logos, Info, Hilfe, Suche ---------- */
-const APP_NAME='Skat-LOGGER',APP_TAG='Spielverlauf aufschreiben + Statistik + mehr',APP_VERSION='1.27.3',APP_BUILD='2026-10-23';
+const APP_NAME='Skat-LOGGER',APP_TAG='Spielverlauf aufschreiben + Statistik + mehr',APP_VERSION='1.27.4',APP_BUILD='2026-10-23';
 const LOGOS=[
   {n:'Kartenfächer',svg:`<svg viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI Symbol,Arial,sans-serif"><rect width="128" height="128" rx="28" fill="#17382a"/><text x="64" y="31" text-anchor="middle" font-family="Georgia,serif" font-size="21" font-weight="700" fill="#f6f1e3" letter-spacing="3">SKAT</text><text x="64" y="118" text-anchor="middle" font-family="Georgia,serif" font-size="19" font-weight="700" fill="#e8b923" letter-spacing="4">LOG</text><g transform="translate(12.8 16) scale(0.8)"><g transform="rotate(-24 64 104)"><rect x="40" y="30" width="48" height="68" rx="6" fill="#fff" stroke="#cfc8b4" stroke-width="1.5"/><text x="47" y="50" font-size="15" fill="#c0392b">♦</text><text x="64" y="80" font-size="32" text-anchor="middle" fill="#c0392b">♦</text></g><g transform="rotate(24 64 104)"><rect x="40" y="30" width="48" height="68" rx="6" fill="#fff" stroke="#cfc8b4" stroke-width="1.5"/><text x="47" y="50" font-size="15" fill="#c0392b">♥</text><text x="64" y="80" font-size="32" text-anchor="middle" fill="#c0392b">♥</text></g><g><rect x="40" y="30" width="48" height="68" rx="6" fill="#fff" stroke="#cfc8b4" stroke-width="1.5"/><text x="47" y="50" font-size="15" fill="#1d2a24">♠</text><text x="64" y="80" font-size="32" text-anchor="middle" fill="#1d2a24">♠</text></g></g></svg>`},
 ];
