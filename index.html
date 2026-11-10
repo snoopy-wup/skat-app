@@ -1307,11 +1307,13 @@ function statCharts(st,order,an,ramschHands,hasPl,hasGames,nImp){
   // Reihenfolge nach Platz (1. = wenigste verlorene Punkte oben, Letzter unten), Platzziffer vor dem Namen; Farben bleiben je Spieler gleich
   const P=order.map((n,i)=>({n,c:colVar(i),s:st[n]})).sort((a,b)=>a.s.punkte-b.s.punkte);
   P.forEach(p=>{p.d=(1+P.filter(o=>o.s.punkte<p.s.punkte).length)+'. '+p.n});
-  const euroItems=P.map(p=>({l:p.d,v:p.s.eurTot,c:p.c,t:eur(p.s.eurTot)}));
-  const ptsItems=P.map(p=>({l:p.d,v:p.s.punkte,c:p.c,t:nf(p.s.punkte)+' Punkte'}));
+  // Legende der Kuchendiagramme: größter Anteil zuerst, Platzziffer 1 = größter Wert (Gleichstand = gleicher Platz); Farben bleiben je Spieler gleich
+  const rk=it=>{it.forEach(x=>{x.l=(1+it.filter(o=>o.v>x.v).length)+'. '+x.n});return it.sort((a,b)=>b.v-a.v)};
+  const euroItems=rk(P.map(p=>({n:p.n,v:p.s.eurTot,c:p.c,t:eur(p.s.eurTot)})));
+  const ptsItems=rk(P.map(p=>({n:p.n,v:p.s.punkte,c:p.c,t:nf(p.s.punkte)+' Punkte'})));
   const totE=euroItems.reduce((a,x)=>a+x.v,0),totP=ptsItems.reduce((a,x)=>a+x.v,0);
   const g=P.reduce((a,p)=>a+p.s.grand[0],0),f=P.reduce((a,p)=>a+p.s.farbe[0],0),nl=P.reduce((a,p)=>a+p.s.null[0],0);
-  const artItems=[{l:'Grand',v:g,c:'var(--c1)'},{l:'Farbspiele',v:f,c:'var(--c2)'},{l:'Null',v:nl,c:'var(--c3)'},{l:'Ramsch',v:ramschHands,c:'var(--c4)'}].filter(x=>x.v>0);
+  const artItems=[{l:'Grand',v:g,c:'var(--c1)'},{l:'Farbspiele',v:f,c:'var(--c2)'},{l:'Null',v:nl,c:'var(--c3)'},{l:'Ramsch',v:ramschHands,c:'var(--c4)'}].filter(x=>x.v>0).sort((a,b)=>b.v-a.v);
   const wl=[{l:'Gewonnen',c:'var(--c1)'},{l:'Verloren',c:'var(--c2)'}];
   const wlRows=P.map(p=>({name:p.d,vals:[p.s.w,p.s.l],sp:p.s.sp}));
   let h='<div class="charts">';
@@ -1321,7 +1323,7 @@ function statCharts(st,order,an,ramschHands,hasPl,hasGames,nImp){
   if(hasGames)h+=`<div class="chartcard"><h3>Als Alleinspieler</h3><p class="muted">Gewonnen und verloren je Spieler</p>${hbarsHTML(wlRows,wl,r=>`${r.vals[0]} gewonnen · ${r.vals[1]} verloren${r.sp?' · '+Math.round(100*r.vals[0]/r.sp)+' %':''}`)}${legendHTML(wl.map(x=>({...x,v:0})),x=>'').replace(/<b><\/b>/g,'')}</div>`;
   if(hasGames){
     // Kuchendiagramme zu Ramsch, Malenko, Buben, Grand und Kontra (je Spieler)
-    const pie=(t,sub,get,fmt,unit,pct)=>{const it=P.map(p=>({l:p.d,v:get(p.s),c:p.c,t:fmt?fmt(get(p.s)):nf(get(p.s)),pct:pct!==false})),tot=it.reduce((a,x)=>a+x.v,0);
+    const pie=(t,sub,get,fmt,unit,pct)=>{const it=rk(P.map(p=>({n:p.n,v:get(p.s),c:p.c,t:fmt?fmt(get(p.s)):nf(get(p.s)),pct:pct!==false}))),tot=it.reduce((a,x)=>a+x.v,0);
       return `<div class="chartcard"><h3>${t}</h3><p class="muted">${sub}</p>${donutSVG(it,t,pct===false?fmt(tot/(it.length||1)):fmt?fmt(tot):nf(tot),pct===false?'Ø gesamt':unit)}${tot?legendHTML(it,x=>fmt?fmt(x.v):nf(x.v)):''}</div>`};
     const f1=v=>(Math.round(v*100)/100).toLocaleString('de-DE');
     h+=pie('Ramsch: verlorene Spiele','Wer hat wie viele Ramsch-Spiele verloren (Anteil in %)',s=>s.ramschL,null,'Spiele');
@@ -2096,7 +2098,7 @@ async function waStep(n){
 }
 
 /* ---------- Logos, Info, Hilfe, Suche ---------- */
-const APP_NAME='Skat-LOGGER',APP_TAG='Spielverlauf aufschreiben + Statistik + mehr',APP_VERSION='1.27.0',APP_BUILD='2026-10-23';
+const APP_NAME='Skat-LOGGER',APP_TAG='Spielverlauf aufschreiben + Statistik + mehr',APP_VERSION='1.27.1',APP_BUILD='2026-10-23';
 const LOGOS=[
   {n:'Kartenfächer',svg:`<svg viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI Symbol,Arial,sans-serif"><rect width="128" height="128" rx="28" fill="#17382a"/><text x="64" y="31" text-anchor="middle" font-family="Georgia,serif" font-size="21" font-weight="700" fill="#f6f1e3" letter-spacing="3">SKAT</text><text x="64" y="118" text-anchor="middle" font-family="Georgia,serif" font-size="19" font-weight="700" fill="#e8b923" letter-spacing="4">LOG</text><g transform="translate(12.8 16) scale(0.8)"><g transform="rotate(-24 64 104)"><rect x="40" y="30" width="48" height="68" rx="6" fill="#fff" stroke="#cfc8b4" stroke-width="1.5"/><text x="47" y="50" font-size="15" fill="#c0392b">♦</text><text x="64" y="80" font-size="32" text-anchor="middle" fill="#c0392b">♦</text></g><g transform="rotate(24 64 104)"><rect x="40" y="30" width="48" height="68" rx="6" fill="#fff" stroke="#cfc8b4" stroke-width="1.5"/><text x="47" y="50" font-size="15" fill="#c0392b">♥</text><text x="64" y="80" font-size="32" text-anchor="middle" fill="#c0392b">♥</text></g><g><rect x="40" y="30" width="48" height="68" rx="6" fill="#fff" stroke="#cfc8b4" stroke-width="1.5"/><text x="47" y="50" font-size="15" fill="#1d2a24">♠</text><text x="64" y="80" font-size="32" text-anchor="middle" fill="#1d2a24">♠</text></g></g></svg>`},
 ];
