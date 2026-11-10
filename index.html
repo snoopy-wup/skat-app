@@ -1319,6 +1319,20 @@ function statCharts(st,order,an,ramschHands,hasPl,hasGames,nImp){
   h+=`<div class="chartcard"><h3>Verlorene Punkte${nImp?' (≈)':''}</h3><p class="muted">Anteil an allen verlorenen Punkten</p>${donutSVG(ptsItems,'Verlorene Punkte je Spieler',nf(totP),'Punkte')}${legendHTML(ptsItems,x=>nf(x.v))}</div>`;
   if(hasGames)h+=`<div class="chartcard"><h3>Spielarten</h3><p class="muted">Anzahl gespielter Spiele</p>${donutSVG(artItems,'Verteilung der Spielarten',String(artItems.reduce((a,x)=>a+x.v,0)),'Spiele')}${legendHTML(artItems)}</div>`;
   if(hasGames)h+=`<div class="chartcard"><h3>Als Alleinspieler</h3><p class="muted">Gewonnen und verloren je Spieler</p>${hbarsHTML(wlRows,wl,r=>`${r.vals[0]} gewonnen · ${r.vals[1]} verloren${r.sp?' · '+Math.round(100*r.vals[0]/r.sp)+' %':''}`)}${legendHTML(wl.map(x=>({...x,v:0})),x=>'').replace(/<b><\/b>/g,'')}</div>`;
+  if(hasGames){
+    // Kuchendiagramme zu Ramsch, Malenko, Buben, Grand und Kontra (je Spieler)
+    const pie=(t,sub,get,fmt,unit,pct)=>{const it=P.map(p=>({l:p.d,v:get(p.s),c:p.c,t:fmt?fmt(get(p.s)):nf(get(p.s)),pct:pct!==false})),tot=it.reduce((a,x)=>a+x.v,0);
+      return `<div class="chartcard"><h3>${t}</h3><p class="muted">${sub}</p>${donutSVG(it,t,pct===false?fmt(tot/(it.length||1)):fmt?fmt(tot):nf(tot),pct===false?'Ø gesamt':unit)}${tot?legendHTML(it,x=>fmt?fmt(x.v):nf(x.v)):''}</div>`};
+    const f1=v=>(Math.round(v*100)/100).toLocaleString('de-DE');
+    h+=pie('Ramsch: verlorene Spiele','Wer hat wie viele Ramsch-Spiele verloren (Anteil in %)',s=>s.ramschL,null,'Spiele');
+    h+=pie('Ramsch: verlorene Punkte','Wer hat wie viele Punkte im Ramsch verloren',s=>s.ramschP,null,'Punkte');
+    h+=pie('Malenko: verloren','Eigene Malenko-Aufgaben, die der Spieler verloren hat (Anteil in %)',s=>s.malL,null,'Spiele');
+    h+=pie('Malenko: gewonnen','Eigene Malenko-Aufgaben, die der Spieler gewonnen hat (Anteil in %)',s=>s.malW,null,'Spiele');
+    h+=pie('Malenko: erhaltene Punkte','Wer hat wie viele Punkte in Malenko-Spielen erhalten',s=>s.malP,null,'Punkte');
+    h+=pie('Buben als Alleinspieler','Ø Buben „mit“ je Alleinspiel (Farbe/Grand, „ohne“ zählt 0)',s=>s.bubN?s.bubS/s.bubN:0,f1,'Ø Buben',false);
+    h+=pie('Grand gespielt','Wer hat wie viele Grand-Spiele gespielt (Anteil in %)',s=>s.grand[0],null,'Grand');
+    h+=pie('Kontra gesagt','Wer hat wie oft Kontra gesagt (Anteil in %)',s=>s.kontra,null,'Kontra');
+  }
   if(hasPl){
     const pl=[{l:'1. Platz',c:'var(--pl1)'},{l:'2. Platz',c:'var(--pl2)'},{l:'3. Platz',c:'var(--pl3)'},{l:'4. Platz',c:'var(--pl4)'}];
     const rows=P.map(p=>({name:p.d,vals:[p.s.pl[1],p.s.pl[2],p.s.pl[3],p.s.pl[4]]})).filter(r=>r.vals.some(v=>v));
@@ -1349,7 +1363,7 @@ function openStats(sel){
   const st={},order=[];
   const get=n=>st[n]||(order.push(n),st[n]={days:0,pl:[0,0,0,0,0,0,0],punkte:0,sp:0,w:0,l:0,
     grand:[0,0,0],farbe:[0,0,0],null:[0,0,0],fc:{kreuz:0,pik:0,herz:0,karo:0},ramsch:0,ramschL:0,ramschP:0,dm:0,
-    mit:0,ohne:0,mitB:0,ohneB:0,hand:0,ouvert:0,snA:0,swA:0,spitze:0,kontra:0,kontraW:0,re:0,veto:0,mal:0,malW:0,malL:0,malP:0,euro:0,eurTot:0,maxW:0,sumAug:0,nAug:0});
+    mit:0,ohne:0,mitB:0,ohneB:0,hand:0,ouvert:0,snA:0,swA:0,spitze:0,kontra:0,kontraW:0,re:0,veto:0,mal:0,malW:0,malL:0,malP:0,euro:0,eurTot:0,maxW:0,sumAug:0,nAug:0,bubS:0,bubN:0});
   an.forEach(a=>{
     const nm_=i=>a.day.players[i];
     a.ghosts.forEach(g=>{const s=get(g.name);s.days++;s.punkte+=g.end;s.euro+=g.pay.euro;s.eurTot+=g.pay.total});
@@ -1375,7 +1389,7 @@ function openStats(sel){
       const g=h.type==='grand'?s.grand:h.type==='null'?s.null:s.farbe;
       g[0]++;g[c.won?1:2]++;
       if(s.fc[h.type]!=null)s.fc[h.type]++;
-      if(h.type!=='null'){if(h.mo==='mit'){s.mit++;s.mitB+=h.n}else{s.ohne++;s.ohneB+=h.n}}
+      if(h.type!=='null'){if(h.mo==='mit'){s.mit++;s.mitB+=h.n;s.bubS+=+h.n||0}else{s.ohne++;s.ohneB+=h.n}s.bubN++}
       if(h.hand||h.ouvert)s.hand++;if(h.ouvert)s.ouvert++;if(h.schnAng||h.schwarzAng||h.ouvert)s.snA++;if(h.schwarzAng||h.ouvert)s.swA++;
       if(h.spitze&&a.day.settings&&a.day.settings.spitze)s.spitze++;
       if(h.veto)s.veto++;
@@ -2082,7 +2096,7 @@ async function waStep(n){
 }
 
 /* ---------- Logos, Info, Hilfe, Suche ---------- */
-const APP_NAME='Skat-LOGGER',APP_TAG='Spielverlauf aufschreiben + Statistik + mehr',APP_VERSION='1.26.2',APP_BUILD='2026-10-23';
+const APP_NAME='Skat-LOGGER',APP_TAG='Spielverlauf aufschreiben + Statistik + mehr',APP_VERSION='1.27.0',APP_BUILD='2026-10-23';
 const LOGOS=[
   {n:'Kartenfächer',svg:`<svg viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI Symbol,Arial,sans-serif"><rect width="128" height="128" rx="28" fill="#17382a"/><text x="64" y="31" text-anchor="middle" font-family="Georgia,serif" font-size="21" font-weight="700" fill="#f6f1e3" letter-spacing="3">SKAT</text><text x="64" y="118" text-anchor="middle" font-family="Georgia,serif" font-size="19" font-weight="700" fill="#e8b923" letter-spacing="4">LOG</text><g transform="translate(12.8 16) scale(0.8)"><g transform="rotate(-24 64 104)"><rect x="40" y="30" width="48" height="68" rx="6" fill="#fff" stroke="#cfc8b4" stroke-width="1.5"/><text x="47" y="50" font-size="15" fill="#c0392b">♦</text><text x="64" y="80" font-size="32" text-anchor="middle" fill="#c0392b">♦</text></g><g transform="rotate(24 64 104)"><rect x="40" y="30" width="48" height="68" rx="6" fill="#fff" stroke="#cfc8b4" stroke-width="1.5"/><text x="47" y="50" font-size="15" fill="#c0392b">♥</text><text x="64" y="80" font-size="32" text-anchor="middle" fill="#c0392b">♥</text></g><g><rect x="40" y="30" width="48" height="68" rx="6" fill="#fff" stroke="#cfc8b4" stroke-width="1.5"/><text x="47" y="50" font-size="15" fill="#1d2a24">♠</text><text x="64" y="80" font-size="32" text-anchor="middle" fill="#1d2a24">♠</text></g></g></svg>`},
 ];
