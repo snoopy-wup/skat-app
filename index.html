@@ -1482,8 +1482,14 @@ async function dirOk(){
 function toast(t,ms){
   const d=document.createElement('div');d.className='toast';d.textContent=t;d.onclick=()=>d.remove();document.body.appendChild(d);setTimeout(()=>d.remove(),ms||4000);
 }
-// Mausrad über einem Zahlenfeld (Augen, Beträge …): Feld verlassen, damit das Rad die Seite scrollt und nicht den Wert ändert
-document.addEventListener('wheel',e=>{const t=e.target;if(t&&t.tagName==='INPUT'&&t.type==='number'&&document.activeElement===t)t.blur()},{passive:true});
+// Augenfelder (Kartenwerte 0–120): bei angewähltem Feld ändert das Mausrad den Wert (hoch = mehr, Umschalt = ±10); ein weiterer Linksklick ins Feld bestätigt (Feld wird verlassen)
+const isAugIn=t=>t&&t.tagName==='INPUT'&&t.type==='number'&&/^aug\d+$/.test(t.id);
+document.addEventListener('wheel',e=>{const t=e.target;if(!isAugIn(t)||document.activeElement!==t)return;
+  e.preventDefault();const d=(e.deltaY<0?1:-1)*(e.shiftKey?10:1);
+  t.value=Math.max(0,Math.min(120,(t.value===''?0:+t.value)+d));t.dispatchEvent(new Event('input',{bubbles:true}))},{passive:false});
+let _augWas=false;
+document.addEventListener('mousedown',e=>{_augWas=isAugIn(e.target)&&document.activeElement===e.target},true);
+document.addEventListener('click',e=>{if(_augWas&&isAugIn(e.target)&&e.button===0){e.target.blur()}_augWas=false});
 const androidApp=()=>typeof window.AndroidBridge!=='undefined'&&window.AndroidBridge; // läuft in der Android-App (WebView)
 async function exportData(){await saveText(exportName(),JSON.stringify(S,null,1),'application/json')} // alle Daten (Spiele, Saisons, Termine mit Verlauf)
 async function saveText(name,text,mime){ // Datei in den Ablageordner bzw. als Download speichern
