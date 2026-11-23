@@ -1168,7 +1168,7 @@ function spBox(){
 
 
 /* ---------- Sprachsteuerung: Mikrofon per Knopf an, Spiel anlegen und mit Rückfrage speichern, danach aus ---------- */
-const VS={on:false,rec:null,confirm:false,speaking:false,last:0,buf:'',base:null};
+const VS={on:false,rec:null,confirm:false,speaking:false,last:0,buf:'',base:null,keep:false};
 const spErrText=c=>({'not-allowed':'Mikrofon nicht erlaubt (Schloss-Symbol neben der Adresse).','service-not-allowed':'Spracherkennung nicht erlaubt (Edge/Windows: „Online-Spracherkennung“ einschalten).','network':'Keine Verbindung zum Spracherkennungs-Dienst (Online-Spracherkennung in Windows an?).','audio-capture':'Kein Mikrofon gefunden.','language-not-supported':'Deutsch wird nicht unterstützt.'})[c]||('Spracherkennung fehlgeschlagen ('+c+').');
 function vsUI(){
   document.querySelectorAll('.vsmic').forEach(b=>{b.classList.toggle('bad',VS.on);b.textContent=VS.on?'⏹':'🎤'});
@@ -1194,7 +1194,7 @@ function vsStart(){
   if(VS.on){vsStop('Mikrofon aus');return}
   if(!SP_SR||androidApp()){toast('Spracherkennung ist hier nicht verfügbar – siehe ⚙ Einstellungen → Spracheingabe.',5000);return}
   if(!F){const li=S.hands.length-1;if(!S.started)return;openForm(li>=0&&S.hands[li].open?li:null)}
-  VS.on=true;VS.confirm=false;VS.last=Date.now();VS.buf='';VS.base=JSON.stringify(F);SP.txt='';SP.msg='Mikrofon ist an – sprich dein Spiel (Pausen sind egal). Zum Schluss „übernehmen“ (oder „zwischenspeichern“, „spiel abschließen“, „fertig“) sagen. Zum Verwerfen „abbrechen“.';
+  VS.on=true;VS.confirm=false;VS.keep=false;VS.last=Date.now();VS.buf='';VS.base=JSON.stringify(F);SP.txt='';SP.msg='Mikrofon ist an – sprich dein Spiel (Pausen sind egal). Zum Schluss „übernehmen“ (oder „zwischenspeichern“, „spiel abschließen“, „fertig“) sagen. Zum Verwerfen „abbrechen“.';
   vsUI();if(F)drawForm();vsListen();
 }
 function vsListen(){
@@ -1232,11 +1232,12 @@ function vsCanSave(){
   if(!isR&&F.declarer==null)return {ok:false,why:'Der Alleinspieler fehlt.'};
   const hasRes=isR?!!ramschAugen(ctx.play):(!!F.outcomeSet||(F.augenSp!==''&&F.augenSp!=null));
   const openEdit=editIdx!=null&&!!F.open;
-  return {ok:true,keep:(editIdx==null||openEdit)&&!hasRes,hasRes};
+  const allowKeep=editIdx==null||openEdit;return {ok:true,keep:allowKeep&&(VS.keep||!hasRes),hasRes};
 }
 function vsAsk(){
   const c=vsCanSave();
   if(!c.ok){SP.msg='⚠ '+c.why+' Bitte ergänzen.';drawForm();vsSpeak(c.why);return}
+  if(c.keep&&VS.keep){F.outcomeSet=false;F.augenSp=null;F.outcome='W';F.sixty=false;F.augen={};F.jungfrau=false;F.durchmarsch=null} // Ergebnis weglassen
   VS.confirm=true;
   const t=vsSummary()+(c.keep?'. Ohne Ergebnis zwischenspeichern?':'. Speichern?');
   SP.msg='❓ '+t+' Sag „ja“ oder „nein“.';drawForm();vsSpeak(t);
@@ -1263,7 +1264,8 @@ function vsHear(t){
   VS.buf=(VS.buf+' '+t).trim();SP.txt=VS.buf;
   F=JSON.parse(VS.base);spApply(VS.buf);
   SP.msg='„'+VS.buf+'“ → '+SP.msg;
-  if(has('ubernehmen','ubernimm','speichern','abspeichern','zwischenspeichern','zwischenspeicher','abschliessen','abschliesse','abschluss','fertig')){vsAsk();return}
+  if(has('zwischenspeichern','zwischenspeicher','zwischen')){VS.keep=true;vsAsk();return} // Zwischenspeichern lässt das Ergebnis weg
+  if(has('ubernehmen','ubernimm','speichern','abspeichern','abschliessen','abschliesse','abschluss','fertig')){VS.keep=false;vsAsk();return}
   drawForm();
 }
 /* ---------- Einstellungen ---------- */
@@ -2459,7 +2461,7 @@ async function waStep(n){
 }
 
 /* ---------- Logos, Info, Hilfe, Suche ---------- */
-const APP_NAME='Skat-LOGGER',APP_TAG='Spielverlauf aufschreiben + Statistik + mehr',APP_VERSION='1.29.3',APP_BUILD='2026-10-23';
+const APP_NAME='Skat-LOGGER',APP_TAG='Spielverlauf aufschreiben + Statistik + mehr',APP_VERSION='1.29.4',APP_BUILD='2026-10-23';
 const LOGOS=[
   {n:'Kartenfächer',svg:`<svg viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI Symbol,Arial,sans-serif"><rect width="128" height="128" rx="28" fill="#17382a"/><text x="64" y="31" text-anchor="middle" font-family="Georgia,serif" font-size="21" font-weight="700" fill="#f6f1e3" letter-spacing="3">SKAT</text><text x="64" y="118" text-anchor="middle" font-family="Georgia,serif" font-size="19" font-weight="700" fill="#e8b923" letter-spacing="4">LOG</text><g transform="translate(12.8 16) scale(0.8)"><g transform="rotate(-24 64 104)"><rect x="40" y="30" width="48" height="68" rx="6" fill="#fff" stroke="#cfc8b4" stroke-width="1.5"/><text x="47" y="50" font-size="15" fill="#c0392b">♦</text><text x="64" y="80" font-size="32" text-anchor="middle" fill="#c0392b">♦</text></g><g transform="rotate(24 64 104)"><rect x="40" y="30" width="48" height="68" rx="6" fill="#fff" stroke="#cfc8b4" stroke-width="1.5"/><text x="47" y="50" font-size="15" fill="#c0392b">♥</text><text x="64" y="80" font-size="32" text-anchor="middle" fill="#c0392b">♥</text></g><g><rect x="40" y="30" width="48" height="68" rx="6" fill="#fff" stroke="#cfc8b4" stroke-width="1.5"/><text x="47" y="50" font-size="15" fill="#1d2a24">♠</text><text x="64" y="80" font-size="32" text-anchor="middle" fill="#1d2a24">♠</text></g></g></svg>`},
 ];
