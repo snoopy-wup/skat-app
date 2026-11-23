@@ -924,9 +924,9 @@ const SP_SR=window.SpeechRecognition||window.webkitSpeechRecognition;
 const SP_U=new Map(Object.entries({ein:1,eins:1,eine:1,zwei:2,zwo:2,drei:3,vier:4,funf:5,sechs:6,sieben:7,acht:8,neun:9,zehn:10,elf:11,zwolf:12,dreizehn:13,vierzehn:14,funfzehn:15,sechzehn:16,siebzehn:17,achtzehn:18,neunzehn:19}));
 const SP_T=new Map(Object.entries({zwanzig:20,dreissig:30,vierzig:40,funfzig:50,sechzig:60,siebzig:70,achtzig:80,neunzig:90}));
 const SP_TYPE={karo:'karo',herz:'herz',pik:'pik',pick:'pik',kreuz:'kreuz',grand:'grand',null:'null',ramsch:'ramsch'};
-const SP_SKIP=new Set(['von','und','sowie']);
+const SP_SKIP=new Set(['von','vom','und','sowie','gesagt','sagt','sagte','hat','durch','dann']);
 const SP_FILL=new Set(['verliert','hat','mit','bekommt','punkte','augen','gesamt','mal','verlor','macht']);
-const SP_KW=new Set([...Object.keys(SP_TYPE),'kontra','re','rekontra','hirsch','geweih','gereizt','reizt','reizen','reiz','bis','mit','ohne','hand','ouvert','offen','schneider','schwarz','angesagt','ansage','schiebe','geschoben','schieben','spitze','gewonnen','gewinnt','gewann','verloren','verliert','verlor','augen','bock','bockrunde','gepasst','eingepasst','passe','passen','passt','jungfrau','durchmarsch','von','und','sowie','spielt','alleinspieler','hat','auf','punkte','bekommt','gesamt','mal','macht','ein','eine','eins']);
+const SP_KW=new Set([...Object.keys(SP_TYPE),'contra','konter','gesagt','sagt','sagte','vom','durch','dann','kontra','re','rekontra','hirsch','geweih','gereizt','reizt','reizen','reiz','bis','mit','ohne','hand','ouvert','offen','schneider','schwarz','angesagt','ansage','schiebe','geschoben','schieben','spitze','gewonnen','gewinnt','gewann','verloren','verliert','verlor','augen','bock','bockrunde','gepasst','eingepasst','passe','passen','passt','jungfrau','durchmarsch','von','und','sowie','spielt','alleinspieler','hat','auf','punkte','bekommt','gesamt','mal','macht','ein','eine','eins']);
 const spNorm=t=>String(t).toLowerCase().replace(/ä/g,'a').replace(/ö/g,'o').replace(/ü/g,'u').replace(/ß/g,'ss');
 function spNumWord(w){
   if(/^\d+$/.test(w))return +w;
@@ -970,7 +970,7 @@ function spParse(text){
   const near=(k,d)=>{const L=[];let j=k+d;while(T[j]){if(P[j]>=0&&!used.has(j)){L.push(P[j]);used.add(j)}else if(!SP_SKIP.has(s(j)))break;j+=d}return L};
   const pick=k=>{let j=k-1;while(T[j]&&SP_SKIP.has(s(j)))j--;const b=T[j]&&P[j]>=0&&!used.has(j)?near(k,-1):[];return b.length?b:near(k,1)};
   T.forEach((t,k)=>{const w=t.s;if(!w)return;
-    if(w==='kontra'){r.contra.push(...pick(k));r.stage=Math.max(r.stage,1)}
+    if(w==='kontra'||w==='contra'||w==='konter'){r.contra.push(...pick(k));r.stage=Math.max(r.stage,1)}
     else if(w==='re'||w==='rekontra')r.stage=Math.max(r.stage,2);
     else if(w==='hirsch')r.stage=Math.max(r.stage,3);
     else if(w==='geweih')r.stage=Math.max(r.stage,4);
@@ -1031,8 +1031,10 @@ function spApply(text){
     if(r.schiebeSaid){if(F.declarer!=null){setF('schiebe',[F.declarer]);ok.push('Schiebe')}else bad.push('Schiebe: erst den Alleinspieler nennen')}
     if(r.contra.length||r.stage>=1){
       const L=[...new Set([...F.contra,...r.contra])].filter(i=>i!==F.declarer&&ctx.play.includes(i));
-      if(L.length){F.contra=L;F.stage=Math.min(4,Math.max(r.stage||1,stageOf(F)||1));drawForm();ok.push(F.stage===1?'Kontra von '+L.map(nm).join(', '):['Kontra','Kontra','Re','Hirsch','Geweih'][F.stage]+' (Kontra von '+L.map(nm).join(', ')+')')}
-      else if(r.stage>=1)bad.push('Kontra: von wem? (Name nennen)');
+      let L2=L;
+      if(!L2.length&&r.stage>=1&&F.declarer!=null){L2=ctx.play.filter(i=>i!==F.declarer);if(L2.length)bad.push('Kontra ohne Namen: alle Gegner eingetragen')}
+      if(L2.length){F.contra=L2;F.stage=Math.min(4,Math.max(r.stage||1,stageOf(F)||1));drawForm();ok.push(F.stage===1?'Kontra von '+L2.map(nm).join(', '):['Kontra','Kontra','Re','Hirsch','Geweih'][F.stage]+' (Kontra von '+L2.map(nm).join(', ')+')')}
+      else if(r.stage>=1)bad.push('Kontra: von wem? (Alleinspieler und Name nennen)');
     }
     // Ergebnis
     if(r.augenSp!=null&&!isN){augenIn(r.augenSp);if(r.schw)setSchwarz(true);ok.push('Augen '+r.augenSp+' : '+(120-r.augenSp)+' ('+(F.outcome[0]==='W'?'gewonnen':'verloren')+')');
@@ -1208,24 +1210,35 @@ function vsListen(){
   try{r.start()}catch(e){VS.rec=null;vsStop('Mikrofon lässt sich nicht starten.')}
 }
 function vsSummary(){
-  const isR=F.type==='ramsch',p=[TYPES[F.type].n],nm=i=>S.players[i];
+  const isR=F.type==='ramsch',p=['Spielart '+TYPES[F.type].n],nm=i=>S.players[i];
+  const st=stageOf(F),stN=['','Kontra','Re','Hirsch','Geweih'];
+  const ans=[];
   if(!isR){
-    if(F.declarer!=null)p.push('Alleinspieler '+nm(F.declarer));
+    p.push(F.declarer!=null?'Alleinspieler '+nm(F.declarer):'kein Alleinspieler');
     if(F.reiz)p.push('gereizt bis '+F.reiz);
-    if(F.type!=='null')p.push(F.mo+' '+F.n);
-    if(F.hand)p.push('Hand');
-    if(F.ouvert)p.push('Ouvert');
-    if((F.contra||[]).length)p.push('Kontra von '+F.contra.map(nm).join(' und '));
+    if(F.type!=='null')p.push(F.mo+' '+F.n+(F.n===1?' Bube':' Buben'));
+    if(F.hand)ans.push('Hand');
+    if(F.ouvert)ans.push('Ouvert');
+    if(F.spitze)ans.push('Spitze');
+    if(F.schnAng||F.schwarzAng)ans.push(F.schwarzAng?'Schwarz angesagt':'Schneider angesagt');
+    if((F.schiebe||[]).length)ans.push('Schiebe');
+    p.push(ans.length?'Ansagen '+ans.join(', '):'keine Ansagen');
+    p.push((F.contra||[]).length?(st>1?stN[st]+' (Kontra von '+F.contra.map(nm).join(' und ')+')':'Kontra von '+F.contra.map(nm).join(' und ')):'kein Kontra');
     const hasA=F.augenSp!==''&&F.augenSp!=null;
-    if(F.outcomeSet||hasA)p.push(OUTN[F.outcome].toLowerCase()+(hasA?' mit '+F.augenSp+' Augen':''));
+    if(F.outcomeSet||hasA)p.push('Ergebnis '+OUTN[F.outcome].toLowerCase()+(hasA?', '+F.augenSp+' Augen':'')+(F.sixty?', genau 60 Augen':''));
     else p.push('noch ohne Ergebnis');
   }else{
-    if(F.passe)p.push('alle gepasst');
+    p.push(F.passe?'alle gepasst':'nicht alle gepasst');
     const a=ramschAugen(ctx.play)||F.augen;
     const L=ctx.play.filter(i=>a[i]!==''&&a[i]!=null).map(i=>nm(i)+' '+a[i]);
-    p.push(L.length?L.join(', '):'noch keine Augen');
+    p.push(L.length?'Augen: '+L.join(', '):'noch keine Augen');
+    if(F.jungfrau)p.push('Jungfrau');
+    if(F.durchmarsch!=null)p.push('Durchmarsch '+nm(F.durchmarsch));
+    p.push((F.contra||[]).length?stN[Math.max(1,st)]+' von '+F.contra.map(nm).join(' und '):'kein Kontra');
+    if((F.schiebe||[]).length)p.push('Schiebe von '+F.schiebe.map(nm).join(' und '));
   }
-  return p.join(', ');
+  const lv=F.levelOverride;if(lv===1)p.push('Bockrunde');else if(lv===0)p.push('normale Runde');
+  return p.join('; ');
 }
 function vsCanSave(){
   const isR=F.type==='ramsch';
@@ -2461,7 +2474,7 @@ async function waStep(n){
 }
 
 /* ---------- Logos, Info, Hilfe, Suche ---------- */
-const APP_NAME='Skat-LOGGER',APP_TAG='Spielverlauf aufschreiben + Statistik + mehr',APP_VERSION='1.29.5',APP_BUILD='2026-10-23',APP_UPDATED='2026-11-23';
+const APP_NAME='Skat-LOGGER',APP_TAG='Spielverlauf aufschreiben + Statistik + mehr',APP_VERSION='1.29.6',APP_BUILD='2026-10-23',APP_UPDATED='2026-11-23';
 const LOGOS=[
   {n:'Kartenfächer',svg:`<svg viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI Symbol,Arial,sans-serif"><rect width="128" height="128" rx="28" fill="#17382a"/><text x="64" y="31" text-anchor="middle" font-family="Georgia,serif" font-size="21" font-weight="700" fill="#f6f1e3" letter-spacing="3">SKAT</text><text x="64" y="118" text-anchor="middle" font-family="Georgia,serif" font-size="19" font-weight="700" fill="#e8b923" letter-spacing="4">LOG</text><g transform="translate(12.8 16) scale(0.8)"><g transform="rotate(-24 64 104)"><rect x="40" y="30" width="48" height="68" rx="6" fill="#fff" stroke="#cfc8b4" stroke-width="1.5"/><text x="47" y="50" font-size="15" fill="#c0392b">♦</text><text x="64" y="80" font-size="32" text-anchor="middle" fill="#c0392b">♦</text></g><g transform="rotate(24 64 104)"><rect x="40" y="30" width="48" height="68" rx="6" fill="#fff" stroke="#cfc8b4" stroke-width="1.5"/><text x="47" y="50" font-size="15" fill="#c0392b">♥</text><text x="64" y="80" font-size="32" text-anchor="middle" fill="#c0392b">♥</text></g><g><rect x="40" y="30" width="48" height="68" rx="6" fill="#fff" stroke="#cfc8b4" stroke-width="1.5"/><text x="47" y="50" font-size="15" fill="#1d2a24">♠</text><text x="64" y="80" font-size="32" text-anchor="middle" fill="#1d2a24">♠</text></g></g></svg>`},
 ];
