@@ -964,7 +964,7 @@ function spParse(text){
   const s=k=>T[k]?T[k].s:null,n=k=>T[k]?T[k].n:null;
   const P=T.map(t=>t.s&&t.n==null?spPlayer(t.s,names):-1);
   const r={contra:[],schiebe:[],aug:{},stage:0},used=new Set(),usedN=new Set();
-  T.forEach(t=>{const ty=SP_TYPE[t.s];if(ty&&ty!=='null'&&!r.type)r.type=ty});
+  T.forEach(t=>{const ty=SP_TYPE[t.s];if(ty&&ty!=='null')r.type=ty});
   const eff=r.type||F.type;
   T.forEach((t,k)=>{if(t.s==='null'){if(eff==='ramsch'&&k>0&&P[k-1]>=0)t.n=0;else if(!r.type)r.type='null'}}); // „Anna null“ im Ramsch = 0 Augen
   const near=(k,d)=>{const L=[];let j=k+d;while(T[j]){if(P[j]>=0&&!used.has(j)){L.push(P[j]);used.add(j)}else if(!SP_SKIP.has(s(j)))break;j+=d}return L};
@@ -1168,8 +1168,7 @@ function spBox(){
 
 
 /* ---------- Sprachsteuerung: Mikrofon per Knopf an, Spiel anlegen und mit Rückfrage speichern, danach aus ---------- */
-const VS={on:false,rec:null,confirm:false,speaking:false,last:0};
-const VS_IDLE=60000; // so lange ohne Eingabe, dann schaltet sich das Mikrofon von selbst aus
+const VS={on:false,rec:null,confirm:false,speaking:false,last:0,buf:'',base:null};
 const spErrText=c=>({'not-allowed':'Mikrofon nicht erlaubt (Schloss-Symbol neben der Adresse).','service-not-allowed':'Spracherkennung nicht erlaubt (Edge/Windows: „Online-Spracherkennung“ einschalten).','network':'Keine Verbindung zum Spracherkennungs-Dienst (Online-Spracherkennung in Windows an?).','audio-capture':'Kein Mikrofon gefunden.','language-not-supported':'Deutsch wird nicht unterstützt.'})[c]||('Spracherkennung fehlgeschlagen ('+c+').');
 function vsUI(){
   document.querySelectorAll('.vsmic').forEach(b=>{b.classList.toggle('bad',VS.on);b.classList.toggle('sec',!VS.on);b.textContent=VS.on?'⏹':'🎤'});
@@ -1195,17 +1194,16 @@ function vsStart(){
   if(VS.on){vsStop('Mikrofon aus');return}
   if(!SP_SR||androidApp()){toast('Spracherkennung ist hier nicht verfügbar – siehe ⚙ Einstellungen → Spracheingabe.',5000);return}
   if(!F){const li=S.hands.length-1;if(!S.started)return;openForm(li>=0&&S.hands[li].open?li:null)}
-  VS.on=true;VS.confirm=false;VS.last=Date.now();SP.msg='Mikrofon ist an – sprich dein Spiel, am Ende „speichern“. Zum Verwerfen „abbrechen“.';
+  VS.on=true;VS.confirm=false;VS.last=Date.now();VS.buf='';VS.base=JSON.stringify(F);SP.txt='';SP.msg='Mikrofon ist an – sprich dein Spiel (Pausen sind egal). Zum Schluss „übernehmen“ sagen. Zum Verwerfen „abbrechen“.';
   vsUI();if(F)drawForm();vsListen();
 }
 function vsListen(){
   if(!VS.on||VS.speaking||VS.rec)return;
-  const r=new SP_SR();r.lang='de-DE';r.interimResults=false;r.continuous=false;r.maxAlternatives=1;VS.rec=r;
+  const r=new SP_SR();r.lang='de-DE';r.interimResults=false;r.continuous=true;r.maxAlternatives=1;VS.rec=r; // läuft über Pausen hinweg weiter
   let fatal=false;
-  r.onresult=e=>{const t=e.results[e.results.length-1][0].transcript;if(t&&t.trim())vsHear(t.trim())};
+  r.onresult=e=>{for(let i=e.resultIndex;i<e.results.length;i++){if(!e.results[i].isFinal)continue;const t=e.results[i][0].transcript;if(t&&t.trim())vsHear(t.trim())}};
   r.onerror=e=>{if(e.error==='no-speech'||e.error==='aborted')return;fatal=true;vsStop(spErrText(e.error))};
   r.onend=()=>{if(VS.rec===r)VS.rec=null;if(!VS.on||fatal)return;
-    if(Date.now()-VS.last>VS_IDLE){vsStop('Mikrofon automatisch aus (längere Zeit keine Eingabe).');return}
     if(!VS.speaking)setTimeout(vsListen,150)};
   try{r.start()}catch(e){VS.rec=null;vsStop('Mikrofon lässt sich nicht starten.')}
 }
@@ -1250,20 +1248,22 @@ function vsSave(){
   else{SP.msg='⚠ Nicht gespeichert (siehe Meldung).';drawForm()}
 }
 function vsHear(t){
-  VS.last=Date.now();SP.txt=t;
+  VS.last=Date.now();
   if(!F){vsStop();return}
   const w=spNorm(t).replace(/[^a-z0-9\s]/g,' ').trim().split(/\s+/),has=(...a)=>a.some(x=>w.includes(x));
   const NO=has('nein','nee','stopp','stop','falsch','nicht'),YES=has('ja','jawohl','jo','jep','genau','richtig','korrekt','stimmt','okay','ok','passt');
   if(VS.confirm){
     if(YES&&!NO){VS.confirm=false;vsSave();return}
     if(has('abbrechen','abbruch')){vsStop('Abgebrochen');closeModal();render();return}
-    if(NO&&w.length<=3){VS.confirm=false;SP.msg='Nicht gespeichert – sprich weiter oder korrigiere.';drawForm();vsSpeak('Okay, weiter.');return}
+    if(NO&&w.length<=3){VS.confirm=false;SP.msg='Nicht gespeichert – sprich weiter oder korrigiere, zum Schluss „übernehmen“.';drawForm();vsSpeak('Okay, weiter.');return}
     VS.confirm=false; // etwas anderes gesagt = Korrektur
   }
   if(has('abbrechen','abbruch')&&w.length<=3){vsStop('Abgebrochen');closeModal();render();return}
-  spApply(t);
-  SP.msg='„'+t+'“ → '+SP.msg;
-  if(has('speichern','abspeichern','fertig')){vsAsk();return}
+  // alles Gesagte wird gesammelt und gemeinsam ausgewertet (auch Sätze, die durch Pausen getrennt wurden)
+  VS.buf=(VS.buf+' '+t).trim();SP.txt=VS.buf;
+  F=JSON.parse(VS.base);spApply(VS.buf);
+  SP.msg='„'+VS.buf+'“ → '+SP.msg;
+  if(has('ubernehmen','ubernimm','speichern','abspeichern','fertig')){vsAsk();return}
   drawForm();
 }
 /* ---------- Einstellungen ---------- */
@@ -2459,7 +2459,7 @@ async function waStep(n){
 }
 
 /* ---------- Logos, Info, Hilfe, Suche ---------- */
-const APP_NAME='Skat-LOGGER',APP_TAG='Spielverlauf aufschreiben + Statistik + mehr',APP_VERSION='1.29.0',APP_BUILD='2026-10-23';
+const APP_NAME='Skat-LOGGER',APP_TAG='Spielverlauf aufschreiben + Statistik + mehr',APP_VERSION='1.29.1',APP_BUILD='2026-10-23';
 const LOGOS=[
   {n:'Kartenfächer',svg:`<svg viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI Symbol,Arial,sans-serif"><rect width="128" height="128" rx="28" fill="#17382a"/><text x="64" y="31" text-anchor="middle" font-family="Georgia,serif" font-size="21" font-weight="700" fill="#f6f1e3" letter-spacing="3">SKAT</text><text x="64" y="118" text-anchor="middle" font-family="Georgia,serif" font-size="19" font-weight="700" fill="#e8b923" letter-spacing="4">LOG</text><g transform="translate(12.8 16) scale(0.8)"><g transform="rotate(-24 64 104)"><rect x="40" y="30" width="48" height="68" rx="6" fill="#fff" stroke="#cfc8b4" stroke-width="1.5"/><text x="47" y="50" font-size="15" fill="#c0392b">♦</text><text x="64" y="80" font-size="32" text-anchor="middle" fill="#c0392b">♦</text></g><g transform="rotate(24 64 104)"><rect x="40" y="30" width="48" height="68" rx="6" fill="#fff" stroke="#cfc8b4" stroke-width="1.5"/><text x="47" y="50" font-size="15" fill="#c0392b">♥</text><text x="64" y="80" font-size="32" text-anchor="middle" fill="#c0392b">♥</text></g><g><rect x="40" y="30" width="48" height="68" rx="6" fill="#fff" stroke="#cfc8b4" stroke-width="1.5"/><text x="47" y="50" font-size="15" fill="#1d2a24">♠</text><text x="64" y="80" font-size="32" text-anchor="middle" fill="#1d2a24">♠</text></g></g></svg>`},
 ];
