@@ -1182,7 +1182,7 @@ function vsSpeak(t,after){
   if(!window.speechSynthesis||typeof SpeechSynthesisUtterance==='undefined'){if(after)after();return}
   try{
     speechSynthesis.cancel();
-    const u=new SpeechSynthesisUtterance(t);u.lang='de-DE';
+    const u=new SpeechSynthesisUtterance(String(t).replace(/Grand/g,'Grong').replace(/Ouvert/g,'Uwär'));u.lang='de-DE'; // Aussprache: Grand = Gron (nasal), Ouvert = Uwär
     VS.speaking=true;if(VS.rec){try{VS.rec.abort()}catch(e){}}
     const done=()=>{VS.speaking=false;if(after)after();if(VS.on)setTimeout(vsListen,200)};
     u.onend=done;u.onerror=done;speechSynthesis.speak(u);
@@ -1219,7 +1219,7 @@ function vsSummary(){
   if(!isR){
     p.push(F.declarer!=null?'Alleinspieler '+nm(F.declarer):'kein Alleinspieler');
     if(F.reiz)p.push('gereizt bis '+F.reiz);
-    if(F.type!=='null')p.push(F.mo+' '+F.n+(F.n===1?' Bube':' Buben'));
+    if(F.type!=='null')p.push(F.n===1?(F.mo==='mit'?'mit einem Buben':'ohne einen Buben'):F.mo+' '+F.n+' Buben');
     if(F.hand)ans.push('Hand');
     if(F.ouvert)ans.push('Ouvert');
     if(F.spitze)ans.push('Spitze');
@@ -1241,6 +1241,17 @@ function vsSummary(){
     if((F.schiebe||[]).length)p.push('Schiebe von '+F.schiebe.map(nm).join(' und '));
   }
   const lv=F.levelOverride;if(lv===1)p.push('Bockrunde');else if(lv===0)p.push('normale Runde');
+  // Punkte: nur wer welche bekommt (wenn das Ergebnis vollständig ist)
+  try{
+    const hasRes=isR?!!ramschAugen(ctx.play):(!!F.outcomeSet||(F.augenSp!==''&&F.augenSp!=null));
+    if(hasRes&&!(VS.keep&&(editIdx==null||F.open))){
+      const mal=F.malPlayer!=null&&F.malPlayer!=='',lev=mal?0:(F.levelOverride!=null?F.levelOverride:ctx.auto);
+      const c=calc(isR?{...F,open:false,augen:ramschAugen(ctx.play)||F.augen}:{...F,open:false},lev,ctx.play,ctx.seat);
+      const L=Object.entries(c.pts).filter(([k,v])=>v).map(([k,v])=>nm(+k)+' bekommt '+v+(v===1?' Punkt':' Punkte'));
+      if(!isR&&c.value)p.splice(p.length,0,'Spielwert '+c.value);
+      p.push(L.length?'Punkte: '+L.join(', '):'keine Punkte');
+    }
+  }catch(e){}
   return p.join('; ');
 }
 function vsCanSave(){
@@ -2478,7 +2489,7 @@ async function waStep(n){
 }
 
 /* ---------- Logos, Info, Hilfe, Suche ---------- */
-const APP_NAME='Skat-LOGGER',APP_TAG='Spielverlauf aufschreiben + Statistik + mehr',APP_VERSION='1.29.9',APP_BUILD='2026-10-23',APP_UPDATED='2026-11-23';
+const APP_NAME='Skat-LOGGER',APP_TAG='Spielverlauf aufschreiben + Statistik + mehr',APP_VERSION='1.29.10',APP_BUILD='2026-10-23',APP_UPDATED='2026-11-23';
 const LOGOS=[
   {n:'Kartenfächer',svg:`<svg viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI Symbol,Arial,sans-serif"><rect width="128" height="128" rx="28" fill="#17382a"/><text x="64" y="31" text-anchor="middle" font-family="Georgia,serif" font-size="21" font-weight="700" fill="#f6f1e3" letter-spacing="3">SKAT</text><text x="64" y="118" text-anchor="middle" font-family="Georgia,serif" font-size="19" font-weight="700" fill="#e8b923" letter-spacing="4">LOG</text><g transform="translate(12.8 16) scale(0.8)"><g transform="rotate(-24 64 104)"><rect x="40" y="30" width="48" height="68" rx="6" fill="#fff" stroke="#cfc8b4" stroke-width="1.5"/><text x="47" y="50" font-size="15" fill="#c0392b">♦</text><text x="64" y="80" font-size="32" text-anchor="middle" fill="#c0392b">♦</text></g><g transform="rotate(24 64 104)"><rect x="40" y="30" width="48" height="68" rx="6" fill="#fff" stroke="#cfc8b4" stroke-width="1.5"/><text x="47" y="50" font-size="15" fill="#c0392b">♥</text><text x="64" y="80" font-size="32" text-anchor="middle" fill="#c0392b">♥</text></g><g><rect x="40" y="30" width="48" height="68" rx="6" fill="#fff" stroke="#cfc8b4" stroke-width="1.5"/><text x="47" y="50" font-size="15" fill="#1d2a24">♠</text><text x="64" y="80" font-size="32" text-anchor="middle" fill="#1d2a24">♠</text></g></g></svg>`},
 ];
