@@ -990,10 +990,11 @@ function spParse(text){
       r[ang?(w==='schneider'?'schnAng':'schwarzAng'):(w==='schneider'?'schn':'schw')]=true;
     }
     else if(eff!=='ramsch'&&(w==='gereizt'||w==='reizt'||w==='reizen'||w==='reiz')){
-      let j=k+1,c=0;while(T[j]&&c<4){if(n(j)!=null){r.reiz=n(j);usedN.add(j);break}if(!['bis','mit','auf','von','ueber'].includes(s(j)))break;j++;c++}
+      let j=k-1,c=0;while(T[j]&&c<3){if(n(j)!=null&&!usedN.has(j)){r.reiz=n(j);usedN.add(j);break}if(!['bis','auf','hat'].includes(s(j)))break;j--;c++} // „hat bis 30 gereizt“
+      if(r.reiz==null){j=k+1;c=0;while(T[j]&&c<4){if(n(j)!=null){r.reiz=n(j);usedN.add(j);break}if(!['bis','mit','auf','von','ueber'].includes(s(j)))break;j++;c++}}
     }
     else if(eff!=='ramsch'&&(w==='mit'||w==='ohne')){
-      if(!['gereizt','bis','reizt','auf'].includes(s(k-1))&&n(k+1)!=null&&s(k+2)!=='augen'&&!usedN.has(k+1)){r.mo=w;r.n=n(k+1);usedN.add(k+1)}
+      if(!['bis','auf'].includes(s(k-1))&&n(k+1)!=null&&s(k+2)!=='augen'&&!usedN.has(k+1)){r.mo=w;r.n=n(k+1);usedN.add(k+1)}
     }
   });
   if(eff!=='ramsch'){
@@ -2358,7 +2359,7 @@ async function waStep(n){
 }
 
 /* ---------- Logos, Info, Hilfe, Suche ---------- */
-const APP_NAME='Skat-LOGGER',APP_TAG='Spielverlauf aufschreiben + Statistik + mehr',APP_VERSION='1.28.4',APP_BUILD='2026-10-23';
+const APP_NAME='Skat-LOGGER',APP_TAG='Spielverlauf aufschreiben + Statistik + mehr',APP_VERSION='1.28.5',APP_BUILD='2026-10-23';
 const LOGOS=[
   {n:'Kartenfächer',svg:`<svg viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI Symbol,Arial,sans-serif"><rect width="128" height="128" rx="28" fill="#17382a"/><text x="64" y="31" text-anchor="middle" font-family="Georgia,serif" font-size="21" font-weight="700" fill="#f6f1e3" letter-spacing="3">SKAT</text><text x="64" y="118" text-anchor="middle" font-family="Georgia,serif" font-size="19" font-weight="700" fill="#e8b923" letter-spacing="4">LOG</text><g transform="translate(12.8 16) scale(0.8)"><g transform="rotate(-24 64 104)"><rect x="40" y="30" width="48" height="68" rx="6" fill="#fff" stroke="#cfc8b4" stroke-width="1.5"/><text x="47" y="50" font-size="15" fill="#c0392b">♦</text><text x="64" y="80" font-size="32" text-anchor="middle" fill="#c0392b">♦</text></g><g transform="rotate(24 64 104)"><rect x="40" y="30" width="48" height="68" rx="6" fill="#fff" stroke="#cfc8b4" stroke-width="1.5"/><text x="47" y="50" font-size="15" fill="#c0392b">♥</text><text x="64" y="80" font-size="32" text-anchor="middle" fill="#c0392b">♥</text></g><g><rect x="40" y="30" width="48" height="68" rx="6" fill="#fff" stroke="#cfc8b4" stroke-width="1.5"/><text x="47" y="50" font-size="15" fill="#1d2a24">♠</text><text x="64" y="80" font-size="32" text-anchor="middle" fill="#1d2a24">♠</text></g></g></svg>`},
 ];
