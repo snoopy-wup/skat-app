@@ -359,7 +359,7 @@ const stageOf=h=>{if(!h.contra||!h.contra.length)return 0;return h.stage!=null?h
 function calc(h,level,active,seat){
   seat=seat||active;
   const st=S.settings,lf=levelF(level),pts={};
-  if(h.type==='ramsch'&&h.geworfen!=null&&h.geworfen!==''){const t=+h.geworfen;pts[t]=120*lf;return {kind:'ramsch',value:null,won:null,pts,text:S.players[t]+' wirft hin (schenkt): 120'+(lf>1?' × Bock '+lf:''),contraWon:false,mult:null,jf:false,rv:120,lf,thrown:true}}
+  if(h.type==='ramsch'&&h.geworfen!=null&&h.geworfen!==''){const t=+h.geworfen,sf=STAGEF[stageOf(h)]*schF(h);pts[t]=120*lf*sf;return {kind:'ramsch',value:null,won:null,pts,text:S.players[t]+' wirft hin (schenkt): 120'+(lf>1?' × Bock '+lf:'')+(stageOf(h)?' × '+STAGEN[stageOf(h)]+' '+STAGEF[stageOf(h)]:'')+(schF(h)>1?' × Schiebe '+schF(h):''),contraWon:false,mult:null,jf:false,rv:120,lf,thrown:true}}
   if(h.type==='ramsch'&&h.open)return {kind:'ramsch',open:true,value:null,won:null,pts,text:'Ramsch läuft – Augen folgen',contraWon:false,mult:null};
   if(h.type==='ramsch'){
     const a=h.augen||{};
@@ -717,7 +717,7 @@ function allowed(t){
 }
 function setF(k,v){
   const oldType=F.type;
-  if(k==='geworfen'){F.geworfen=(v===null||v==='')?null:+v;if(F.geworfen!=null){F.contra=[];F.stage=1;F.schiebe=[];F.jungfrau=false;F.durchmarsch=null;F.passe=false;F.augen={}}drawForm();return}
+  if(k==='geworfen'){F.geworfen=(v===null||v==='')?null:+v;if(F.geworfen!=null){F.contra=(F.contra||[]).filter(ramschCan);F.schiebe=(F.schiebe||[]).filter(ramschCan);if(!F.contra.length)F.stage=1;F.jungfrau=false;F.durchmarsch=null;F.passe=false;F.augen={}}drawForm();return}
   F[k]=v;
   if(k==='outcome')F.outcomeSet=true;
   if(k==='jungfrau'&&v)F.durchmarsch=null;           // Jungfrau und Durchmarsch schließen sich aus
@@ -736,6 +736,7 @@ function setF(k,v){
   drawForm();
 }
 function toggleContra(i){
+  if(!ramschCan(i))return;
   const p=F.contra.indexOf(i);p<0?F.contra.push(i):F.contra.splice(p,1);
   if(F.stage==null)F.stage=1;drawForm();
 }
@@ -772,15 +773,26 @@ function setSn(b){F.outcome=F.outcome[0]+(b?'S':'');F.outcomeSet=true;F.augenSp=
 function setSw(b){F.outcome=F.outcome[0]+(b?'SW':'S');F.outcomeSet=true;F.augenSp=null;drawForm()}
 function setSixty(b){F.sixty=b;drawForm()}
 function setSchiebe(b){F.schiebe=b&&F.declarer!=null?[F.declarer]:[];drawForm()}
-function toggleSchiebe(i){const k=(F.schiebe||[]).indexOf(i);F.schiebe=F.schiebe||[];k<0?F.schiebe.push(i):F.schiebe.splice(k,1);drawForm()}
+function toggleSchiebe(i){if(!ramschCan(i))return;const k=(F.schiebe||[]).indexOf(i);F.schiebe=F.schiebe||[];k<0?F.schiebe.push(i):F.schiebe.splice(k,1);drawForm()}
 // Ansagen im Ramsch: Kontra, Re, Hirsch (jeder Spieler), Schiebe (Stock nicht aufgenommen); nicht erlaubt, wenn alle gepasst haben
+// Reihenfolge beim Aufnehmen des Stocks: es beginnt der Spieler nach dem Geber, der Geber kommt (bei 3 Spielern) zuletzt
+function ramschOrder(){
+  const seat=ctx.seat&&ctx.seat.length?ctx.seat:ctx.play,k=seat.indexOf(ctx.dealer),ord=[];
+  for(let j=1;j<=seat.length;j++)ord.push(seat[((k<0?-1:k)+j)%seat.length]);
+  return ord.filter(i=>ctx.play.includes(i));
+}
+// Wer darf (noch) etwas ansagen? Hat ein Spieler geworfen, können nur er selbst und die Spieler vor ihm in der Reihenfolge vorher angesagt haben
+function ramschCan(i){
+  if(F.geworfen==null||F.geworfen==='')return true;
+  const o=ramschOrder();return o.indexOf(i)<=o.indexOf(+F.geworfen);
+}
 function ramschAnsagen(act,dis){
   const st=stageOf(F),d=dis?'disabled':'';
   return `<label style="${dis?'opacity:.45':''}">Kontra gesagt von (im Ramsch darf jeder Spieler Kontra, Re und Hirsch sagen${dis?(F.geworfen!=null?' – nicht möglich: ein Spieler hat geworfen':' – nicht möglich: alle haben gepasst'):''})</label>
-  <div class="seg">${act.map(i=>`<button class="${F.contra.includes(i)?'on':''}" ${d} onclick="toggleContra(${i})">${esc(S.players[i])}</button>`).join('')}</div>
+  <div class="seg">${act.map(i=>`<button class="${F.contra.includes(i)?'on':''}" ${d||!ramschCan(i)?'disabled':''} onclick="toggleContra(${i})">${esc(S.players[i])}</button>`).join('')}</div>
   <div class="seg"><button class="${st>=1?'on':''}" disabled>Kontra ×2</button>${[[2,'Re ×4'],[3,'Hirsch ×8']].map(([s,l])=>`<button class="${st>=s?'on':''}" ${!dis&&st>=s-1&&F.contra.length?'':'disabled'} onclick="toggleStage(${s})">${l}</button>`).join('')}</div>
   <label style="${dis?'opacity:.45':''}">Schiebe gesagt von (Stock nicht aufgenommen, jeder Schiebende verdoppelt die Verlustpunkte)</label>
-  <div class="seg">${act.map(i=>`<button class="${(F.schiebe||[]).includes(i)?'on':''}" ${d} onclick="toggleSchiebe(${i})">${esc(S.players[i])}</button>`).join('')}</div>`;
+  <div class="seg">${act.map(i=>`<button class="${(F.schiebe||[]).includes(i)?'on':''}" ${d||!ramschCan(i)?'disabled':''} onclick="toggleSchiebe(${i})">${esc(S.players[i])}</button>`).join('')}</div>`;
 }
 let LASTTAP={i:-1,t:0};
 // Abgeschlossene Spiele öffnen nur mit Doppelklick bzw. Doppeltipp; ein laufendes Spiel (Ergebnis fehlt) mit einem Klick
@@ -859,8 +871,8 @@ function drawForm(){
     const noPass=isMalHand||forcedR; // in einem Pflicht-Ramsch kann niemand mehr passen
     if(noPass)F.passe=false;
     h+=`<label class="chk" style="${noPass?'opacity:.45':''}"><input type="checkbox" ${F.passe&&!noPass?'checked':''} ${noPass?'disabled':''} onchange="setF('passe',this.checked)"> Alle haben gepasst – löst ${ctx.seat.length} Ramsch-Spiele aus (dieses mitgerechnet)${isMalHand?' – im Malenko nicht möglich':forcedR?' – im Pflicht-Ramsch nicht möglich':''}</label>`;
-    h+=`<label>Geworfen / geschenkt – ein Spieler wirft hin: er bekommt 120 Punkte, niemand kann danach Kontra oder Re sagen, das Spiel gilt für ihn als verloren</label><div class="seg">${act.map(i=>`<button class="${F.geworfen===i?'on':''}" onclick="setF('geworfen',${F.geworfen===i?'null':i})">${esc(S.players[i])} wirft</button>`).join('')}</div>`;
-    h+=ramschAnsagen(act,(!!F.passe&&!noPass)||F.geworfen!=null);
+    h+=`<label>Geworfen / geschenkt – ein Spieler wirft hin: er bekommt 120 Punkte (das bis dahin Angesagte zählt mit), nach dem Werfen kann niemand mehr etwas ansagen, das Spiel gilt für ihn als verloren</label><div class="muted" style="margin-bottom:4px">Reihenfolge beim Aufnehmen des Stocks: ${ramschOrder().map((i,k)=>(k+1)+'. '+esc(S.players[i])).join(' → ')}${ctx.play.includes(ctx.dealer)?' (Geber zuletzt)':''} – wer nach dem Werfer dran wäre, kann nichts mehr ansagen.</div><div class="seg">${act.map(i=>`<button class="${F.geworfen===i?'on':''}" onclick="setF('geworfen',${F.geworfen===i?'null':i})">${esc(S.players[i])} wirft</button>`).join('')}</div>`;
+    h+=ramschAnsagen(act,!!F.passe&&!noPass);
     h+=(F.geworfen!=null?'<fieldset disabled style="border:0;padding:0;margin:0;opacity:.4">':fsOpen)+`<label>Augen (Kartenwerte) je Spieler – jeder kann verlieren (inkl. Skat, Summe 120)${resLocked?' – wird später eingetragen':''}</label><div class="row2">${act.map(i=>`<div><label>${esc(S.players[i])}</label><div class="augw"><input type="number" min="0" max="120" id="aug${i}" value="${F.augen[i]??''}" placeholder="${emp.length===1&&emp[0]===i&&sum<=120?120-sum:''}" oninput="ramschIn(${i},this.value)"><button type="button" class="ab u" tabindex="-1" aria-label="mehr" onmousedown="event.preventDefault()" onpointerdown="augHold('aug${i}',1,event)">▲</button><button type="button" class="ab d" tabindex="-1" aria-label="weniger" onmousedown="event.preventDefault()" onpointerdown="augHold('aug${i}',-1,event)">▼</button></div></div>`).join('')}</div>
     <div class="muted">Summe: ${sum} ${sum===120?'✓':emp.length===1&&sum<=120?'(Rest '+(120-sum)+' wird beim leeren Feld eingetragen)':'(muss 120 sein)'}</div>
     <label class="chk" style="${hasZero&&F.durchmarsch==null?'':'opacity:.45'}"><input type="checkbox" ${F.jungfrau&&hasZero?'checked':''} ${hasZero&&F.durchmarsch==null?'':'disabled'} onchange="setF('jungfrau',this.checked)"> Jungfrau (×${S.settings.jungfrau})${hasZero?' – nur wenn jemand Jungfrau ist':' – nur wählbar, wenn ein Spieler 0 Augen hat'}</label>
@@ -901,7 +913,7 @@ function ramschAugen(act){
 }
 function saveHand(keepOpen){
   const h=JSON.parse(JSON.stringify(F));
-  if(h.type==='ramsch'){h.declarer=null;h.reiz=null;h.augen=keepOpen?(Object.keys(F.augen||{}).length?F.augen:null):ramschAugen(ctx.play);if(ctx.ramschLeft>0)h.passe=false;if(h.geworfen!=null){h.contra=[];h.stage=1;h.schiebe=[];h.jungfrau=false;h.durchmarsch=null;h.passe=false}}
+  if(h.type==='ramsch'){h.declarer=null;h.reiz=null;h.augen=keepOpen?(Object.keys(F.augen||{}).length?F.augen:null):ramschAugen(ctx.play);if(ctx.ramschLeft>0)h.passe=false;if(h.geworfen!=null){h.contra=(h.contra||[]).filter(ramschCan);h.schiebe=(h.schiebe||[]).filter(ramschCan);if(!h.contra.length)h.stage=1;h.jungfrau=false;h.durchmarsch=null;h.passe=false}}
   // Bei 4 Spielern setzt der Geber aus und kann nie Alleinspieler sein
   else if(h.declarer!=null&&!ctx.play.includes(+h.declarer)){toast('Der Geber spielt bei 4 Spielern nicht mit und kann nicht Alleinspieler sein.',5000);return}
   // offen = Spiel angelegt (gereizt/angesagt), Ergebnis noch nicht eingetragen
@@ -1072,13 +1084,14 @@ function spApply(text){
   }else{
     const noPass=malHand||ctx.ramschLeft>0||ctx.wasForced;
     if(r.passe){if(noPass)bad.push('Alle gepasst ist hier nicht möglich');else{setF('passe',true);ok.push('alle gepasst')}}
-    if(r.throwSaid){if(r.throwP!=null&&ctx.play.includes(r.throwP)){setF('geworfen',r.throwP);ok.push(nm(r.throwP)+' wirft hin (120 Punkte, kein Kontra)')}else bad.push('Wer wirft? Bitte einen Mitspieler nennen')}
-    if(!F.passe&&F.geworfen==null&&(r.contra.length||r.stage>=1)){
-      const L=[...new Set([...F.contra,...r.contra])].filter(i=>ctx.play.includes(i));
+    if(r.throwSaid){if(r.throwP!=null&&ctx.play.includes(r.throwP)){setF('geworfen',r.throwP);ok.push(nm(r.throwP)+' wirft hin (120 Punkte)')}else bad.push('Wer wirft? Bitte einen Mitspieler nennen')}
+    if(!F.passe&&(r.contra.length||r.stage>=1)){
+      const L0=[...new Set([...F.contra,...r.contra])].filter(i=>ctx.play.includes(i)),L=L0.filter(ramschCan);
+      if(L.length<L0.length)bad.push('Nach dem Werfer kann nicht mehr angesagt werden: '+L0.filter(i=>!ramschCan(i)).map(nm).join(', '));
       if(L.length){F.contra=L;F.stage=Math.min(3,Math.max(r.stage||1,stageOf(F)||1));ok.push(F.stage===1?'Kontra von '+L.map(nm).join(', '):['Kontra','Kontra','Re','Hirsch'][F.stage]+' (Kontra von '+L.map(nm).join(', ')+')')}
       else bad.push('Kontra: von wem? (Name nennen)');
     }
-    if(!F.passe&&F.geworfen==null&&r.schiebe.length){F.schiebe=[...new Set([...(F.schiebe||[]),...r.schiebe])];ok.push('Schiebe: '+F.schiebe.map(nm).join(', '))}
+    if(!F.passe&&r.schiebe.length){const S0=[...new Set([...(F.schiebe||[]),...r.schiebe])];F.schiebe=S0.filter(ramschCan);if(F.schiebe.length<S0.length)bad.push('Nach dem Werfer kann nicht mehr geschoben werden: '+S0.filter(i=>!ramschCan(i)).map(nm).join(', '));if(F.schiebe.length)ok.push('Schiebe: '+F.schiebe.map(nm).join(', '))}
     const set=(p,v)=>{v=Math.min(120,v);F.augen[p]=v;if(v===120)ctx.play.forEach(q=>{if(q!==p)F.augen[q]=0})};
     Object.entries(F.geworfen!=null?{}:r.aug).forEach(([p,v])=>{if(ctx.play.includes(+p)){set(+p,v)}});
     if(F.geworfen==null&&r.durch&&r.durchP!=null&&ctx.play.includes(r.durchP))set(r.durchP,120);
@@ -1317,7 +1330,7 @@ function vsRows(){
     const hasA=F.augenSp!==''&&F.augenSp!=null;
     R.push(['Ergebnis',(F.outcomeSet||hasA)?OUTN[F.outcome]+(hasA?' ('+F.augenSp+' Augen)':'')+(F.sixty?', genau 60':''):'noch keins']);
   }else{
-    if(F.geworfen!=null)R.push(['Geworfen',nm(F.geworfen)+' wirft hin – 120 Punkte, kein Kontra mehr']);else R.push(['Alle gepasst',F.passe?'ja':'nein']);
+    if(F.geworfen!=null)R.push(['Geworfen',nm(F.geworfen)+' wirft hin – 120 Punkte']);else R.push(['Alle gepasst',F.passe?'ja':'nein']);
     const a=ramschAugen(ctx.play)||F.augen;
     R.push(['Augen',ctx.play.filter(i=>a[i]!==''&&a[i]!=null).map(i=>nm(i)+' '+a[i]).join(', ')||'noch keine']);
     if(F.jungfrau)R.push(['Jungfrau','ja']);
@@ -1370,7 +1383,7 @@ function vsSummary(){
     if(F.outcomeSet||hasA)p.push('Ergebnis '+OUTN[F.outcome].toLowerCase()+(hasA?', '+F.augenSp+' Augen':'')+(F.sixty?', genau 60 Augen':''));
     else p.push('noch ohne Ergebnis');
   }else{
-    p.push(F.geworfen!=null?nm(F.geworfen)+' wirft hin und bekommt 120 Punkte, kein Kontra mehr möglich':(F.passe?'alle gepasst':'nicht alle gepasst'));
+    p.push(F.geworfen!=null?nm(F.geworfen)+' wirft hin und bekommt 120 Punkte':(F.passe?'alle gepasst':'nicht alle gepasst'));
     const a=ramschAugen(ctx.play)||F.augen;
     const L=ctx.play.filter(i=>a[i]!==''&&a[i]!=null).map(i=>nm(i)+' '+a[i]);
     if(F.geworfen==null)p.push(L.length?'Augen: '+L.join(', '):'noch keine Augen');
@@ -2659,7 +2672,7 @@ async function waStep(n){
 }
 
 /* ---------- Logos, Info, Hilfe, Suche ---------- */
-const APP_NAME='Skat-LOGGER',APP_TAG='Spielverlauf aufschreiben + Statistik + mehr',APP_VERSION='1.31.0',APP_BUILD='2026-10-23',APP_UPDATED='2026-11-23';
+const APP_NAME='Skat-LOGGER',APP_TAG='Spielverlauf aufschreiben + Statistik + mehr',APP_VERSION='1.31.1',APP_BUILD='2026-10-23',APP_UPDATED='2026-11-23';
 const LOGOS=[
   {n:'Kartenfächer',svg:`<svg viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI Symbol,Arial,sans-serif"><rect width="128" height="128" rx="28" fill="#17382a"/><text x="64" y="31" text-anchor="middle" font-family="Georgia,serif" font-size="21" font-weight="700" fill="#f6f1e3" letter-spacing="3">SKAT</text><text x="64" y="118" text-anchor="middle" font-family="Georgia,serif" font-size="19" font-weight="700" fill="#e8b923" letter-spacing="4">LOG</text><g transform="translate(12.8 16) scale(0.8)"><g transform="rotate(-24 64 104)"><rect x="40" y="30" width="48" height="68" rx="6" fill="#fff" stroke="#cfc8b4" stroke-width="1.5"/><text x="47" y="50" font-size="15" fill="#c0392b">♦</text><text x="64" y="80" font-size="32" text-anchor="middle" fill="#c0392b">♦</text></g><g transform="rotate(24 64 104)"><rect x="40" y="30" width="48" height="68" rx="6" fill="#fff" stroke="#cfc8b4" stroke-width="1.5"/><text x="47" y="50" font-size="15" fill="#c0392b">♥</text><text x="64" y="80" font-size="32" text-anchor="middle" fill="#c0392b">♥</text></g><g><rect x="40" y="30" width="48" height="68" rx="6" fill="#fff" stroke="#cfc8b4" stroke-width="1.5"/><text x="47" y="50" font-size="15" fill="#1d2a24">♠</text><text x="64" y="80" font-size="32" text-anchor="middle" fill="#1d2a24">♠</text></g></g></svg>`},
 ];
