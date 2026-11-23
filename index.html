@@ -60,6 +60,7 @@ tr.row{cursor:pointer}
 .chk{display:flex;align-items:center;gap:8px;margin:6px 0;color:var(--ink);font-size:15px}
 .chk input{width:20px;height:20px}
 .muted{color:var(--mute);font-size:13px}
+.vspop{position:fixed;inset:0;z-index:2000;background:#0008;display:flex;align-items:center;justify-content:center;padding:8px}.vscard{background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:12px;padding:10px 12px;width:100%;max-width:440px;max-height:98vh;overflow:hidden;font-size:clamp(11px,2.2vh,15px)}.vscard h1{font-size:1.15em;margin:0 0 4px}.vsrows{width:100%;border-collapse:collapse}.vsrows td{padding:2px 4px;border-bottom:1px solid var(--line);vertical-align:top}.vsrows td.k{color:var(--mute);white-space:nowrap;width:1%}.vswarn{background:var(--bad);color:#fff;border-radius:6px;padding:3px 6px;margin:2px 0}.vsq{margin-top:4px}
 .spbox{border:1px dashed var(--line);border-radius:10px;padding:6px 10px 8px;margin:8px 0}.spbox .btn{padding:8px 12px;white-space:nowrap}.spbox summary{cursor:pointer}
 .scroll{overflow-x:auto}
 .pc{text-align:center}
@@ -675,7 +676,7 @@ function openForm(i){
     F.ouvertFree=true}
   drawForm();
 }
-function closeModal(){if(typeof micStop==='function')micStop();if(typeof VS!=='undefined'&&VS.on)vsStop();document.getElementById('modal').innerHTML='';F=null;SHEETSTACK=[];SETONLY=false}
+function closeModal(){if(typeof vsPopHide==='function')vsPopHide();if(typeof micStop==='function')micStop();if(typeof VS!=='undefined'&&VS.on)vsStop();document.getElementById('modal').innerHTML='';F=null;SHEETSTACK=[];SETONLY=false}
 /* ---------- Navigation: ← zurück (oben links), ✕ Anwendung schließen (oben rechts) ---------- */
 let SHEETSTACK=[]; // zuvor geöffnete Fenster (z. B. Gesamtansicht → Statistik → zurück zur Gesamtansicht)
 function sheetBack(){const p=SHEETSTACK.pop();if(p)document.getElementById('modal').innerHTML=p;else closeModal()}
@@ -1208,7 +1209,9 @@ async function micStart(){
 function spSettings(){
   setTimeout(spMicState,0);setTimeout(micDevices,0);
   const ua=navigator.userAgent.replace(/\s+/g,' ').slice(0,110);
-  return `<label>🎤 Spracheingabe (Diagnose)</label>
+  return `<label>🎤 Spracheingabe</label>
+  <div style="margin:4px 0 8px"><button class="btn sec" id="vsOutBtn" onclick="vsToggleOut()">${vsVoiceOut()?'🔊 Sprachausgabe: an':'🔇 Sprachausgabe: aus (Pop-up statt Ansage)'}</button><div class="muted">Aus: Die App spricht nichts vor, sondern zeigt vor dem Speichern alle gehörten Angaben auf einen Blick in einem Pop-up (Ja/Nein per Sprache oder Tippen).</div></div>
+  <label>Diagnose</label>
   <div class="prev" style="margin:4px 0;font-weight:400;font-size:13px">
   Spracherkennung im Browser: <b>${SP_SR?'vorhanden':'NICHT vorhanden'}</b>${androidApp()?' (Android-App: 🎤-Knopf wird ausgeblendet, bitte das Tastatur-Mikrofon nutzen)':''}<br>
   Sichere Verbindung (https/localhost): <b>${window.isSecureContext?'ja':'NEIN – Mikrofon geht nur über https'}</b><br>
@@ -1235,7 +1238,10 @@ const spErrText=c=>({'not-allowed':'Mikrofon nicht erlaubt. '+spHelp('perm'),'se
 function vsUI(){
   document.querySelectorAll('.vsmic').forEach(b=>{b.classList.toggle('bad',VS.on);b.textContent=VS.on?'⏹':'🎤'});
 }
+const vsVoiceOut=()=>{try{return localStorage.getItem('skat-voice-out')!=='0'}catch(e){return true}};
+function vsToggleOut(){const on=!vsVoiceOut();try{localStorage.setItem('skat-voice-out',on?'1':'0')}catch(e){}if(!on){try{window.speechSynthesis&&speechSynthesis.cancel()}catch(e){}}const b=document.getElementById('vsOutBtn');if(b)b.textContent=on?'🔊 Sprachausgabe: an':'🔇 Sprachausgabe: aus (Pop-up statt Ansage)'}
 function vsSpeak(t,after){
+  if(!vsVoiceOut()){if(after)after();return} // Sprachausgabe aus: nichts sprechen, die Angaben erscheinen im Pop-up
   if(!window.speechSynthesis||typeof SpeechSynthesisUtterance==='undefined'){if(after)after();return}
   try{
     speechSynthesis.cancel();
@@ -1246,6 +1252,7 @@ function vsSpeak(t,after){
   }catch(e){VS.speaking=false;if(after)after()}
 }
 function vsStop(msg){
+  vsPopHide();
   VS.on=false;VS.confirm=false;VS.speaking=false;
   if(VS.rec){try{VS.rec.abort()}catch(e){}VS.rec=null}
   try{window.speechSynthesis&&speechSynthesis.cancel()}catch(e){}
@@ -1285,6 +1292,55 @@ function vsBest(res){
     if(sc>bs){bs=sc;best=t}
   }
   return best;
+}
+function vsPopHide(){const d=document.getElementById('vsPop');if(d)d.remove()}
+// Alle gehörten Angaben als Zeilen (für das Pop-up, ohne Scrollen)
+function vsRows(){
+  const isR=F.type==='ramsch',nm=i=>S.players[i],R=[],st=stageOf(F),stN=['','Kontra','Re','Hirsch','Geweih'];
+  R.push(['Spielart',TYPES[F.type].n]);
+  if(!isR){
+    R.push(['Alleinspieler',F.declarer!=null?nm(F.declarer):'–']);
+    if(F.reiz)R.push(['Gereizt bis',F.reiz]);
+    if(F.type!=='null')R.push(['Buben',F.mo+' '+F.n]);
+    const ans=[];if(F.hand)ans.push('Hand');if(F.ouvert)ans.push('Ouvert');if(F.spitze)ans.push('Spitze');if(F.schnAng||F.schwarzAng)ans.push(F.schwarzAng?'Schwarz angesagt':'Schneider angesagt');if((F.schiebe||[]).length)ans.push('Schiebe');
+    R.push(['Ansagen',ans.length?ans.join(', '):'keine']);
+    R.push(['Kontra',(F.contra||[]).length?(st>1?stN[st]+', ':'')+'von '+F.contra.map(nm).join(', '):'keins']);
+    const hasA=F.augenSp!==''&&F.augenSp!=null;
+    R.push(['Ergebnis',(F.outcomeSet||hasA)?OUTN[F.outcome]+(hasA?' ('+F.augenSp+' Augen)':'')+(F.sixty?', genau 60':''):'noch keins']);
+  }else{
+    R.push(['Alle gepasst',F.passe?'ja':'nein']);
+    const a=ramschAugen(ctx.play)||F.augen;
+    R.push(['Augen',ctx.play.filter(i=>a[i]!==''&&a[i]!=null).map(i=>nm(i)+' '+a[i]).join(', ')||'noch keine']);
+    if(F.jungfrau)R.push(['Jungfrau','ja']);
+    if(F.durchmarsch!=null)R.push(['Durchmarsch',nm(F.durchmarsch)]);
+    R.push(['Kontra',(F.contra||[]).length?(st>1?stN[st]+', ':'')+'von '+F.contra.map(nm).join(', '):'keins']);
+    if((F.schiebe||[]).length)R.push(['Schiebe',F.schiebe.map(nm).join(', ')]);
+  }
+  const malH=F.malPlayer!=null&&F.malPlayer!=='',lvE=malH?0:(F.levelOverride!=null?F.levelOverride:ctx.auto);
+  R.push(['Bockspiel',lvE>0?'ja, Faktor '+levelF(lvE):'nein']);
+  try{
+    const hasRes=isR?!!ramschAugen(ctx.play):(!!F.outcomeSet||(F.augenSp!==''&&F.augenSp!=null));
+    if(hasRes&&!(VS.keep&&(editIdx==null||F.open))){
+      const lev=lvE,c=calc(isR?{...F,open:false,augen:ramschAugen(ctx.play)||F.augen}:{...F,open:false},lev,ctx.play,ctx.seat);
+      if(!isR&&c.over)R.push(['⚠ Überreizt','gespielt nur '+((c.base&&c.mult)?c.base*c.mult:c.value)+', gereizt bis '+F.reiz+' – gilt als verloren']);
+      if(!isR&&c.value)R.push(['Spielwert',c.value]);
+      const L=Object.entries(c.pts).filter(([k,v])=>v).map(([k,v])=>nm(+k)+' '+v);
+      R.push(['Verlorene Punkte',L.length?L.join(', '):'keine']);
+    }
+  }catch(e){}
+  return R;
+}
+function vsPopShow(q,warn,confirm){
+  vsPopHide();
+  const rows=vsRows().map(([a,b])=>`<tr><td class="k">${esc(a)}</td><td>${esc(String(b))}</td></tr>`).join('');
+  const d=document.createElement('div');d.id='vsPop';d.className='vspop';
+  d.innerHTML=`<div class="vscard"><h1>🎤 Gehört – wird so eingetragen</h1>${warn?`<div class="vswarn">⚠ ${esc(warn)}</div>`:''}<table class="vsrows">${rows}</table><div class="muted vsq">${esc(q||'')}</div><div class="btnbar" style="margin-top:6px">${confirm?'<button class="btn" onclick="vsAnswer(true)">Ja</button><button class="btn sec" onclick="vsAnswer(false)">Nein</button>':'<button class="btn sec" onclick="vsPopHide()">OK</button>'}</div></div>`;
+  document.body.appendChild(d);
+}
+function vsAnswer(yes){
+  vsPopHide();if(!F||!VS.confirm)return;VS.confirm=false;
+  if(yes){vsSave();return}
+  SP.msg='Nicht gespeichert – sprich weiter oder korrigiere.';drawForm();
 }
 function vsSummary(){
   const isR=F.type==='ramsch',p=['Spielart '+TYPES[F.type].n],nm=i=>S.players[i];
@@ -1346,12 +1402,12 @@ function ramschFehlt(){
 }
 function vsAsk(close){
   const c=vsCanSave();
-  if(!c.ok){SP.msg='⚠ '+c.why+' Bitte ergänzen.';drawForm();vsSpeak(c.why);return}
-  if(close&&!c.hasRes&&!VS.keep){const m=F.type==='ramsch'?ramschFehlt():'Zum Abschließen fehlt das Ergebnis. Sag gewonnen oder verloren, oder die Augen.';SP.msg='⚠ '+m;drawForm();vsSpeak(m);return}
+  if(!c.ok){SP.msg='⚠ '+c.why+' Bitte ergänzen.';drawForm();vsSpeak(c.why);if(!vsVoiceOut())vsPopShow('',c.why,false);return}
+  if(close&&!c.hasRes&&!VS.keep){const m=F.type==='ramsch'?ramschFehlt():'Zum Abschließen fehlt das Ergebnis. Sag gewonnen oder verloren, oder die Augen.';SP.msg='⚠ '+m;drawForm();vsSpeak(m);if(!vsVoiceOut())vsPopShow('',m,false);return}
   if(c.keep&&VS.keep){F.outcomeSet=false;F.augenSp=null;F.outcome='W';F.sixty=false;F.augen={};F.jungfrau=false;F.durchmarsch=null} // Ergebnis weglassen
   VS.confirm=true;
   const open=editIdx!=null&&!!F.open;const t=vsSummary()+(c.keep?(VS.keep?'. Ohne Ergebnis zwischenspeichern?':(F.type==='ramsch'?'. '+ramschFehlt()+' Oder ohne Ergebnis zwischenspeichern?':'. Es fehlt noch das Ergebnis. Ohne Ergebnis zwischenspeichern? Oder sag jetzt das Ergebnis.')):(open?'. Ergebnis eintragen und Spiel abschließen?':'. Speichern?'));
-  SP.msg='❓ '+t+' Sag „ja“ oder „nein“.';drawForm();vsSpeak(t+' Sage ja oder nein.');
+  SP.msg='❓ '+t+' Sag „ja“ oder „nein“.';drawForm();vsSpeak(t+' Sage ja oder nein.');if(!vsVoiceOut())vsPopShow((c.keep?(VS.keep?'Ohne Ergebnis zwischenspeichern?':'Es fehlt noch das Ergebnis – ohne Ergebnis zwischenspeichern oder Ergebnis sagen?'):(open?'Ergebnis eintragen und Spiel abschließen?':'Speichern?'))+' Sag „ja“ oder „nein“.',null,true);
 }
 function vsSave(){
   const c=vsCanSave();if(!c.ok){vsAsk();return}
@@ -1361,7 +1417,7 @@ function vsSave(){
 }
 const vsFix=t=>String(t).replace(/\b(grang|gang|drang|gran|grant)\b/gi,'Grand');
 function vsHear(t){
-  VS.last=Date.now();
+  VS.last=Date.now();vsPopHide();
   t=vsFix(t);
   if(!F){vsStop();return}
   // „Korrektur/Korrigieren“: alles bisher Gesagte wird verworfen, danach zählen nur die neuen Angaben
@@ -2578,7 +2634,7 @@ async function waStep(n){
 }
 
 /* ---------- Logos, Info, Hilfe, Suche ---------- */
-const APP_NAME='Skat-LOGGER',APP_TAG='Spielverlauf aufschreiben + Statistik + mehr',APP_VERSION='1.29.20',APP_BUILD='2026-10-23',APP_UPDATED='2026-11-23';
+const APP_NAME='Skat-LOGGER',APP_TAG='Spielverlauf aufschreiben + Statistik + mehr',APP_VERSION='1.30.0',APP_BUILD='2026-10-23',APP_UPDATED='2026-11-23';
 const LOGOS=[
   {n:'Kartenfächer',svg:`<svg viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI Symbol,Arial,sans-serif"><rect width="128" height="128" rx="28" fill="#17382a"/><text x="64" y="31" text-anchor="middle" font-family="Georgia,serif" font-size="21" font-weight="700" fill="#f6f1e3" letter-spacing="3">SKAT</text><text x="64" y="118" text-anchor="middle" font-family="Georgia,serif" font-size="19" font-weight="700" fill="#e8b923" letter-spacing="4">LOG</text><g transform="translate(12.8 16) scale(0.8)"><g transform="rotate(-24 64 104)"><rect x="40" y="30" width="48" height="68" rx="6" fill="#fff" stroke="#cfc8b4" stroke-width="1.5"/><text x="47" y="50" font-size="15" fill="#c0392b">♦</text><text x="64" y="80" font-size="32" text-anchor="middle" fill="#c0392b">♦</text></g><g transform="rotate(24 64 104)"><rect x="40" y="30" width="48" height="68" rx="6" fill="#fff" stroke="#cfc8b4" stroke-width="1.5"/><text x="47" y="50" font-size="15" fill="#c0392b">♥</text><text x="64" y="80" font-size="32" text-anchor="middle" fill="#c0392b">♥</text></g><g><rect x="40" y="30" width="48" height="68" rx="6" fill="#fff" stroke="#cfc8b4" stroke-width="1.5"/><text x="47" y="50" font-size="15" fill="#1d2a24">♠</text><text x="64" y="80" font-size="32" text-anchor="middle" fill="#1d2a24">♠</text></g></g></svg>`},
 ];
