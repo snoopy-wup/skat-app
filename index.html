@@ -1247,12 +1247,13 @@ function vsCanSave(){
   const openEdit=editIdx!=null&&!!F.open;
   const allowKeep=editIdx==null||openEdit;return {ok:true,keep:allowKeep&&(VS.keep||!hasRes),hasRes};
 }
-function vsAsk(){
+function vsAsk(close){
   const c=vsCanSave();
   if(!c.ok){SP.msg='⚠ '+c.why+' Bitte ergänzen.';drawForm();vsSpeak(c.why);return}
+  if(close&&!c.hasRes&&!VS.keep){const m='Zum Abschließen fehlt das Ergebnis. Sag gewonnen oder verloren, oder die Augen.';SP.msg='⚠ '+m;drawForm();vsSpeak(m);return}
   if(c.keep&&VS.keep){F.outcomeSet=false;F.augenSp=null;F.outcome='W';F.sixty=false;F.augen={};F.jungfrau=false;F.durchmarsch=null} // Ergebnis weglassen
   VS.confirm=true;
-  const t=vsSummary()+(c.keep?'. Ohne Ergebnis zwischenspeichern?':'. Speichern?');
+  const open=editIdx!=null&&!!F.open;const t=vsSummary()+(c.keep?(VS.keep?'. Ohne Ergebnis zwischenspeichern?':'. Es fehlt noch das Ergebnis. Ohne Ergebnis zwischenspeichern? Oder sag jetzt das Ergebnis.'):(open?'. Ergebnis eintragen und Spiel abschließen?':'. Speichern?'));
   SP.msg='❓ '+t+' Sag „ja“ oder „nein“.';drawForm();vsSpeak(t);
 }
 function vsSave(){
@@ -1278,7 +1279,7 @@ function vsHear(t){
   F=JSON.parse(VS.base);spApply(VS.buf);
   SP.msg='„'+VS.buf+'“ → '+SP.msg;
   if(has('zwischenspeichern','zwischenspeicher','zwischen')){VS.keep=true;vsAsk();return} // Zwischenspeichern lässt das Ergebnis weg
-  if(has('ubernehmen','ubernimm','speichern','abspeichern','abschliessen','abschliesse','abschluss','fertig')){VS.keep=false;vsAsk();return}
+  if(has('ubernehmen','ubernimm','speichern','abspeichern','abschliessen','abschliesse','abgeschlossen','abschluss','fertig')){VS.keep=false;vsAsk(has('abschliessen','abschliesse','abgeschlossen','abschluss'));return}
   drawForm();
 }
 /* ---------- Einstellungen ---------- */
@@ -2474,7 +2475,7 @@ async function waStep(n){
 }
 
 /* ---------- Logos, Info, Hilfe, Suche ---------- */
-const APP_NAME='Skat-LOGGER',APP_TAG='Spielverlauf aufschreiben + Statistik + mehr',APP_VERSION='1.29.6',APP_BUILD='2026-10-23',APP_UPDATED='2026-11-23';
+const APP_NAME='Skat-LOGGER',APP_TAG='Spielverlauf aufschreiben + Statistik + mehr',APP_VERSION='1.29.7',APP_BUILD='2026-10-23',APP_UPDATED='2026-11-23';
 const LOGOS=[
   {n:'Kartenfächer',svg:`<svg viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI Symbol,Arial,sans-serif"><rect width="128" height="128" rx="28" fill="#17382a"/><text x="64" y="31" text-anchor="middle" font-family="Georgia,serif" font-size="21" font-weight="700" fill="#f6f1e3" letter-spacing="3">SKAT</text><text x="64" y="118" text-anchor="middle" font-family="Georgia,serif" font-size="19" font-weight="700" fill="#e8b923" letter-spacing="4">LOG</text><g transform="translate(12.8 16) scale(0.8)"><g transform="rotate(-24 64 104)"><rect x="40" y="30" width="48" height="68" rx="6" fill="#fff" stroke="#cfc8b4" stroke-width="1.5"/><text x="47" y="50" font-size="15" fill="#c0392b">♦</text><text x="64" y="80" font-size="32" text-anchor="middle" fill="#c0392b">♦</text></g><g transform="rotate(24 64 104)"><rect x="40" y="30" width="48" height="68" rx="6" fill="#fff" stroke="#cfc8b4" stroke-width="1.5"/><text x="47" y="50" font-size="15" fill="#c0392b">♥</text><text x="64" y="80" font-size="32" text-anchor="middle" fill="#c0392b">♥</text></g><g><rect x="40" y="30" width="48" height="68" rx="6" fill="#fff" stroke="#cfc8b4" stroke-width="1.5"/><text x="47" y="50" font-size="15" fill="#1d2a24">♠</text><text x="64" y="80" font-size="32" text-anchor="middle" fill="#1d2a24">♠</text></g></g></svg>`},
 ];
