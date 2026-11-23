@@ -675,7 +675,7 @@ function openForm(i){
     F.ouvertFree=true}
   drawForm();
 }
-function closeModal(){document.getElementById('modal').innerHTML='';F=null;SHEETSTACK=[];SETONLY=false}
+function closeModal(){if(typeof micStop==='function')micStop();document.getElementById('modal').innerHTML='';F=null;SHEETSTACK=[];SETONLY=false}
 /* ---------- Navigation: ← zurück (oben links), ✕ Anwendung schließen (oben rechts) ---------- */
 let SHEETSTACK=[]; // zuvor geöffnete Fenster (z. B. Gesamtansicht → Statistik → zurück zur Gesamtansicht)
 function sheetBack(){const p=SHEETSTACK.pop();if(p)document.getElementById('modal').innerHTML=p;else closeModal()}
@@ -1088,6 +1088,49 @@ function spListen(fertig,test){
 function spMic(){spListen(spApply,false)}
 function spTest(){spListen(t=>{const T=spTok(t);spLogAdd('Zerlegt: '+T.map(x=>x.n!=null?x.n:x.s).join(' | '))},true)}
 async function spMicState(){let m='unbekannt';try{if(navigator.permissions){const q=await navigator.permissions.query({name:'microphone'});m=({granted:'erlaubt',denied:'GESPERRT',prompt:'wird beim Start abgefragt'})[q.state]||q.state}}catch(e){}const el=document.getElementById('spPerm');if(el)el.textContent=m+(m==='GESPERRT'?' – im Browser freigeben (Schloss-Symbol neben der Adresse → Mikrofon → Zulassen) bzw. in den Windows-Einstellungen unter Datenschutz → Mikrofon':'')}
+// Mikrofon-Pegel: zeigt die Schwingungen (Wellenform) und die Lautstärke, unabhängig von der Spracherkennung
+const MIC={st:null,ctx:null,raf:0};
+function micStop(){
+  if(MIC.raf)cancelAnimationFrame(MIC.raf);MIC.raf=0;
+  if(MIC.st){MIC.st.getTracks().forEach(t=>t.stop());MIC.st=null}
+  if(MIC.ctx){try{MIC.ctx.close()}catch(e){}MIC.ctx=null}
+  const b=document.getElementById('micBtn');if(b)b.textContent='🎚 Mikrofon-Pegel anzeigen';
+}
+async function micStart(){
+  if(MIC.st){micStop();spLogAdd('Pegelanzeige beendet');return}
+  const info=document.getElementById('micInfo');
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){if(info)info.textContent='Dieser Browser kann das Mikrofon nicht öffnen (kein getUserMedia'+(window.isSecureContext?'':', Seite nicht über https')+').';return}
+  try{
+    const st=await navigator.mediaDevices.getUserMedia({audio:true});MIC.st=st;
+    const tr=st.getAudioTracks()[0];
+    const AC=window.AudioContext||window.webkitAudioContext;MIC.ctx=new AC();if(MIC.ctx.state==='suspended')await MIC.ctx.resume();
+    const an=MIC.ctx.createAnalyser();an.fftSize=1024;MIC.ctx.createMediaStreamSource(st).connect(an);
+    const buf=new Uint8Array(an.fftSize);let peak=0;
+    const b=document.getElementById('micBtn');if(b)b.textContent='⏹ Pegelanzeige beenden';
+    let devs=[];try{devs=(await navigator.mediaDevices.enumerateDevices()).filter(d=>d.kind==='audioinput')}catch(e){}
+    spLogAdd('Mikrofon geöffnet: '+(tr.label||'(ohne Name)')+' · Status '+tr.readyState+(tr.muted?' · STUMM geschaltet':'')+' · '+devs.length+' Eingabegerät(e)');
+    const draw=()=>{
+      const cv=document.getElementById('micCv'),lv=document.getElementById('micLv'),tx=document.getElementById('micInfo');
+      if(!cv){micStop();return} // Einstellungen wurden geschlossen
+      an.getByteTimeDomainData(buf);
+      let mx=0;for(let i=0;i<buf.length;i++){const v=Math.abs(buf[i]-128)/128;if(v>mx)mx=v}
+      peak=Math.max(mx,peak*0.97);
+      const g=cv.getContext('2d'),W=cv.width,H=cv.height;g.clearRect(0,0,W,H);
+      g.strokeStyle=getComputedStyle(document.body).color;g.lineWidth=1.5;g.beginPath();
+      for(let i=0;i<buf.length;i++){const x=i/(buf.length-1)*W,y=H/2+((buf[i]-128)/128)*(H/2-2)*3;i?g.lineTo(x,Math.max(1,Math.min(H-1,y))):g.moveTo(x,y)}
+      g.stroke();
+      const pct=Math.min(100,Math.round(Math.sqrt(peak)*100));
+      if(lv)lv.style.width=pct+'%';
+      if(tx)tx.textContent=(mx>0.02?'Es kommt Ton an. ':'Kaum Signal – sprich lauter oder prüfe das Mikrofon. ')+'Pegel '+pct+' %'+(tr.muted?' · Mikrofon ist STUMM geschaltet':'');
+      MIC.raf=requestAnimationFrame(draw);
+    };
+    draw();
+  }catch(e){
+    micStop();const n=e&&e.name||'';
+    const m=({NotAllowedError:'Zugriff verweigert – im Browser (Schloss-Symbol neben der Adresse) und in Windows (Einstellungen → Datenschutz → Mikrofon) erlauben.',NotFoundError:'Kein Mikrofon gefunden.',NotReadableError:'Mikrofon wird von einem anderen Programm benutzt oder ist gesperrt.',OverconstrainedError:'Mikrofon passt nicht zu den Vorgaben.',SecurityError:'Aus Sicherheitsgründen gesperrt (nur über https).'})[n]||('Fehler: '+(e&&e.message||e));
+    if(info)info.textContent=m;spLogAdd('Mikrofon-Fehler '+n+': '+m);
+  }
+}
 function spSettings(){
   setTimeout(spMicState,0);
   const ua=navigator.userAgent.replace(/\s+/g,' ').slice(0,110);
@@ -1098,8 +1141,8 @@ function spSettings(){
   Mikrofon-Berechtigung: <b id="spPerm">…</b><br>
   Sprache: de-DE · Internet: <b>${navigator.onLine?'verbunden':'offline'}</b><br>
   <span class="muted">${esc(ua)}</span></div>
-  <div style="display:flex;gap:8px;flex-wrap:wrap;margin:6px 0"><button class="btn sec" id="spTestBtn" onclick="spTest()" ${SP_SR?'':'disabled'}>🎤 Test starten</button><button class="btn sec" onclick="SP_LOG.length=0;spLogAdd('Protokoll geleert')">Protokoll leeren</button></div>
-  <pre id="spLog" class="muted" style="white-space:pre-wrap;margin:0 0 8px;max-height:180px;overflow:auto;background:var(--card);border:1px solid var(--line);border-radius:8px;padding:6px 8px">${esc(SP_LOG.join('\n')||'Test starten und einen Satz sprechen, z. B. „Anna Grand mit zwei gewonnen“. Hier steht, was das Gerät hört und welcher Fehler kommt.')}</pre>`;
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin:6px 0"><button class="btn sec" id="spTestBtn" onclick="spTest()" ${SP_SR?'':'disabled'}>🎤 Test starten</button><button class="btn sec" id="micBtn" onclick="micStart()">🎚 Mikrofon-Pegel anzeigen</button><button class="btn sec" onclick="SP_LOG.length=0;spLogAdd('Protokoll geleert')">Protokoll leeren</button></div>
+  <div style="margin:0 0 8px"><canvas id="micCv" width="300" height="60" style="width:100%;height:60px;background:var(--card);border:1px solid var(--line);border-radius:8px"></canvas><div style="height:8px;background:var(--line);border-radius:4px;margin-top:4px;overflow:hidden"><div id="micLv" style="height:8px;width:0;background:var(--accent)"></div></div><div class="muted" id="micInfo">Mit „Mikrofon-Pegel anzeigen“ siehst du, ob überhaupt Ton am Mikrofon ankommt (Wellenform und Balken), unabhängig von der Spracherkennung.</div></div><pre id="spLog" class="muted" style="white-space:pre-wrap;margin:0 0 8px;max-height:180px;overflow:auto;background:var(--card);border:1px solid var(--line);border-radius:8px;padding:6px 8px">${esc(SP_LOG.join('\n')||'Test starten und einen Satz sprechen, z. B. „Anna Grand mit zwei gewonnen“. Hier steht, was das Gerät hört und welcher Fehler kommt.')}</pre>`;
 }
 function spBox(){
   const can=!!SP_SR&&!androidApp();
@@ -2304,7 +2347,7 @@ async function waStep(n){
 }
 
 /* ---------- Logos, Info, Hilfe, Suche ---------- */
-const APP_NAME='Skat-LOGGER',APP_TAG='Spielverlauf aufschreiben + Statistik + mehr',APP_VERSION='1.28.1',APP_BUILD='2026-10-23';
+const APP_NAME='Skat-LOGGER',APP_TAG='Spielverlauf aufschreiben + Statistik + mehr',APP_VERSION='1.28.2',APP_BUILD='2026-10-23';
 const LOGOS=[
   {n:'Kartenfächer',svg:`<svg viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI Symbol,Arial,sans-serif"><rect width="128" height="128" rx="28" fill="#17382a"/><text x="64" y="31" text-anchor="middle" font-family="Georgia,serif" font-size="21" font-weight="700" fill="#f6f1e3" letter-spacing="3">SKAT</text><text x="64" y="118" text-anchor="middle" font-family="Georgia,serif" font-size="19" font-weight="700" fill="#e8b923" letter-spacing="4">LOG</text><g transform="translate(12.8 16) scale(0.8)"><g transform="rotate(-24 64 104)"><rect x="40" y="30" width="48" height="68" rx="6" fill="#fff" stroke="#cfc8b4" stroke-width="1.5"/><text x="47" y="50" font-size="15" fill="#c0392b">♦</text><text x="64" y="80" font-size="32" text-anchor="middle" fill="#c0392b">♦</text></g><g transform="rotate(24 64 104)"><rect x="40" y="30" width="48" height="68" rx="6" fill="#fff" stroke="#cfc8b4" stroke-width="1.5"/><text x="47" y="50" font-size="15" fill="#c0392b">♥</text><text x="64" y="80" font-size="32" text-anchor="middle" fill="#c0392b">♥</text></g><g><rect x="40" y="30" width="48" height="68" rx="6" fill="#fff" stroke="#cfc8b4" stroke-width="1.5"/><text x="47" y="50" font-size="15" fill="#1d2a24">♠</text><text x="64" y="80" font-size="32" text-anchor="middle" fill="#1d2a24">♠</text></g></g></svg>`},
 ];
