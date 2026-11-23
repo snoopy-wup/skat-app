@@ -61,6 +61,7 @@ tr.row{cursor:pointer}
 .chk input{width:20px;height:20px}
 .muted{color:var(--mute);font-size:13px}
 .vspop{position:fixed;inset:0;z-index:2000;background:#0008;display:flex;align-items:center;justify-content:center;padding:8px}.vscard{background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:12px;padding:10px 12px;width:100%;max-width:440px;max-height:98vh;overflow:hidden;font-size:clamp(11px,2.2vh,15px)}.vscard h1{font-size:1.15em;margin:0 0 4px}.vsrows{width:100%;border-collapse:collapse}.vsrows td{padding:2px 4px;border-bottom:1px solid var(--line);vertical-align:top}.vsrows td.k{color:var(--mute);white-space:nowrap;width:1%}.vswarn{background:var(--bad);color:#fff;border-radius:6px;padding:3px 6px;margin:2px 0}.vsq{margin-top:4px}
+.augw{position:relative}.augw input[type=number]{padding-right:32px;-moz-appearance:textfield}.augw input::-webkit-inner-spin-button,.augw input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}.augw .ab{position:absolute;right:1px;width:28px;height:calc(50% - 1px);padding:0;border:0;background:var(--chip);color:var(--ink);font-size:10px;line-height:1;cursor:pointer;touch-action:none;user-select:none}.augw .ab.u{top:1px;border-radius:0 7px 0 0}.augw .ab.d{bottom:1px;border-radius:0 0 7px 0}.augw .ab:active{background:var(--accent);color:var(--accent-ink)}
 .spbox{border:1px dashed var(--line);border-radius:10px;padding:6px 10px 8px;margin:8px 0}.spbox .btn{padding:8px 12px;white-space:nowrap}.spbox summary{cursor:pointer}
 .scroll{overflow-x:auto}
 .pc{text-align:center}
@@ -857,7 +858,7 @@ function drawForm(){
     if(noPass)F.passe=false;
     h+=`<label class="chk" style="${noPass?'opacity:.45':''}"><input type="checkbox" ${F.passe&&!noPass?'checked':''} ${noPass?'disabled':''} onchange="setF('passe',this.checked)"> Alle haben gepasst – löst ${ctx.seat.length} Ramsch-Spiele aus (dieses mitgerechnet)${isMalHand?' – im Malenko nicht möglich':forcedR?' – im Pflicht-Ramsch nicht möglich':''}</label>`;
     h+=ramschAnsagen(act,!!F.passe&&!noPass);
-    h+=fsOpen+`<label>Augen (Kartenwerte) je Spieler – jeder kann verlieren (inkl. Skat, Summe 120)${resLocked?' – wird später eingetragen':''}</label><div class="row2">${act.map(i=>`<div><label>${esc(S.players[i])}</label><input type="number" min="0" max="120" id="aug${i}" value="${F.augen[i]??''}" placeholder="${emp.length===1&&emp[0]===i&&sum<=120?120-sum:''}" oninput="ramschIn(${i},this.value)"></div>`).join('')}</div>
+    h+=fsOpen+`<label>Augen (Kartenwerte) je Spieler – jeder kann verlieren (inkl. Skat, Summe 120)${resLocked?' – wird später eingetragen':''}</label><div class="row2">${act.map(i=>`<div><label>${esc(S.players[i])}</label><div class="augw"><input type="number" min="0" max="120" id="aug${i}" value="${F.augen[i]??''}" placeholder="${emp.length===1&&emp[0]===i&&sum<=120?120-sum:''}" oninput="ramschIn(${i},this.value)"><button type="button" class="ab u" tabindex="-1" aria-label="mehr" onmousedown="event.preventDefault()" onpointerdown="augHold('aug${i}',1,event)">▲</button><button type="button" class="ab d" tabindex="-1" aria-label="weniger" onmousedown="event.preventDefault()" onpointerdown="augHold('aug${i}',-1,event)">▼</button></div></div>`).join('')}</div>
     <div class="muted">Summe: ${sum} ${sum===120?'✓':emp.length===1&&sum<=120?'(Rest '+(120-sum)+' wird beim leeren Feld eingetragen)':'(muss 120 sein)'}</div>
     <label class="chk" style="${hasZero&&F.durchmarsch==null?'':'opacity:.45'}"><input type="checkbox" ${F.jungfrau&&hasZero?'checked':''} ${hasZero&&F.durchmarsch==null?'':'disabled'} onchange="setF('jungfrau',this.checked)"> Jungfrau (×${S.settings.jungfrau})${hasZero?' – nur wenn jemand Jungfrau ist':' – nur wählbar, wenn ein Spieler 0 Augen hat'}</label>
     <label class="chk" style="${who120!=null&&!F.jungfrau?'':'opacity:.45'}"><input type="checkbox" ${F.durchmarsch!=null&&who120!=null?'checked':''} ${who120!=null&&!F.jungfrau?'':'disabled'} onchange="setF('durchmarsch',this.checked?${who120}:null)"> Durchmarsch${who120!=null?' ('+esc(S.players[who120])+' hat 120 Augen)':' – nur wenn ein Spieler 120 Augen hat'}</label></fieldset>`;
@@ -2018,6 +2019,21 @@ document.addEventListener('contextmenu',e=>{if(isAugIn(e.target)&&document.activ
 
 document.addEventListener('mousedown',e=>{_augWas=isAugIn(e.target)&&document.activeElement===e.target},true);
 document.addEventListener('click',e=>{if(_augWas&&isAugIn(e.target)&&e.button===0){e.target.blur()}_augWas=false});
+
+// Augenfelder: ▲/▼ (und Pfeiltasten) gedrückt halten = erst 5 × 1 Schritt, danach in 5er-Schritten
+const AUG_REP={tm:0,iv:0};
+function augStep(id,d){const el=document.getElementById(id);if(!el)return false;const v=el.value===''?0:+el.value;el.value=Math.max(0,Math.min(120,v+d));el.dispatchEvent(new Event('input',{bubbles:true}));return true}
+function augRelease(){clearTimeout(AUG_REP.tm);clearInterval(AUG_REP.iv);AUG_REP.tm=AUG_REP.iv=0}
+function augHold(id,dir,ev){
+  if(ev&&ev.preventDefault)ev.preventDefault();augRelease();let n=0;
+  const step=()=>{n++;if(!augStep(id,dir*(n<=5?1:5)))augRelease()};
+  step();AUG_REP.tm=setTimeout(()=>{AUG_REP.iv=setInterval(step,130)},420);
+}
+['pointerup','pointercancel','blur','contextmenu'].forEach(e=>window.addEventListener(e,augRelease));
+let _akn=0;
+document.addEventListener('keydown',e=>{const t=e.target;if(!isAugIn(t)||(e.key!=='ArrowUp'&&e.key!=='ArrowDown'))return;
+  e.preventDefault();if(!e.repeat)_akn=0;_akn++;augStep(t.id,(e.key==='ArrowUp'?1:-1)*(_akn<=5?1:5))});
+document.addEventListener('keyup',()=>{_akn=0});
 const androidApp=()=>typeof window.AndroidBridge!=='undefined'&&window.AndroidBridge; // läuft in der Android-App (WebView)
 async function exportData(){await saveText(exportName(),JSON.stringify(S,null,1),'application/json')} // alle Daten (Spiele, Saisons, Termine mit Verlauf)
 async function saveText(name,text,mime){ // Datei in den Ablageordner bzw. als Download speichern
@@ -2634,7 +2650,7 @@ async function waStep(n){
 }
 
 /* ---------- Logos, Info, Hilfe, Suche ---------- */
-const APP_NAME='Skat-LOGGER',APP_TAG='Spielverlauf aufschreiben + Statistik + mehr',APP_VERSION='1.30.0',APP_BUILD='2026-10-23',APP_UPDATED='2026-11-23';
+const APP_NAME='Skat-LOGGER',APP_TAG='Spielverlauf aufschreiben + Statistik + mehr',APP_VERSION='1.30.1',APP_BUILD='2026-10-23',APP_UPDATED='2026-11-23';
 const LOGOS=[
   {n:'Kartenfächer',svg:`<svg viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI Symbol,Arial,sans-serif"><rect width="128" height="128" rx="28" fill="#17382a"/><text x="64" y="31" text-anchor="middle" font-family="Georgia,serif" font-size="21" font-weight="700" fill="#f6f1e3" letter-spacing="3">SKAT</text><text x="64" y="118" text-anchor="middle" font-family="Georgia,serif" font-size="19" font-weight="700" fill="#e8b923" letter-spacing="4">LOG</text><g transform="translate(12.8 16) scale(0.8)"><g transform="rotate(-24 64 104)"><rect x="40" y="30" width="48" height="68" rx="6" fill="#fff" stroke="#cfc8b4" stroke-width="1.5"/><text x="47" y="50" font-size="15" fill="#c0392b">♦</text><text x="64" y="80" font-size="32" text-anchor="middle" fill="#c0392b">♦</text></g><g transform="rotate(24 64 104)"><rect x="40" y="30" width="48" height="68" rx="6" fill="#fff" stroke="#cfc8b4" stroke-width="1.5"/><text x="47" y="50" font-size="15" fill="#c0392b">♥</text><text x="64" y="80" font-size="32" text-anchor="middle" fill="#c0392b">♥</text></g><g><rect x="40" y="30" width="48" height="68" rx="6" fill="#fff" stroke="#cfc8b4" stroke-width="1.5"/><text x="47" y="50" font-size="15" fill="#1d2a24">♠</text><text x="64" y="80" font-size="32" text-anchor="middle" fill="#1d2a24">♠</text></g></g></svg>`},
 ];
