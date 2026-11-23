@@ -1071,6 +1071,46 @@ function spGo(){
   if(!String(SP.txt).trim()){SP.msg='Bitte erst etwas sagen oder eintippen.';drawForm();return}
   spApply(SP.txt);
 }
+// Betriebssystem und Browser erkennen, damit nur die passende Hilfe erscheint
+function spEnv(){
+  const ua=navigator.userAgent||'',pf=navigator.platform||'';
+  const ios=/iPhone|iPad|iPod/.test(ua)||(pf==='MacIntel'&&navigator.maxTouchPoints>1);
+  const os=ios?'ios':/Android/.test(ua)?'android':/Windows/.test(ua)?'windows':/Mac/.test(ua)?'mac':/Linux|X11|CrOS/.test(ua)?'linux':'other';
+  const br=/EdgiOS|EdgA|Edg\//.test(ua)?'edge':/OPR\/|Opera/.test(ua)?'opera':/SamsungBrowser/.test(ua)?'samsung':/FxiOS|Firefox/.test(ua)?'firefox':/CriOS|Chrome\//.test(ua)?'chrome':/Safari/.test(ua)?'safari':'other';
+  const app=!!androidApp();
+  const standalone=!!((window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone);
+  const osN={ios:'iPhone/iPad (iOS)',android:'Android',windows:'Windows',mac:'macOS',linux:'Linux',other:'unbekanntes System'}[os];
+  const brN={edge:'Edge',chrome:'Chrome',safari:'Safari',firefox:'Firefox',samsung:'Samsung Internet',opera:'Opera',other:'unbekannter Browser'}[br];
+  return {os,br,app,standalone,osN,brN:app?'Skat-App (Android)':brN};
+}
+// Hilfetext je nach Art des Problems, nur für das laufende System
+function spHelp(kind){
+  const e=spEnv(),os=e.os,br=e.br,bn=e.brN;
+  if(e.app&&os==='android'){
+    return {perm:'Android-App: Mikrofon erlauben unter Einstellungen → Apps → Skat-LOGGER → Berechtigungen → Mikrofon. Die Spracherkennung der App gibt es nicht; nutze das Mikrofon deiner Tastatur im Textfeld.',online:'In der Android-App gibt es keine eingebaute Spracherkennung. Nutze das Mikrofon deiner Tastatur im Textfeld (Google-Spracheingabe, braucht Internet).',def:'Android benutzt das Mikrofon des Geräts bzw. des angeschlossenen Headsets (Headset aus- und einstecken, um zu wechseln).',nosr:'Die Android-App hat keine eingebaute Spracherkennung. Nutze das Mikrofon deiner Tastatur im Textfeld.'}[kind]||'';
+  }
+  if(os==='windows'){
+    const win='Windows: Einstellungen → Datenschutz und Sicherheit → Mikrofon → „Mikrofonzugriff“ und „Desktop-Apps den Zugriff auf Ihr Mikrofon erlauben“ einschalten.';
+    const tonIn='Windows: Einstellungen → System → Ton → Eingabe: das richtige Mikrofon als Standard wählen.';
+    if(br==='edge')return {perm:'Edge: Schloss-Symbol neben der Adresse → Mikrofon → Zulassen (oder edge://settings/content/microphone). '+win,online:'Edge schickt die Sprache an Microsoft: Windows → Einstellungen → Datenschutz und Sicherheit → Spracherkennung → „Online-Spracherkennung“ einschalten. Außerdem Internet, Firewall oder Firmen-Netz prüfen.',def:'Edge: edge://settings/content/microphone → das richtige Mikrofon wählen. '+tonIn,nosr:''}[kind];
+    if(br==='chrome')return {perm:'Chrome: Schloss-Symbol neben der Adresse → Mikrofon → Zulassen (oder chrome://settings/content/microphone). '+win,online:'Chrome schickt die Sprache an Google: Internet, Firewall oder Firmen-Netz prüfen. Eine Windows-Einstellung ist dafür nicht nötig.',def:'Chrome: chrome://settings/content/microphone → das richtige Mikrofon wählen. '+tonIn,nosr:''}[kind];
+    if(br==='firefox')return {perm:'Firefox: Schloss-Symbol neben der Adresse → Berechtigungen → Mikrofon zulassen. '+win,online:'',def:tonIn,nosr:'Firefox hat keine Browser-Spracherkennung. Nutze Edge oder Chrome, oder das Windows-Diktat (Windows-Taste + H) im Textfeld.'}[kind];
+    return {perm:'Schloss-Symbol neben der Adresse → Mikrofon zulassen. '+win,online:'Internet, Firewall oder Firmen-Netz prüfen.',def:tonIn,nosr:'Dieser Browser hat keine Spracherkennung. Nutze Edge oder Chrome, oder das Windows-Diktat (Windows-Taste + H) im Textfeld.'}[kind];
+  }
+  if(os==='android'){
+    const pm='Android: Einstellungen → Apps → '+bn+' → Berechtigungen → Mikrofon → Zulassen.';
+    return {perm:bn+': Schloss-Symbol neben der Adresse → Berechtigungen → Mikrofon → Zulassen. '+pm,online:'Android braucht die Google-Spracheingabe und Internet: Einstellungen → System → Sprachen und Eingabe → Spracheingabe → „Google“ wählen. Alternativ das Mikrofon der Tastatur im Textfeld nutzen.',def:'Android benutzt das Mikrofon des Geräts bzw. des angeschlossenen Headsets (Headset aus- und einstecken, um zu wechseln).',nosr:'Dieser Browser hat keine Spracherkennung. Nutze Chrome oder das Mikrofon deiner Tastatur im Textfeld.'}[kind];
+  }
+  if(os==='ios'){
+    const home=e.standalone?' Du nutzt die App vom Home-Bildschirm: Dort fragt iOS oft bei jedem Start neu und die Spracherkennung ist unzuverlässig. Öffne die Seite stattdessen in Safari oder nutze das Mikrofon der Tastatur im Textfeld.':'';
+    return {perm:(br==='safari'?'Safari: „aA“ in der Adresszeile → Website-Einstellungen → Mikrofon → Erlauben, oder iPhone-Einstellungen → Safari → Mikrofon.':bn+': iPhone-Einstellungen → '+bn+' → Mikrofon einschalten.')+home,online:'iOS: Einstellungen → Allgemein → Tastatur → „Diktierfunktion aktivieren“ einschalten und Siri aktivieren; Internet prüfen. Alternativ das Mikrofon der Tastatur im Textfeld nutzen.'+home,def:'iOS wählt das Mikrofon selbst (Headset oder AirPods trennen, um das eingebaute zu nutzen).',nosr:'Dieser Browser hat auf iOS keine Spracherkennung. Nutze Safari oder das Mikrofon der Tastatur im Textfeld.'+home}[kind];
+  }
+  if(os==='mac'){
+    const pm='macOS: Systemeinstellungen → Datenschutz & Sicherheit → Mikrofon → '+bn+' einschalten.';
+    return {perm:bn+': Schloss-Symbol neben der Adresse → Mikrofon zulassen'+(br==='safari'?' (Safari → Einstellungen → Websites → Mikrofon)':'')+'. '+pm,online:br==='safari'?'Safari: Systemeinstellungen → Tastatur → Diktierfunktion einschalten; Internet prüfen.':'Internet, Firewall oder Firmen-Netz prüfen.',def:'macOS: Systemeinstellungen → Ton → Eingabe: das richtige Mikrofon wählen.'+(br==='chrome'?' Chrome: chrome://settings/content/microphone.':br==='edge'?' Edge: edge://settings/content/microphone.':''),nosr:br==='firefox'?'Firefox hat keine Browser-Spracherkennung. Nutze Chrome, Edge oder Safari.':''}[kind];
+  }
+  return {perm:'Schloss-Symbol neben der Adresse → Mikrofon zulassen; außerdem in den Systemeinstellungen den Mikrofonzugriff des Browsers erlauben.',online:'Internet, Firewall oder Firmen-Netz prüfen.',def:'Das Standard-Mikrofon in den Toneinstellungen des Systems wählen.',nosr:'Dieser Browser hat keine Spracherkennung. Nutze Chrome oder Edge.'}[kind];
+}
 const SP_LOG=[];
 function spLogAdd(t){SP_LOG.push(new Date().toLocaleTimeString('de-DE')+' '+t);if(SP_LOG.length>40)SP_LOG.shift();const el=document.getElementById('spLog');if(el)el.textContent=SP_LOG.join('\n')}
 // Aufnahme starten; fertig(text) wird mit dem erkannten Text aufgerufen (test=true: nur Anzeige in den Einstellungen)
@@ -1087,14 +1127,14 @@ function spListen(fertig,test){
     r.onspeechend=()=>spLogAdd('Sprache zu Ende');
     r.onnomatch=()=>spLogAdd('Nicht verstanden');
     r.onresult=e=>{let t='';for(let i=0;i<e.results.length;i++)t+=e.results[i][0].transcript+' ';SP.txt=t.trim();SP.got=true;spLogAdd((e.results[e.results.length-1].isFinal?'Ergebnis: „':'Zwischenstand: „')+SP.txt+'“');const el=document.getElementById('spTxt');if(el)el.value=SP.txt};
-    r.onerror=e=>{SP.err=true;spLogAdd('FEHLER: '+e.error+(e.message?' – '+e.message:''));SP.msg=({'not-allowed':'Mikrofon nicht erlaubt – bitte im Browser freigeben (Schloss-Symbol neben der Adresse).','service-not-allowed':'Spracherkennung ist nicht erlaubt. Edge/Windows: Einstellungen → Datenschutz → Spracherkennung → „Online-Spracherkennung“ einschalten.','no-speech':'Nichts gehört – nochmal versuchen und nach dem Klick sofort sprechen.','network':'Keine Verbindung zum Spracherkennungs-Dienst. In Edge/Windows: Einstellungen → Datenschutz und Sicherheit → Spracherkennung → „Online-Spracherkennung“ einschalten; sonst Internet, Firewall oder Firmen-Netz prüfen.','audio-capture':'Kein Mikrofon gefunden.','language-not-supported':'Deutsch wird nicht unterstützt.'})[e.error]||('Spracherkennung fehlgeschlagen ('+e.error+'). Du kannst das Mikrofon deiner Tastatur im Textfeld nutzen.')};
+    r.onerror=e=>{SP.err=true;spLogAdd('FEHLER: '+e.error+(e.message?' – '+e.message:''));SP.msg=({'not-allowed':'Mikrofon nicht erlaubt. '+spHelp('perm'),'service-not-allowed':'Spracherkennung ist nicht erlaubt. '+spHelp('online'),'no-speech':'Nichts gehört – nochmal versuchen und nach dem Klick sofort sprechen.','network':'Keine Verbindung zum Spracherkennungs-Dienst. '+spHelp('online'),'audio-capture':'Kein Mikrofon gefunden.','language-not-supported':'Deutsch wird nicht unterstützt.'})[e.error]||('Spracherkennung fehlgeschlagen ('+e.error+'). Du kannst das Mikrofon deiner Tastatur im Textfeld nutzen.')};
     r.onend=()=>{SP.on=false;SP.rec=null;spLogAdd('Aufnahme beendet'+(SP.got?'':' – ohne Ergebnis'));redraw();if(!test&&F&&SP.got&&!SP.err)fertig(SP.txt);else if(test&&SP.got&&!SP.err)fertig(SP.txt)};
     spLogAdd('Starte Aufnahme …');r.start();
   }catch(e){SP.on=false;spLogAdd('Start nicht möglich: '+e);SP.msg='Spracherkennung lässt sich hier nicht starten. Nutze das Mikrofon deiner Tastatur im Textfeld.';if(!test&&F)drawForm()}
 }
 function spMic(){spListen(spApply,false)}
 function spTest(){spListen(t=>{const T=spTok(t);spLogAdd('Zerlegt: '+T.map(x=>x.n!=null?x.n:x.s).join(' | '))},true)}
-async function spMicState(){let m='unbekannt';try{if(navigator.permissions){const q=await navigator.permissions.query({name:'microphone'});m=({granted:'erlaubt',denied:'GESPERRT',prompt:'wird beim Start abgefragt'})[q.state]||q.state}}catch(e){}const el=document.getElementById('spPerm');if(el)el.textContent=m+(m==='GESPERRT'?' – im Browser freigeben (Schloss-Symbol neben der Adresse → Mikrofon → Zulassen) bzw. in den Windows-Einstellungen unter Datenschutz → Mikrofon (Edge: edge://settings/content/microphone)':'')}
+async function spMicState(){let m='unbekannt';try{if(navigator.permissions){const q=await navigator.permissions.query({name:'microphone'});m=({granted:'erlaubt',denied:'GESPERRT',prompt:'wird beim Start abgefragt'})[q.state]||q.state}}catch(e){}const el=document.getElementById('spPerm');if(el)el.textContent=m+(m==='GESPERRT'?' – '+spHelp('perm'):'')}
 // Mikrofon-Pegel: zeigt die Schwingungen (Wellenform) und die Lautstärke, unabhängig von der Spracherkennung
 const MIC={st:null,ctx:null,raf:0};
 const micPref=()=>{try{return localStorage.getItem('skat-mic')||''}catch(e){return ''}};
@@ -1145,7 +1185,7 @@ async function micStart(){
     draw();
   }catch(e){
     micStop();const n=e&&e.name||'';
-    const m=({NotAllowedError:'Zugriff verweigert – im Browser (Schloss-Symbol neben der Adresse) und in Windows (Einstellungen → Datenschutz → Mikrofon) erlauben.',NotFoundError:'Kein Mikrofon gefunden.',NotReadableError:'Mikrofon wird von einem anderen Programm benutzt oder ist gesperrt.',OverconstrainedError:'Mikrofon passt nicht zu den Vorgaben.',SecurityError:'Aus Sicherheitsgründen gesperrt (nur über https).'})[n]||('Fehler: '+(e&&e.message||e));
+    const m=({NotAllowedError:'Zugriff verweigert. '+spHelp('perm'),NotFoundError:'Kein Mikrofon gefunden.',NotReadableError:'Mikrofon wird von einem anderen Programm benutzt oder ist gesperrt.',OverconstrainedError:'Mikrofon passt nicht zu den Vorgaben.',SecurityError:'Aus Sicherheitsgründen gesperrt (nur über https).'})[n]||('Fehler: '+(e&&e.message||e));
     if(info)info.textContent=m;spLogAdd('Mikrofon-Fehler '+n+': '+m);
   }
 }
@@ -1160,7 +1200,7 @@ function spSettings(){
   Sprache: de-DE · Internet: <b>${navigator.onLine?'verbunden':'offline'}</b><br>
   <span class="muted">${esc(ua)}</span></div>
   <div style="display:flex;gap:8px;flex-wrap:wrap;margin:6px 0"><button class="btn sec" id="spTestBtn" onclick="spTest()" ${SP_SR?'':'disabled'}>🎤 Test starten</button><button class="btn sec" id="micBtn" onclick="micStart()">🎚 Mikrofon-Pegel anzeigen</button><button class="btn sec" onclick="SP_LOG.length=0;spLogAdd('Protokoll geleert')">Protokoll leeren</button></div>
-  <label for="micSel">Mikrofon für die Pegelanzeige wählen</label><select id="micSel" onchange="micPick(this.value)"><option value="">Standard-Mikrofon des Systems</option></select><div class="muted" style="margin:3px 0 6px"><b>Edge:</b> Mikrofon unter edge://settings/content/microphone als Standard wählen; zusätzlich muss in Windows „Online-Spracherkennung“ an sein (Einstellungen → Datenschutz und Sicherheit → Spracherkennung). Die Spracherkennung des Browsers benutzt immer das Standard-Mikrofon des Browsers/Systems und lässt sich nicht pro Aufruf wählen. Ein hier gefundenes funktionierendes Mikrofon stellst du in Chrome unter Einstellungen → Datenschutz und Sicherheit → Website-Einstellungen → Mikrofon (oder per Schloss-Symbol neben der Adresse) bzw. in Windows unter Einstellungen → System → Ton → Eingabe als Standard ein.</div><div style="margin:0 0 8px"><canvas id="micCv" width="300" height="60" style="width:100%;height:60px;background:var(--card);border:1px solid var(--line);border-radius:8px"></canvas><div style="height:8px;background:var(--line);border-radius:4px;margin-top:4px;overflow:hidden"><div id="micLv" style="height:8px;width:0;background:var(--accent)"></div></div><div class="muted" id="micInfo">Mit „Mikrofon-Pegel anzeigen“ siehst du, ob überhaupt Ton am Mikrofon ankommt (Wellenform und Balken), unabhängig von der Spracherkennung.</div></div><pre id="spLog" class="muted" style="white-space:pre-wrap;margin:0 0 8px;max-height:180px;overflow:auto;background:var(--card);border:1px solid var(--line);border-radius:8px;padding:6px 8px">${esc(SP_LOG.join('\n')||'Test starten und einen Satz sprechen, z. B. „Anna Grand mit zwei gewonnen“. Hier steht, was das Gerät hört und welcher Fehler kommt.')}</pre>`;
+  <label for="micSel">Mikrofon für die Pegelanzeige wählen</label><select id="micSel" onchange="micPick(this.value)"><option value="">Standard-Mikrofon des Systems</option></select><div class="muted" style="margin:3px 0 6px"><b>Dein System: ${esc(spEnv().osN)} · ${esc(spEnv().brN)}</b><br>${esc(spHelp('def')||'')} ${esc(spHelp('online')||'')} ${esc(spHelp('nosr')||'')}<br>Die Browser-Spracherkennung benutzt immer das Standard-Mikrofon und lässt sich nicht pro Aufruf wählen. Wenn die Pegelanzeige ausschlägt, aber nichts erkannt wird, stimmt meist die Freigabe nicht: ${esc(spHelp('perm')||'')}</div><div style="margin:0 0 8px"><canvas id="micCv" width="300" height="60" style="width:100%;height:60px;background:var(--card);border:1px solid var(--line);border-radius:8px"></canvas><div style="height:8px;background:var(--line);border-radius:4px;margin-top:4px;overflow:hidden"><div id="micLv" style="height:8px;width:0;background:var(--accent)"></div></div><div class="muted" id="micInfo">Mit „Mikrofon-Pegel anzeigen“ siehst du, ob überhaupt Ton am Mikrofon ankommt (Wellenform und Balken), unabhängig von der Spracherkennung.</div></div><pre id="spLog" class="muted" style="white-space:pre-wrap;margin:0 0 8px;max-height:180px;overflow:auto;background:var(--card);border:1px solid var(--line);border-radius:8px;padding:6px 8px">${esc(SP_LOG.join('\n')||'Test starten und einen Satz sprechen, z. B. „Anna Grand mit zwei gewonnen“. Hier steht, was das Gerät hört und welcher Fehler kommt.')}</pre>`;
 }
 function spBox(){
   const can=!!SP_SR&&!androidApp();
@@ -1175,7 +1215,7 @@ function spBox(){
 
 /* ---------- Sprachsteuerung: Mikrofon per Knopf an, Spiel anlegen und mit Rückfrage speichern, danach aus ---------- */
 const VS={on:false,rec:null,confirm:false,speaking:false,last:0,buf:'',base:null,keep:false};
-const spErrText=c=>({'not-allowed':'Mikrofon nicht erlaubt (Schloss-Symbol neben der Adresse).','service-not-allowed':'Spracherkennung nicht erlaubt (Edge/Windows: „Online-Spracherkennung“ einschalten).','network':'Keine Verbindung zum Spracherkennungs-Dienst (Online-Spracherkennung in Windows an?).','audio-capture':'Kein Mikrofon gefunden.','language-not-supported':'Deutsch wird nicht unterstützt.'})[c]||('Spracherkennung fehlgeschlagen ('+c+').');
+const spErrText=c=>({'not-allowed':'Mikrofon nicht erlaubt. '+spHelp('perm'),'service-not-allowed':'Spracherkennung nicht erlaubt. '+spHelp('online'),'network':'Keine Verbindung zum Spracherkennungs-Dienst. '+spHelp('online'),'audio-capture':'Kein Mikrofon gefunden.','language-not-supported':'Deutsch wird nicht unterstützt.'})[c]||('Spracherkennung fehlgeschlagen ('+c+').');
 function vsUI(){
   document.querySelectorAll('.vsmic').forEach(b=>{b.classList.toggle('bad',VS.on);b.textContent=VS.on?'⏹':'🎤'});
 }
@@ -2492,7 +2532,7 @@ async function waStep(n){
 }
 
 /* ---------- Logos, Info, Hilfe, Suche ---------- */
-const APP_NAME='Skat-LOGGER',APP_TAG='Spielverlauf aufschreiben + Statistik + mehr',APP_VERSION='1.29.13',APP_BUILD='2026-10-23',APP_UPDATED='2026-11-23';
+const APP_NAME='Skat-LOGGER',APP_TAG='Spielverlauf aufschreiben + Statistik + mehr',APP_VERSION='1.29.14',APP_BUILD='2026-10-23',APP_UPDATED='2026-11-23';
 const LOGOS=[
   {n:'Kartenfächer',svg:`<svg viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI Symbol,Arial,sans-serif"><rect width="128" height="128" rx="28" fill="#17382a"/><text x="64" y="31" text-anchor="middle" font-family="Georgia,serif" font-size="21" font-weight="700" fill="#f6f1e3" letter-spacing="3">SKAT</text><text x="64" y="118" text-anchor="middle" font-family="Georgia,serif" font-size="19" font-weight="700" fill="#e8b923" letter-spacing="4">LOG</text><g transform="translate(12.8 16) scale(0.8)"><g transform="rotate(-24 64 104)"><rect x="40" y="30" width="48" height="68" rx="6" fill="#fff" stroke="#cfc8b4" stroke-width="1.5"/><text x="47" y="50" font-size="15" fill="#c0392b">♦</text><text x="64" y="80" font-size="32" text-anchor="middle" fill="#c0392b">♦</text></g><g transform="rotate(24 64 104)"><rect x="40" y="30" width="48" height="68" rx="6" fill="#fff" stroke="#cfc8b4" stroke-width="1.5"/><text x="47" y="50" font-size="15" fill="#c0392b">♥</text><text x="64" y="80" font-size="32" text-anchor="middle" fill="#c0392b">♥</text></g><g><rect x="40" y="30" width="48" height="68" rx="6" fill="#fff" stroke="#cfc8b4" stroke-width="1.5"/><text x="47" y="50" font-size="15" fill="#1d2a24">♠</text><text x="64" y="80" font-size="32" text-anchor="middle" fill="#1d2a24">♠</text></g></g></svg>`},
 ];
