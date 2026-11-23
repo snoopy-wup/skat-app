@@ -1064,17 +1064,42 @@ function spGo(){
   if(!String(SP.txt).trim()){SP.msg='Bitte erst etwas sagen oder eintippen.';drawForm();return}
   spApply(SP.txt);
 }
-function spMic(){
+const SP_LOG=[];
+function spLogAdd(t){SP_LOG.push(new Date().toLocaleTimeString('de-DE')+' '+t);if(SP_LOG.length>40)SP_LOG.shift();const el=document.getElementById('spLog');if(el)el.textContent=SP_LOG.join('\n')}
+// Aufnahme starten; fertig(text) wird mit dem erkannten Text aufgerufen (test=true: nur Anzeige in den Einstellungen)
+function spListen(fertig,test){
   if(SP.on&&SP.rec){try{SP.rec.stop()}catch(e){}return}
-  if(!SP_SR)return;
+  if(!SP_SR){spLogAdd('Keine Spracherkennung in diesem Browser.');return}
   try{
     const r=new SP_SR();r.lang='de-DE';r.interimResults=true;r.continuous=false;r.maxAlternatives=1;SP.rec=r;SP.got=false;SP.err=false;
-    r.onstart=()=>{SP.on=true;SP.msg='Ich höre zu … bitte sprechen.';if(F)drawForm()};
-    r.onresult=e=>{let t='';for(let i=0;i<e.results.length;i++)t+=e.results[i][0].transcript+' ';SP.txt=t.trim();SP.got=true;const el=document.getElementById('spTxt');if(el)el.value=SP.txt};
-    r.onerror=e=>{SP.err=true;SP.msg=({'not-allowed':'Mikrofon nicht erlaubt – bitte in den Browser-Einstellungen freigeben.','service-not-allowed':'Spracherkennung ist hier nicht erlaubt.','no-speech':'Nichts gehört – nochmal versuchen.','network':'Keine Internetverbindung für die Spracherkennung.','audio-capture':'Kein Mikrofon gefunden.'})[e.error]||('Spracherkennung fehlgeschlagen ('+e.error+'). Du kannst auch das Mikrofon deiner Tastatur nutzen.')};
-    r.onend=()=>{SP.on=false;SP.rec=null;if(!F)return;if(SP.got&&!SP.err)spApply(SP.txt);else drawForm()};
-    r.start();
-  }catch(e){SP.on=false;SP.msg='Spracherkennung lässt sich hier nicht starten. Nutze das Mikrofon deiner Tastatur im Textfeld.';if(F)drawForm()}
+    const redraw=()=>{if(!test&&F)drawForm();const b=document.getElementById('spTestBtn');if(b)b.textContent=SP.on?'⏹ Test beenden':'🎤 Test starten'};
+    r.onstart=()=>{SP.on=true;spLogAdd('Aufnahme gestartet (de-DE)');if(!test)SP.msg='Ich höre zu … bitte sprechen.';redraw()};
+    r.onaudiostart=()=>spLogAdd('Mikrofon aktiv');
+    r.onsoundstart=()=>spLogAdd('Geräusch erkannt');
+    r.onspeechstart=()=>spLogAdd('Sprache erkannt');
+    r.onspeechend=()=>spLogAdd('Sprache zu Ende');
+    r.onnomatch=()=>spLogAdd('Nicht verstanden');
+    r.onresult=e=>{let t='';for(let i=0;i<e.results.length;i++)t+=e.results[i][0].transcript+' ';SP.txt=t.trim();SP.got=true;spLogAdd((e.results[e.results.length-1].isFinal?'Ergebnis: „':'Zwischenstand: „')+SP.txt+'“');const el=document.getElementById('spTxt');if(el)el.value=SP.txt};
+    r.onerror=e=>{SP.err=true;spLogAdd('FEHLER: '+e.error+(e.message?' – '+e.message:''));SP.msg=({'not-allowed':'Mikrofon nicht erlaubt – bitte im Browser freigeben (Schloss-Symbol neben der Adresse).','service-not-allowed':'Spracherkennung ist hier nicht erlaubt.','no-speech':'Nichts gehört – nochmal versuchen und nach dem Klick sofort sprechen.','network':'Keine Verbindung zum Spracherkennungs-Dienst (Internet, Firewall oder Firmen-Netz?).','audio-capture':'Kein Mikrofon gefunden.','language-not-supported':'Deutsch wird nicht unterstützt.'})[e.error]||('Spracherkennung fehlgeschlagen ('+e.error+'). Du kannst das Mikrofon deiner Tastatur im Textfeld nutzen.')};
+    r.onend=()=>{SP.on=false;SP.rec=null;spLogAdd('Aufnahme beendet'+(SP.got?'':' – ohne Ergebnis'));redraw();if(!test&&F&&SP.got&&!SP.err)fertig(SP.txt);else if(test&&SP.got&&!SP.err)fertig(SP.txt)};
+    spLogAdd('Starte Aufnahme …');r.start();
+  }catch(e){SP.on=false;spLogAdd('Start nicht möglich: '+e);SP.msg='Spracherkennung lässt sich hier nicht starten. Nutze das Mikrofon deiner Tastatur im Textfeld.';if(!test&&F)drawForm()}
+}
+function spMic(){spListen(spApply,false)}
+function spTest(){spListen(t=>{const T=spTok(t);spLogAdd('Zerlegt: '+T.map(x=>x.n!=null?x.n:x.s).join(' | '))},true)}
+async function spMicState(){let m='unbekannt';try{if(navigator.permissions){const q=await navigator.permissions.query({name:'microphone'});m=({granted:'erlaubt',denied:'GESPERRT',prompt:'wird beim Start abgefragt'})[q.state]||q.state}}catch(e){}const el=document.getElementById('spPerm');if(el)el.textContent=m+(m==='GESPERRT'?' – im Browser freigeben (Schloss-Symbol neben der Adresse → Mikrofon → Zulassen) bzw. in den Windows-Einstellungen unter Datenschutz → Mikrofon':'')}
+function spSettings(){
+  setTimeout(spMicState,0);
+  const ua=navigator.userAgent.replace(/\s+/g,' ').slice(0,110);
+  return `<label>🎤 Spracheingabe (Diagnose)</label>
+  <div class="prev" style="margin:4px 0;font-weight:400;font-size:13px">
+  Spracherkennung im Browser: <b>${SP_SR?'vorhanden':'NICHT vorhanden'}</b>${androidApp()?' (Android-App: 🎤-Knopf wird ausgeblendet, bitte das Tastatur-Mikrofon nutzen)':''}<br>
+  Sichere Verbindung (https/localhost): <b>${window.isSecureContext?'ja':'NEIN – Mikrofon geht nur über https'}</b><br>
+  Mikrofon-Berechtigung: <b id="spPerm">…</b><br>
+  Sprache: de-DE · Internet: <b>${navigator.onLine?'verbunden':'offline'}</b><br>
+  <span class="muted">${esc(ua)}</span></div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin:6px 0"><button class="btn sec" id="spTestBtn" onclick="spTest()" ${SP_SR?'':'disabled'}>🎤 Test starten</button><button class="btn sec" onclick="SP_LOG.length=0;spLogAdd('Protokoll geleert')">Protokoll leeren</button></div>
+  <pre id="spLog" class="muted" style="white-space:pre-wrap;margin:0 0 8px;max-height:180px;overflow:auto;background:var(--card);border:1px solid var(--line);border-radius:8px;padding:6px 8px">${esc(SP_LOG.join('\n')||'Test starten und einen Satz sprechen, z. B. „Anna Grand mit zwei gewonnen“. Hier steht, was das Gerät hört und welcher Fehler kommt.')}</pre>`;
 }
 function spBox(){
   const can=!!SP_SR&&!androidApp();
@@ -1102,6 +1127,7 @@ function openSettings(){
   <div class="prev" style="margin:4px 0;font-weight:400">${folderLabel()?'Ordner: <b>'+esc(folderLabel())+'</b> – Export speichert dort, Import zeigt die Dateien dort.':'Nicht festgelegt – Standardordner des Geräts (Android: Downloads/SkatLog) bzw. Download-Ordner des Browsers.'}</div>
   ${canPickDir()?`<p class="muted">Tipp: Wähle einen eigenen Unterordner (z. B. „Skat“), nicht „Dokumente“, „Downloads“ oder „Desktop“ selbst – die sperrt der Browser.</p><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn sec" onclick="pickDir()">Ordner wählen …</button>${folderLabel()?'<button class="btn sec" onclick="clearDir()">Ordner entfernen</button>':''}</div>`:'<p class="muted">Ein fester Ordner lässt sich nur in Chrome oder Edge am PC wählen. Auf dem Handy und in anderen Browsern bestimmt der Browser den Speicherort (meist „Downloads“).</p>'}
   ${emailSection()}
+  ${spSettings()}
   <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px"><button class="btn sec" onclick="closeModal()">Schließen</button></div></div></div>`;
     return;
   }
@@ -1122,6 +1148,7 @@ function openSettings(){
   <div class="prev" style="margin:4px 0;font-weight:400">${folderLabel()?'Ordner: <b>'+esc(folderLabel())+'</b> – Export speichert dort, Import zeigt die Dateien dort.':'Nicht festgelegt – Standardordner des Geräts (Android: Downloads/SkatLog) bzw. Download-Ordner des Browsers.'}</div>
   ${canPickDir()?`<p class="muted">Tipp: Wähle einen eigenen Unterordner (z. B. „Skat“), nicht „Dokumente“, „Downloads“ oder „Desktop“ selbst – die sperrt der Browser.</p><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn sec" onclick="pickDir()">Ordner wählen …</button>${folderLabel()?'<button class="btn sec" onclick="clearDir()">Ordner entfernen</button>':''}</div>`:'<p class="muted">Ein fester Ordner lässt sich nur in Chrome oder Edge am PC wählen. Auf dem Handy und in anderen Browsern bestimmt der Browser den Speicherort (meist „Downloads“).</p>'}
   ${emailSection()}
+  ${spSettings()}
   ${chk('contraPays','Gewonnenes Spiel: alle anderen Mitspieler bekommen den Spielwert')}
   ${chk('round10','Ramsch: Verlust-Augen auf nächste 10 runden (55 → 60, 54 → 50)')}
   ${chk('startBock','Spieltag beginnt mit Bock-/Ramschrunde')}
@@ -2277,7 +2304,7 @@ async function waStep(n){
 }
 
 /* ---------- Logos, Info, Hilfe, Suche ---------- */
-const APP_NAME='Skat-LOGGER',APP_TAG='Spielverlauf aufschreiben + Statistik + mehr',APP_VERSION='1.28.0',APP_BUILD='2026-10-23';
+const APP_NAME='Skat-LOGGER',APP_TAG='Spielverlauf aufschreiben + Statistik + mehr',APP_VERSION='1.28.1',APP_BUILD='2026-10-23';
 const LOGOS=[
   {n:'Kartenfächer',svg:`<svg viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI Symbol,Arial,sans-serif"><rect width="128" height="128" rx="28" fill="#17382a"/><text x="64" y="31" text-anchor="middle" font-family="Georgia,serif" font-size="21" font-weight="700" fill="#f6f1e3" letter-spacing="3">SKAT</text><text x="64" y="118" text-anchor="middle" font-family="Georgia,serif" font-size="19" font-weight="700" fill="#e8b923" letter-spacing="4">LOG</text><g transform="translate(12.8 16) scale(0.8)"><g transform="rotate(-24 64 104)"><rect x="40" y="30" width="48" height="68" rx="6" fill="#fff" stroke="#cfc8b4" stroke-width="1.5"/><text x="47" y="50" font-size="15" fill="#c0392b">♦</text><text x="64" y="80" font-size="32" text-anchor="middle" fill="#c0392b">♦</text></g><g transform="rotate(24 64 104)"><rect x="40" y="30" width="48" height="68" rx="6" fill="#fff" stroke="#cfc8b4" stroke-width="1.5"/><text x="47" y="50" font-size="15" fill="#c0392b">♥</text><text x="64" y="80" font-size="32" text-anchor="middle" fill="#c0392b">♥</text></g><g><rect x="40" y="30" width="48" height="68" rx="6" fill="#fff" stroke="#cfc8b4" stroke-width="1.5"/><text x="47" y="50" font-size="15" fill="#1d2a24">♠</text><text x="64" y="80" font-size="32" text-anchor="middle" fill="#1d2a24">♠</text></g></g></svg>`},
 ];
