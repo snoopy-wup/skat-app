@@ -923,10 +923,10 @@ const SP={txt:'',msg:'',on:false,rec:null,got:false,err:false};
 const SP_SR=window.SpeechRecognition||window.webkitSpeechRecognition;
 const SP_U=new Map(Object.entries({ein:1,eins:1,eine:1,zwei:2,zwo:2,drei:3,vier:4,funf:5,sechs:6,sieben:7,acht:8,neun:9,zehn:10,elf:11,zwolf:12,dreizehn:13,vierzehn:14,funfzehn:15,sechzehn:16,siebzehn:17,achtzehn:18,neunzehn:19}));
 const SP_T=new Map(Object.entries({zwanzig:20,dreissig:30,vierzig:40,funfzig:50,sechzig:60,siebzig:70,achtzig:80,neunzig:90}));
-const SP_TYPE={karo:'karo',herz:'herz',pik:'pik',pick:'pik',kreuz:'kreuz',grand:'grand',null:'null',ramsch:'ramsch'};
+const SP_TYPE={karo:'karo',caro:'karo',karro:'karo',herz:'herz',hertz:'herz',pik:'pik',pick:'pik',kreuz:'kreuz',kreutz:'kreuz',grand:'grand',grang:'grand',gang:'grand',drang:'grand',gran:'grand',grant:'grand',null:'null',ramsch:'ramsch'};
 const SP_SKIP=new Set(['von','vom','und','sowie','gesagt','sagt','sagte','hat','durch','dann']);
 const SP_FILL=new Set(['verliert','hat','mit','bekommt','punkte','punkten','punkt','augen','gesamt','mal','verlor','verloren','macht']);
-const SP_KW=new Set([...Object.keys(SP_TYPE),'jungens','jungen','jungs','buben','bube','bauern','bauer','einen','einem','er','sie','es','ergebnis','ergebnisse','punkten','punkt','punkte','stiche','stich','keine','keinen','kein','geschlagen','erhalten','erhalt','andere','anderen','gegner','die','der','den','haben','habe','contra','konter','gesagt','sagt','sagte','vom','durch','dann','kontra','re','rekontra','hirsch','geweih','gereizt','reizt','reizen','reiz','bis','mit','ohne','hand','ouvert','offen','schneider','schwarz','angesagt','ansage','schiebe','geschoben','schieben','spitze','gewonnen','gewinnt','gewann','verloren','verliert','verlor','augen','bock','bockrunde','gepasst','eingepasst','passe','passen','passt','jungfrau','durchmarsch','von','und','sowie','spielt','alleinspieler','hat','auf','punkte','bekommt','gesamt','mal','macht','ein','eine','eins']);
+const SP_KW=new Set([...Object.keys(SP_TYPE),'junge','korrektur','korrigieren','korrigiere','korrigier','jungens','jungen','jungs','buben','bube','bauern','bauer','einen','einem','er','sie','es','ergebnis','ergebnisse','punkten','punkt','punkte','stiche','stich','keine','keinen','kein','geschlagen','erhalten','erhalt','andere','anderen','gegner','die','der','den','haben','habe','contra','konter','gesagt','sagt','sagte','vom','durch','dann','kontra','re','rekontra','hirsch','geweih','gereizt','reizt','reizen','reiz','bis','mit','ohne','hand','ouvert','offen','schneider','schwarz','angesagt','ansage','schiebe','geschoben','schieben','spitze','gewonnen','gewinnt','gewann','verloren','verliert','verlor','augen','bock','bockrunde','gepasst','eingepasst','passe','passen','passt','jungfrau','durchmarsch','von','und','sowie','spielt','alleinspieler','hat','auf','punkte','bekommt','gesamt','mal','macht','ein','eine','eins']);
 const spNorm=t=>String(t).toLowerCase().replace(/ä/g,'a').replace(/ö/g,'o').replace(/ü/g,'u').replace(/ß/g,'ss');
 function spNumWord(w){
   if(/^\d+$/.test(w))return +w;
@@ -992,7 +992,9 @@ function spParse(text){
     else if(w==='ouvert'||w==='offen')r.ouvert=true;
     else if(w==='spitze')r.spitze=true;
     else if(w==='stiche'||w==='stich'){const q=n(k-1);if(q===0||['keine','keinen','kein'].includes(s(k-1)))r.schw=true;if(q!=null)usedN.add(k-1)} // „die anderen haben 0 Stiche“ = Schwarz, keine Augen
-    else if(['jungens','jungen','jungs','buben','bube','bauern','bauer','bubens'].includes(w)){if(n(k-1)!=null&&!usedN.has(k-1)){r.n=n(k-1);if(!r.mo)r.mo=s(k-2)==='ohne'?'ohne':'mit';usedN.add(k-1)}} // „er hat 2 Jungens“
+    else if(['jungens','jungen','jungs','junge','buben','bube','bauern','bauer','bubens'].includes(w)){
+      const num=n(k-1)!=null&&!usedN.has(k-1),one=n(k-1)==null&&['einen','einem','ein','eine'].includes(s(k-1));
+      if(num||one){r.n=one?1:n(k-1);r.mo=s(k-2)==='ohne'?'ohne':(r.mo||'mit');if(num)usedN.add(k-1)}} // „er hat 2 Jungens“, „einen Jungen“
     else if(w==='bock'||w==='bockrunde')r.bock=true;
     else if(['gepasst','eingepasst','passe','passen','passt'].includes(w))r.passe=true;
     else if(['gewonnen','gewinnt','gewann'].includes(w))r.won=true;
@@ -1081,7 +1083,7 @@ function spApply(text){
   drawForm();
 }
 function spGo(){
-  const el=document.getElementById('spTxt');if(el)SP.txt=el.value;
+  const el=document.getElementById('spTxt');if(el)SP.txt=vsFix(el.value);
   if(!String(SP.txt).trim()){SP.msg='Bitte erst etwas sagen oder eintippen.';drawForm();return}
   spApply(SP.txt);
 }
@@ -1357,9 +1359,15 @@ function vsSave(){
   if(!F){vsStop();toast('✓ Gespeichert',3000);vsSpeak('Gespeichert.')}
   else{SP.msg='⚠ Nicht gespeichert (siehe Meldung).';drawForm()}
 }
+const vsFix=t=>String(t).replace(/\b(grang|gang|drang|gran|grant)\b/gi,'Grand');
 function vsHear(t){
   VS.last=Date.now();
+  t=vsFix(t);
   if(!F){vsStop();return}
+  // „Korrektur/Korrigieren“: alles bisher Gesagte wird verworfen, danach zählen nur die neuen Angaben
+  { const m=/\b(korrektur|korrigieren|korrigiere|korrigier)\b[\s,.:;!-]*/i.exec(t);
+    if(m){VS.buf='';VS.confirm=false;F=JSON.parse(VS.base);t=t.slice(m.index+m[0].length).trim();
+      if(!t){SP.txt='';SP.msg='Alles gelöscht – bitte die Angaben neu sagen.';drawForm();vsSpeak('Alles gelöscht. Bitte neu sagen.');return}} }
   const nms=spNames(),w=spNorm(t).replace(/[^a-z0-9\s]/g,' ').trim().split(/\s+/).map(x=>{if(SP_KW.has(x)||spPlayer(x,nms)>=0)return x;return spFuzzyKw(x)||x}),has=(...a)=>a.some(x=>w.includes(x));
   const NO=has('nein','nee','stopp','stop','falsch','nicht'),YES=has('ja','jawohl','jo','jep','genau','richtig','korrekt','stimmt','okay','ok','passt');
   if(VS.confirm){
@@ -2570,7 +2578,7 @@ async function waStep(n){
 }
 
 /* ---------- Logos, Info, Hilfe, Suche ---------- */
-const APP_NAME='Skat-LOGGER',APP_TAG='Spielverlauf aufschreiben + Statistik + mehr',APP_VERSION='1.29.19',APP_BUILD='2026-10-23',APP_UPDATED='2026-11-23';
+const APP_NAME='Skat-LOGGER',APP_TAG='Spielverlauf aufschreiben + Statistik + mehr',APP_VERSION='1.29.20',APP_BUILD='2026-10-23',APP_UPDATED='2026-11-23';
 const LOGOS=[
   {n:'Kartenfächer',svg:`<svg viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI Symbol,Arial,sans-serif"><rect width="128" height="128" rx="28" fill="#17382a"/><text x="64" y="31" text-anchor="middle" font-family="Georgia,serif" font-size="21" font-weight="700" fill="#f6f1e3" letter-spacing="3">SKAT</text><text x="64" y="118" text-anchor="middle" font-family="Georgia,serif" font-size="19" font-weight="700" fill="#e8b923" letter-spacing="4">LOG</text><g transform="translate(12.8 16) scale(0.8)"><g transform="rotate(-24 64 104)"><rect x="40" y="30" width="48" height="68" rx="6" fill="#fff" stroke="#cfc8b4" stroke-width="1.5"/><text x="47" y="50" font-size="15" fill="#c0392b">♦</text><text x="64" y="80" font-size="32" text-anchor="middle" fill="#c0392b">♦</text></g><g transform="rotate(24 64 104)"><rect x="40" y="30" width="48" height="68" rx="6" fill="#fff" stroke="#cfc8b4" stroke-width="1.5"/><text x="47" y="50" font-size="15" fill="#c0392b">♥</text><text x="64" y="80" font-size="32" text-anchor="middle" fill="#c0392b">♥</text></g><g><rect x="40" y="30" width="48" height="68" rx="6" fill="#fff" stroke="#cfc8b4" stroke-width="1.5"/><text x="47" y="50" font-size="15" fill="#1d2a24">♠</text><text x="64" y="80" font-size="32" text-anchor="middle" fill="#1d2a24">♠</text></g></g></svg>`},
 ];
