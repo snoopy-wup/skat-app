@@ -960,7 +960,7 @@ function spPlayer(w,names){
 }
 // Satz → erkannte Angaben (ohne etwas zu ändern)
 function spParse(text){
-  const T=spTok(text),names=ctx.play.map(i=>({i,nm:spNorm(S.players[i]).trim().split(/\s+/)[0]}));
+  const T=spTok(text),ids=ctx.dealer!=null&&!ctx.play.includes(ctx.dealer)?[...ctx.play,ctx.dealer]:ctx.play,names=ids.map(i=>({i,nm:spNorm(S.players[i]).trim().split(/\s+/)[0]})); // der aussetzende Geber wird mit erkannt, damit „Geber spielt“ gemeldet werden kann
   const s=k=>T[k]?T[k].s:null,n=k=>T[k]?T[k].n:null;
   const P=T.map(t=>t.s&&t.n==null?spPlayer(t.s,names):-1);
   const r={contra:[],schiebe:[],aug:{},stage:0},used=new Set(),usedN=new Set();
@@ -1000,7 +1000,7 @@ function spParse(text){
   if(eff!=='ramsch'){
     T.forEach((t,k)=>{if(t.n!=null&&!usedN.has(k)&&t.n<=120&&(s(k+1)==='augen'||s(k-1)==='augen'))r.augenSp=t.n});
     if(r.augenSp==null){let bare=null;T.forEach((t,k)=>{if(t.n!=null&&!usedN.has(k)&&t.n<=120)bare=t.n});if(bare!=null){r.augenSp=bare;r.bareAug=true}} // nur eine Zahl gesagt = Augen
-    const k=T.findIndex((t,k)=>P[k]>=0&&!used.has(k));if(k>=0)r.declarer=P[k];
+    let k=T.findIndex((t,k)=>P[k]>=0&&!used.has(k)&&ctx.play.includes(P[k]));if(k<0)k=T.findIndex((t,k)=>P[k]>=0&&!used.has(k));if(k>=0)r.declarer=P[k]; // mitspielende Namen haben Vorrang vor dem aussetzenden Geber
   }else{
     T.forEach((t,k)=>{if(P[k]>=0&&!used.has(k)){let j=k+1;while(T[j]&&SP_FILL.has(s(j)))j++;if(T[j]&&n(j)!=null&&!usedN.has(j)&&n(j)<=120){r.aug[P[k]]=n(j);usedN.add(j)}}});
   }
@@ -1018,6 +1018,8 @@ function spApply(text){
   }
   const isR=F.type==='ramsch',isN=F.type==='null',malHand=F.malPlayer!=null&&F.malPlayer!=='';
   if(!isR){
+    SP.dealerHit=null;
+    if(r.declarer!=null&&!ctx.play.includes(r.declarer)){SP.dealerHit=nm(r.declarer);bad.push('Der Geber '+nm(r.declarer)+' kann nicht spielen (bei 4 Spielern setzt der Geber aus)');r.declarer=null}
     if(r.declarer!=null&&r.declarer!==F.declarer){
       if(ctx.mal&&!ctx.free&&editIdx==null&&!F.veto)bad.push('Malenko: '+nm(ctx.mal.player)+' muss spielen');
       else{setF('declarer',r.declarer);ok.push('Alleinspieler '+nm(r.declarer))}
@@ -1243,7 +1245,7 @@ function vsSummary(){
 }
 function vsCanSave(){
   const isR=F.type==='ramsch';
-  if(!isR&&F.declarer==null)return {ok:false,why:'Der Alleinspieler fehlt.'};
+  if(!isR&&F.declarer==null)return {ok:false,why:SP.dealerHit?'Der Geber '+SP.dealerHit+' kann nicht spielen. Bitte einen anderen Alleinspieler nennen.':'Der Alleinspieler fehlt.'};
   const hasRes=isR?!!ramschAugen(ctx.play):(!!F.outcomeSet||(F.augenSp!==''&&F.augenSp!=null));
   const openEdit=editIdx!=null&&!!F.open;
   const allowKeep=editIdx==null||openEdit;return {ok:true,keep:allowKeep&&(VS.keep||!hasRes),hasRes};
@@ -1255,7 +1257,7 @@ function vsAsk(close){
   if(c.keep&&VS.keep){F.outcomeSet=false;F.augenSp=null;F.outcome='W';F.sixty=false;F.augen={};F.jungfrau=false;F.durchmarsch=null} // Ergebnis weglassen
   VS.confirm=true;
   const open=editIdx!=null&&!!F.open;const t=vsSummary()+(c.keep?(VS.keep?'. Ohne Ergebnis zwischenspeichern?':'. Es fehlt noch das Ergebnis. Ohne Ergebnis zwischenspeichern? Oder sag jetzt das Ergebnis.'):(open?'. Ergebnis eintragen und Spiel abschließen?':'. Speichern?'));
-  SP.msg='❓ '+t+' Sag „ja“ oder „nein“.';drawForm();vsSpeak(t);
+  SP.msg='❓ '+t+' Sag „ja“ oder „nein“.';drawForm();vsSpeak(t+' Sage ja oder nein.');
 }
 function vsSave(){
   const c=vsCanSave();if(!c.ok){vsAsk();return}
@@ -2476,7 +2478,7 @@ async function waStep(n){
 }
 
 /* ---------- Logos, Info, Hilfe, Suche ---------- */
-const APP_NAME='Skat-LOGGER',APP_TAG='Spielverlauf aufschreiben + Statistik + mehr',APP_VERSION='1.29.8',APP_BUILD='2026-10-23',APP_UPDATED='2026-11-23';
+const APP_NAME='Skat-LOGGER',APP_TAG='Spielverlauf aufschreiben + Statistik + mehr',APP_VERSION='1.29.9',APP_BUILD='2026-10-23',APP_UPDATED='2026-11-23';
 const LOGOS=[
   {n:'Kartenfächer',svg:`<svg viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI Symbol,Arial,sans-serif"><rect width="128" height="128" rx="28" fill="#17382a"/><text x="64" y="31" text-anchor="middle" font-family="Georgia,serif" font-size="21" font-weight="700" fill="#f6f1e3" letter-spacing="3">SKAT</text><text x="64" y="118" text-anchor="middle" font-family="Georgia,serif" font-size="19" font-weight="700" fill="#e8b923" letter-spacing="4">LOG</text><g transform="translate(12.8 16) scale(0.8)"><g transform="rotate(-24 64 104)"><rect x="40" y="30" width="48" height="68" rx="6" fill="#fff" stroke="#cfc8b4" stroke-width="1.5"/><text x="47" y="50" font-size="15" fill="#c0392b">♦</text><text x="64" y="80" font-size="32" text-anchor="middle" fill="#c0392b">♦</text></g><g transform="rotate(24 64 104)"><rect x="40" y="30" width="48" height="68" rx="6" fill="#fff" stroke="#cfc8b4" stroke-width="1.5"/><text x="47" y="50" font-size="15" fill="#c0392b">♥</text><text x="64" y="80" font-size="32" text-anchor="middle" fill="#c0392b">♥</text></g><g><rect x="40" y="30" width="48" height="68" rx="6" fill="#fff" stroke="#cfc8b4" stroke-width="1.5"/><text x="47" y="50" font-size="15" fill="#1d2a24">♠</text><text x="64" y="80" font-size="32" text-anchor="middle" fill="#1d2a24">♠</text></g></g></svg>`},
 ];
