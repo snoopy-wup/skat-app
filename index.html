@@ -60,6 +60,7 @@ tr.row{cursor:pointer}
 .chk{display:flex;align-items:center;gap:8px;margin:6px 0;color:var(--ink);font-size:15px}
 .chk input{width:20px;height:20px}
 .muted{color:var(--mute);font-size:13px}
+.spbox{border:1px dashed var(--line);border-radius:10px;padding:6px 10px 8px;margin:8px 0}.spbox .btn{padding:8px 12px;white-space:nowrap}.spbox summary{cursor:pointer}
 .scroll{overflow-x:auto}
 .pc{text-align:center}
 #app tr.cyc td{border-bottom:4px solid var(--ink)}
@@ -666,7 +667,7 @@ function newF(R){
 let ctx=null;
 function openForm(i){
   const R=replay();
-  editIdx=i;
+  editIdx=i;SP.txt='';SP.msg='';
   if(i==null){F=newF(R);ctx={dealer:R.dealer,play:R.play,seat:R.seat,auto:R.nextLevel,mal:R.mal,free:false,ramschLeft:R.forcedRamsch?1:0,forcedInfo:R.forcedInfo}}
   else{const r=R.rows[i];F=JSON.parse(JSON.stringify(r.h));ctx={dealer:r.dealer,play:r.play,seat:r.seat,auto:r.lv,mal:null,free:true,ramschLeft:0,wasForced:r.forced>0||r.slot==='ramsch'};
     if(F.contra==null)F.contra=[];if(F.augen==null)F.augen={};if(!F.open)F.outcomeSet=true;
@@ -800,7 +801,7 @@ function drawForm(){
   const fsOpen=resLocked?'<fieldset disabled style="border:0;padding:0;margin:0;opacity:.4">':'<fieldset style="border:0;padding:0;margin:0">';
   const isMalHand=F.malPlayer!=null&&F.malPlayer!==''; // Malenko: es wird nicht gereizt
   if(isMalHand&&F.reiz)F.reiz=null;
-  let h=`<div class="modal"><div class="sheet">${navBar('closeModal()')}<h1>${editIdx==null?'Neues Spiel':'Spiel '+(editIdx+1)+' bearbeiten'}</h1>`;
+  let h=`<div class="modal"><div class="sheet">${navBar('closeModal()')}<h1>${editIdx==null?'Neues Spiel':'Spiel '+(editIdx+1)+' bearbeiten'}</h1>${spBox()}`;
   const autoLv=ctx.auto;
   if(editIdx==null&&ctx.mal){
     h+=`<div class="banner mal">Malenko: <b>${nm(ctx.mal.player)}</b> muss spielen · offen: ${ctx.mal.remaining.map(g=>GROUPN[g]).join(' / ')}
@@ -915,6 +916,174 @@ function roundPopup(c,R,queued){
 function delHand(){
   const lh=S.hands[S.hands.length-1];
   ask(`Letztes Spiel (Nr. ${S.hands.length}${lh?', '+(TYPES[lh.type]||{n:'?'}).n:''}) wirklich löschen?`,'Ja, löschen',()=>{S.hands.pop();S.events=S.events.filter(e=>e.at<=S.hands.length);save();render()});
+}
+
+/* ---------- Spracheingabe (füllt die Spielmaske aus; gespeichert wird immer von Hand) ---------- */
+const SP={txt:'',msg:'',on:false,rec:null,got:false,err:false};
+const SP_SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+const SP_U=new Map(Object.entries({ein:1,eins:1,eine:1,zwei:2,zwo:2,drei:3,vier:4,funf:5,sechs:6,sieben:7,acht:8,neun:9,zehn:10,elf:11,zwolf:12,dreizehn:13,vierzehn:14,funfzehn:15,sechzehn:16,siebzehn:17,achtzehn:18,neunzehn:19}));
+const SP_T=new Map(Object.entries({zwanzig:20,dreissig:30,vierzig:40,funfzig:50,sechzig:60,siebzig:70,achtzig:80,neunzig:90}));
+const SP_TYPE={karo:'karo',herz:'herz',pik:'pik',pick:'pik',kreuz:'kreuz',grand:'grand',null:'null',ramsch:'ramsch'};
+const SP_SKIP=new Set(['von','und','sowie']);
+const SP_FILL=new Set(['verliert','hat','mit','bekommt','punkte','augen','gesamt','mal','verlor','macht']);
+const SP_KW=new Set([...Object.keys(SP_TYPE),'kontra','re','rekontra','hirsch','geweih','gereizt','reizt','reizen','reiz','bis','mit','ohne','hand','ouvert','offen','schneider','schwarz','angesagt','ansage','schiebe','geschoben','schieben','spitze','gewonnen','gewinnt','gewann','verloren','verliert','verlor','augen','bock','bockrunde','gepasst','eingepasst','passe','passen','passt','jungfrau','durchmarsch','von','und','sowie','spielt','alleinspieler','hat','auf','punkte','bekommt','gesamt','mal','macht','ein','eine','eins']);
+const spNorm=t=>String(t).toLowerCase().replace(/ä/g,'a').replace(/ö/g,'o').replace(/ü/g,'u').replace(/ß/g,'ss');
+function spNumWord(w){
+  if(/^\d+$/.test(w))return +w;
+  if(w==='null')return null;
+  if(SP_U.has(w))return SP_U.get(w);if(SP_T.has(w))return SP_T.get(w);
+  let m=w.match(/^(ein|zwei|drei|vier|funf|sechs|sieben|acht|neun)und([a-z]+)$/);
+  if(m&&SP_T.has(m[2]))return SP_U.get(m[1])+SP_T.get(m[2]);
+  m=w.match(/^(?:ein)?hundert(.*)$/);
+  if(m){if(!m[1])return 100;const r=spNumWord(m[1].replace(/^und/,''));return r==null?null:100+r}
+  return null;
+}
+// Text → Wörter (Zahlwörter werden zu Zahlen: {s:Wort,n:Zahl|null})
+function spTok(t){
+  const w=spNorm(t).replace(/[^a-z0-9\s]/g,' ').replace(/(\d)([a-z])/g,'$1 $2').replace(/([a-z])(\d)/g,'$1 $2').split(/\s+/).filter(Boolean),out=[];
+  for(let i=0;i<w.length;i++){
+    const a=w[i];
+    if(w[i+1]==='und'&&SP_U.has(a)&&a!=='ein'&&SP_T.has(w[i+2]||'')){out.push({s:null,n:SP_U.get(a)+SP_T.get(w[i+2])});i+=2;continue} // „zwei und siebzig“
+    const n=spNumWord(a);
+    out.push(n!=null?{s:null,n}:{s:a,n:null});
+  }
+  return out;
+}
+function spLev(a,b){const m=[];for(let i=0;i<=a.length;i++)m[i]=[i];for(let j=1;j<=b.length;j++)m[0][j]=j;for(let i=1;i<=a.length;i++)for(let j=1;j<=b.length;j++)m[i][j]=Math.min(m[i-1][j]+1,m[i][j-1]+1,m[i-1][j-1]+(a[i-1]===b[j-1]?0:1));return m[a.length][b.length]}
+function spPlayer(w,names){
+  if(!w||w.length<2||SP_KW.has(w))return -1;
+  for(const p of names)if(w===p.nm)return p.i;
+  for(const p of names)if(w.length>=3&&p.nm.startsWith(w))return p.i;
+  let best=-1,bd=9;
+  for(const p of names){const lim=p.nm.length>=8?2:p.nm.length>=5?1:0,d=spLev(w,p.nm);if(d<=lim&&d<bd){bd=d;best=p.i}}
+  return best;
+}
+// Satz → erkannte Angaben (ohne etwas zu ändern)
+function spParse(text){
+  const T=spTok(text),names=ctx.play.map(i=>({i,nm:spNorm(S.players[i]).trim().split(/\s+/)[0]}));
+  const s=k=>T[k]?T[k].s:null,n=k=>T[k]?T[k].n:null;
+  const P=T.map(t=>t.s&&t.n==null?spPlayer(t.s,names):-1);
+  const r={contra:[],schiebe:[],aug:{},stage:0},used=new Set(),usedN=new Set();
+  T.forEach(t=>{const ty=SP_TYPE[t.s];if(ty&&ty!=='null'&&!r.type)r.type=ty});
+  const eff=r.type||F.type;
+  T.forEach((t,k)=>{if(t.s==='null'){if(eff==='ramsch'&&k>0&&P[k-1]>=0)t.n=0;else if(!r.type)r.type='null'}}); // „Anna null“ im Ramsch = 0 Augen
+  const near=(k,d)=>{const L=[];let j=k+d;while(T[j]){if(P[j]>=0&&!used.has(j)){L.push(P[j]);used.add(j)}else if(!SP_SKIP.has(s(j)))break;j+=d}return L};
+  const pick=k=>{let j=k-1;while(T[j]&&SP_SKIP.has(s(j)))j--;const b=T[j]&&P[j]>=0&&!used.has(j)?near(k,-1):[];return b.length?b:near(k,1)};
+  T.forEach((t,k)=>{const w=t.s;if(!w)return;
+    if(w==='kontra'){r.contra.push(...pick(k));r.stage=Math.max(r.stage,1)}
+    else if(w==='re'||w==='rekontra')r.stage=Math.max(r.stage,2);
+    else if(w==='hirsch')r.stage=Math.max(r.stage,3);
+    else if(w==='geweih')r.stage=Math.max(r.stage,4);
+    else if(w==='schiebe'||w==='geschoben'||w==='schieben'){r.schiebeSaid=true;r.schiebe.push(...pick(k))}
+    else if(w==='jungfrau'){const L=pick(k);r.jung=true;if(L.length)r.jungP=L[0]}
+    else if(w==='durchmarsch'){const L=pick(k);r.durch=true;if(L.length)r.durchP=L[0]}
+    else if(w==='hand')r.hand=true;
+    else if(w==='ouvert'||w==='offen')r.ouvert=true;
+    else if(w==='spitze')r.spitze=true;
+    else if(w==='bock'||w==='bockrunde')r.bock=true;
+    else if(['gepasst','eingepasst','passe','passen','passt'].includes(w))r.passe=true;
+    else if(['gewonnen','gewinnt','gewann'].includes(w))r.won=true;
+    else if(['verloren','verlor'].includes(w)||(w==='verliert'&&eff!=='ramsch'))r.won=false;
+    else if(w==='schneider'||w==='schwarz'){
+      let j=k+1;while(['und','schneider','schwarz'].includes(s(j)))j++;
+      const ang=s(j)==='angesagt'||s(j)==='ansage'||s(k-1)==='angesagt'||s(k-1)==='ansage';
+      r[ang?(w==='schneider'?'schnAng':'schwarzAng'):(w==='schneider'?'schn':'schw')]=true;
+    }
+    else if(eff!=='ramsch'&&(w==='gereizt'||w==='reizt'||w==='reizen'||w==='reiz')){
+      let j=k+1,c=0;while(T[j]&&c<4){if(n(j)!=null){r.reiz=n(j);usedN.add(j);break}if(!['bis','mit','auf','von','ueber'].includes(s(j)))break;j++;c++}
+    }
+    else if(eff!=='ramsch'&&(w==='mit'||w==='ohne')){
+      if(!['gereizt','bis','reizt','auf'].includes(s(k-1))&&n(k+1)!=null&&s(k+2)!=='augen'&&!usedN.has(k+1)){r.mo=w;r.n=n(k+1);usedN.add(k+1)}
+    }
+  });
+  if(eff!=='ramsch'){
+    T.forEach((t,k)=>{if(t.n!=null&&!usedN.has(k)&&t.n<=120&&(s(k+1)==='augen'||s(k-1)==='augen'))r.augenSp=t.n});
+    const k=T.findIndex((t,k)=>P[k]>=0&&!used.has(k));if(k>=0)r.declarer=P[k];
+  }else{
+    T.forEach((t,k)=>{if(P[k]>=0&&!used.has(k)){let j=k+1;while(T[j]&&SP_FILL.has(s(j)))j++;if(T[j]&&n(j)!=null&&!usedN.has(j)&&n(j)<=120){r.aug[P[k]]=n(j);usedN.add(j)}}});
+  }
+  return r;
+}
+// erkannte Angaben in die offene Spielmaske eintragen
+function spApply(text){
+  if(!F||!ctx)return;
+  const r=spParse(text),ok=[],bad=[],nm=i=>S.players[i];
+  if(r.passe&&!r.type&&F.type!=='ramsch'&&allowed('ramsch'))r.type='ramsch'; // „alle gepasst“ heißt Ramsch
+  if(r.type){
+    if(r.type===F.type)ok.push('Spielart '+TYPES[r.type].n);
+    else if(allowed(r.type)){setF('type',r.type);ok.push('Spielart '+TYPES[r.type].n)}
+    else bad.push(TYPES[r.type].n+' ist jetzt nicht erlaubt');
+  }
+  const isR=F.type==='ramsch',isN=F.type==='null',malHand=F.malPlayer!=null&&F.malPlayer!=='';
+  if(!isR){
+    if(r.declarer!=null&&r.declarer!==F.declarer){
+      if(ctx.mal&&!ctx.free&&editIdx==null&&!F.veto)bad.push('Malenko: '+nm(ctx.mal.player)+' muss spielen');
+      else{setF('declarer',r.declarer);ok.push('Alleinspieler '+nm(r.declarer))}
+    }else if(r.declarer!=null)ok.push('Alleinspieler '+nm(r.declarer));
+    if(r.reiz!=null){if(malHand)bad.push('Im Malenko wird nicht gereizt');else if(REIZ.includes(r.reiz)){setF('reiz',r.reiz);ok.push('gereizt bis '+r.reiz)}else bad.push('Reizwert '+r.reiz+' gibt es nicht')}
+    if(r.mo&&!isN){const mx=F.type==='grand'?4:11,k=Math.max(1,Math.min(mx,r.n||1));if(r.n>mx||r.n<1)bad.push('Anzahl Buben höchstens '+mx);setF('mo',r.mo);setF('n',k);ok.push(r.mo+' '+k)}
+    if(r.hand&&!F.veto){setF('hand',true);ok.push('Hand')}
+    if(r.ouvert){setF('ouvert',true);ok.push('Ouvert')}
+    if(r.spitze&&S.settings.spitze&&!isN){setF('spitze',true);ok.push('Spitze')}
+    if(r.schnAng&&!isN){setF('schnAng',true);ok.push('Schneider angesagt')}
+    if(r.schwarzAng&&!isN){setF('schwarzAng',true);ok.push('Schwarz angesagt')}
+    if(r.schiebeSaid){if(F.declarer!=null){setF('schiebe',[F.declarer]);ok.push('Schiebe')}else bad.push('Schiebe: erst den Alleinspieler nennen')}
+    if(r.contra.length||r.stage>=1){
+      const L=[...new Set([...F.contra,...r.contra])].filter(i=>i!==F.declarer&&ctx.play.includes(i));
+      if(L.length){F.contra=L;F.stage=Math.min(4,Math.max(r.stage||1,stageOf(F)||1));drawForm();ok.push(F.stage===1?'Kontra von '+L.map(nm).join(', '):['Kontra','Kontra','Re','Hirsch','Geweih'][F.stage]+' (Kontra von '+L.map(nm).join(', ')+')')}
+      else if(r.stage>=1)bad.push('Kontra: von wem? (Name nennen)');
+    }
+    // Ergebnis
+    if(r.augenSp!=null&&!isN){augenIn(r.augenSp);if(r.schw)setSchwarz(true);ok.push('Augen '+r.augenSp+' : '+(120-r.augenSp)+' ('+(F.outcome[0]==='W'?'gewonnen':'verloren')+')');
+      if(r.won!=null&&(F.outcome[0]==='W')!==r.won)bad.push('Augen und „'+(r.won?'gewonnen':'verloren')+'“ passen nicht zusammen – es gelten die Augen')}
+    else if(r.won!=null){setRes(r.won);if(!isN&&r.schw){setSw(true)}else if(!isN&&r.schn){setSn(true)}ok.push((r.won?'gewonnen':'verloren')+(!isN&&r.schw?', schwarz':!isN&&r.schn?', Schneider':''))}
+  }else{
+    const noPass=malHand||ctx.ramschLeft>0||ctx.wasForced;
+    if(r.passe){if(noPass)bad.push('Alle gepasst ist hier nicht möglich');else{setF('passe',true);ok.push('alle gepasst')}}
+    if(!F.passe&&(r.contra.length||r.stage>=1)){
+      const L=[...new Set([...F.contra,...r.contra])].filter(i=>ctx.play.includes(i));
+      if(L.length){F.contra=L;F.stage=Math.min(3,Math.max(r.stage||1,stageOf(F)||1));ok.push(F.stage===1?'Kontra von '+L.map(nm).join(', '):['Kontra','Kontra','Re','Hirsch'][F.stage]+' (Kontra von '+L.map(nm).join(', ')+')')}
+      else bad.push('Kontra: von wem? (Name nennen)');
+    }
+    if(!F.passe&&r.schiebe.length){F.schiebe=[...new Set([...(F.schiebe||[]),...r.schiebe])];ok.push('Schiebe: '+F.schiebe.map(nm).join(', '))}
+    const set=(p,v)=>{v=Math.min(120,v);F.augen[p]=v;if(v===120)ctx.play.forEach(q=>{if(q!==p)F.augen[q]=0})};
+    Object.entries(r.aug).forEach(([p,v])=>{if(ctx.play.includes(+p)){set(+p,v)}});
+    if(r.durch&&r.durchP!=null&&ctx.play.includes(r.durchP))set(r.durchP,120);
+    if(r.jung&&r.jungP!=null&&ctx.play.includes(r.jungP)&&(F.augen[r.jungP]===''||F.augen[r.jungP]==null))F.augen[r.jungP]=0;
+    const got=Object.keys(r.aug).filter(p=>ctx.play.includes(+p));
+    if(got.length)ok.push('Augen '+got.map(p=>nm(+p)+' '+F.augen[p]).join(', '));
+    if(r.durch&&r.durchP!=null){F.durchmarsch=r.durchP;ok.push('Durchmarsch '+nm(r.durchP))}
+    if(r.jung){F.jungfrau=true;F.durchmarsch=null;ok.push('Jungfrau')}
+  }
+  if(r.bock&&!malHand){setF('levelOverride',1);ok.push('Bockrunde')}
+  SP.msg=(ok.length?'✓ Eingetragen: '+ok.join(' · '):'')+(bad.length?(ok.length?' — ':'')+'⚠ '+bad.join('; '):'')||'Nichts erkannt. Beispiel: „Anna Grand mit 2 gewonnen 72 Augen“.';
+  drawForm();
+}
+function spGo(){
+  const el=document.getElementById('spTxt');if(el)SP.txt=el.value;
+  if(!String(SP.txt).trim()){SP.msg='Bitte erst etwas sagen oder eintippen.';drawForm();return}
+  spApply(SP.txt);
+}
+function spMic(){
+  if(SP.on&&SP.rec){try{SP.rec.stop()}catch(e){}return}
+  if(!SP_SR)return;
+  try{
+    const r=new SP_SR();r.lang='de-DE';r.interimResults=true;r.continuous=false;r.maxAlternatives=1;SP.rec=r;SP.got=false;SP.err=false;
+    r.onstart=()=>{SP.on=true;SP.msg='Ich höre zu … bitte sprechen.';if(F)drawForm()};
+    r.onresult=e=>{let t='';for(let i=0;i<e.results.length;i++)t+=e.results[i][0].transcript+' ';SP.txt=t.trim();SP.got=true;const el=document.getElementById('spTxt');if(el)el.value=SP.txt};
+    r.onerror=e=>{SP.err=true;SP.msg=({'not-allowed':'Mikrofon nicht erlaubt – bitte in den Browser-Einstellungen freigeben.','service-not-allowed':'Spracherkennung ist hier nicht erlaubt.','no-speech':'Nichts gehört – nochmal versuchen.','network':'Keine Internetverbindung für die Spracherkennung.','audio-capture':'Kein Mikrofon gefunden.'})[e.error]||('Spracherkennung fehlgeschlagen ('+e.error+'). Du kannst auch das Mikrofon deiner Tastatur nutzen.')};
+    r.onend=()=>{SP.on=false;SP.rec=null;if(!F)return;if(SP.got&&!SP.err)spApply(SP.txt);else drawForm()};
+    r.start();
+  }catch(e){SP.on=false;SP.msg='Spracherkennung lässt sich hier nicht starten. Nutze das Mikrofon deiner Tastatur im Textfeld.';if(F)drawForm()}
+}
+function spBox(){
+  const can=!!SP_SR&&!androidApp();
+  return `<div class="spbox"><label for="spTxt">🎤 Spracheingabe – füllt die Maske aus, du prüfst und speicherst selbst</label>
+  <div style="display:flex;gap:6px;align-items:center"><input type="text" id="spTxt" value="${esc(SP.txt)}" placeholder="z. B. Anna Grand mit 2 gewonnen 72 Augen" oninput="SP.txt=this.value" onkeydown="if(event.key==='Enter'){event.preventDefault();spGo()}" autocomplete="off" autocapitalize="none" spellcheck="false" style="flex:1;min-width:0">
+  ${can?`<button class="btn ${SP.on?'bad':'sec'}" onclick="spMic()" title="${SP.on?'Aufnahme beenden':'Sprechen'}" aria-label="Spracheingabe">${SP.on?'⏹':'🎤'}</button>`:''}<button class="btn" onclick="spGo()">Übernehmen</button></div>
+  ${SP.msg?`<div class="muted" style="margin-top:4px">${esc(SP.msg)}</div>`:''}
+  <details><summary class="muted">Beispiele${can?'':' (Mikrofon-Taste der Tastatur zum Diktieren nutzen)'}</summary><div class="muted">
+  „Anna Grand mit zwei gereizt bis 36 gewonnen 72 Augen“<br>„Bernd Kreuz ohne drei Hand verloren“<br>„Anna Herz Kontra von Chris, Re“<br>„Ramsch Anna 45 Bernd 30 Chris 25“<br>„Alle gepasst“ · „Bockrunde“<br>Die Angaben ergänzen sich: mehrere Sätze nacheinander sind möglich.</div></details></div>`;
 }
 
 /* ---------- Einstellungen ---------- */
@@ -2108,7 +2277,7 @@ async function waStep(n){
 }
 
 /* ---------- Logos, Info, Hilfe, Suche ---------- */
-const APP_NAME='Skat-LOGGER',APP_TAG='Spielverlauf aufschreiben + Statistik + mehr',APP_VERSION='1.27.4',APP_BUILD='2026-10-23';
+const APP_NAME='Skat-LOGGER',APP_TAG='Spielverlauf aufschreiben + Statistik + mehr',APP_VERSION='1.28.0',APP_BUILD='2026-10-23';
 const LOGOS=[
   {n:'Kartenfächer',svg:`<svg viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI Symbol,Arial,sans-serif"><rect width="128" height="128" rx="28" fill="#17382a"/><text x="64" y="31" text-anchor="middle" font-family="Georgia,serif" font-size="21" font-weight="700" fill="#f6f1e3" letter-spacing="3">SKAT</text><text x="64" y="118" text-anchor="middle" font-family="Georgia,serif" font-size="19" font-weight="700" fill="#e8b923" letter-spacing="4">LOG</text><g transform="translate(12.8 16) scale(0.8)"><g transform="rotate(-24 64 104)"><rect x="40" y="30" width="48" height="68" rx="6" fill="#fff" stroke="#cfc8b4" stroke-width="1.5"/><text x="47" y="50" font-size="15" fill="#c0392b">♦</text><text x="64" y="80" font-size="32" text-anchor="middle" fill="#c0392b">♦</text></g><g transform="rotate(24 64 104)"><rect x="40" y="30" width="48" height="68" rx="6" fill="#fff" stroke="#cfc8b4" stroke-width="1.5"/><text x="47" y="50" font-size="15" fill="#c0392b">♥</text><text x="64" y="80" font-size="32" text-anchor="middle" fill="#c0392b">♥</text></g><g><rect x="40" y="30" width="48" height="68" rx="6" fill="#fff" stroke="#cfc8b4" stroke-width="1.5"/><text x="47" y="50" font-size="15" fill="#1d2a24">♠</text><text x="64" y="80" font-size="32" text-anchor="middle" fill="#1d2a24">♠</text></g></g></svg>`},
 ];
