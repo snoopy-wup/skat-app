@@ -949,6 +949,16 @@ function spTok(t){
   }
   return out;
 }
+// Namen der erkannten Spieler (Mitspieler und aussetzender Geber)
+function spNames(){const ids=ctx.dealer!=null&&!ctx.play.includes(ctx.dealer)?[...ctx.play,ctx.dealer]:ctx.play;return ids.map(i=>({i,nm:spNorm(S.players[i]).trim().split(/\s+/)[0]}))}
+// Befehlswörter, die bei der Erkennung oft leicht verhört werden (z. B. „übernehmen“ → „übernehme“, „Kontra“ → „Contra“)
+const SP_KWF=['gewonnen','verloren','kontra','gereizt','ubernehmen','zwischenspeichern','abschliessen','abspeichern','speichern','eintragen','schneider','schwarz','angesagt','bockrunde','ouvert','alleinspieler','ramsch','durchmarsch','jungfrau','abbrechen','geschlagen','erhalten','augen','punkte','punkten','hirsch','geweih','gepasst','eingepasst','schiebe','fertig'];
+function spFuzzyKw(w){
+  if(w.length<5||SP_KW.has(w))return null;
+  const lim=w.length>=9?2:1;let best=null,bd=9;
+  for(const k of SP_KWF){if(Math.abs(k.length-w.length)>lim)continue;const d=spLev(w,k);if(d<=lim&&d<bd){bd=d;best=k}}
+  return best;
+}
 function spLev(a,b){const m=[];for(let i=0;i<=a.length;i++)m[i]=[i];for(let j=1;j<=b.length;j++)m[0][j]=j;for(let i=1;i<=a.length;i++)for(let j=1;j<=b.length;j++)m[i][j]=Math.min(m[i-1][j]+1,m[i][j-1]+1,m[i-1][j-1]+(a[i-1]===b[j-1]?0:1));return m[a.length][b.length]}
 function spPlayer(w,names){
   if(!w||w.length<2||SP_KW.has(w))return -1;
@@ -961,6 +971,7 @@ function spPlayer(w,names){
 // Satz → erkannte Angaben (ohne etwas zu ändern)
 function spParse(text){
   const T=spTok(text),ids=ctx.dealer!=null&&!ctx.play.includes(ctx.dealer)?[...ctx.play,ctx.dealer]:ctx.play,names=ids.map(i=>({i,nm:spNorm(S.players[i]).trim().split(/\s+/)[0]})); // der aussetzende Geber wird mit erkannt, damit „Geber spielt“ gemeldet werden kann
+  T.forEach(t=>{if(t.s&&t.n==null&&!SP_KW.has(t.s)&&spPlayer(t.s,names)<0){const c=spFuzzyKw(t.s);if(c)t.s=c}}); // verhörte Befehlswörter berichtigen
   const s=k=>T[k]?T[k].s:null,n=k=>T[k]?T[k].n:null;
   const P=T.map(t=>t.s&&t.n==null?spPlayer(t.s,names):-1);
   const r={contra:[],schiebe:[],aug:{},stage:0},used=new Set(),usedN=new Set();
@@ -1247,13 +1258,30 @@ function vsStart(){
 }
 function vsListen(){
   if(!VS.on||VS.speaking||VS.rec)return;
-  const r=new SP_SR();r.lang='de-DE';r.interimResults=false;r.continuous=true;r.maxAlternatives=1;VS.rec=r; // läuft über Pausen hinweg weiter
+  const r=new SP_SR();r.lang='de-DE';r.interimResults=true;r.continuous=true;r.maxAlternatives=3;VS.rec=r; // läuft über Pausen hinweg weiter
   let fatal=false;
-  r.onresult=e=>{for(let i=e.resultIndex;i<e.results.length;i++){if(!e.results[i].isFinal)continue;const t=e.results[i][0].transcript;if(t&&t.trim())vsHear(t.trim())}};
+  r.onresult=e=>{
+    let live='';
+    for(let i=e.resultIndex;i<e.results.length;i++){
+      const res=e.results[i];
+      if(res.isFinal){const t=vsBest(res);if(t)vsHear(t)}else live+=res[0].transcript+' ';
+    }
+    const el=document.getElementById('spTxt');if(el&&live.trim())el.value=(VS.buf+' '+live).trim(); // Zwischenstand: man sieht sofort, was ankommt
+  };
   r.onerror=e=>{if(e.error==='no-speech'||e.error==='aborted')return;fatal=true;vsStop(spErrText(e.error))};
   r.onend=()=>{if(VS.rec===r)VS.rec=null;if(!VS.on||fatal)return;
-    if(!VS.speaking)setTimeout(vsListen,150)};
+    if(!VS.speaking)setTimeout(vsListen,30)};
   try{r.start()}catch(e){VS.rec=null;vsStop('Mikrofon lässt sich nicht starten.')}
+}
+// Aus den Alternativen der Erkennung die wählen, in der die meisten bekannten Wörter (Befehle, Namen, Zahlen) vorkommen
+function vsBest(res){
+  const nms=spNames();let best='',bs=-1;
+  for(let k=0;k<res.length;k++){
+    const t=String(res[k].transcript||'').trim();if(!t)continue;
+    const sc=spTok(t).reduce((a,x)=>a+(x.n!=null||SP_KW.has(x.s)||spPlayer(x.s,nms)>=0||spFuzzyKw(x.s)?1:0),0);
+    if(sc>bs){bs=sc;best=t}
+  }
+  return best;
 }
 function vsSummary(){
   const isR=F.type==='ramsch',p=['Spielart '+TYPES[F.type].n],nm=i=>S.players[i];
@@ -1330,7 +1358,7 @@ function vsSave(){
 function vsHear(t){
   VS.last=Date.now();
   if(!F){vsStop();return}
-  const w=spNorm(t).replace(/[^a-z0-9\s]/g,' ').trim().split(/\s+/),has=(...a)=>a.some(x=>w.includes(x));
+  const nms=spNames(),w=spNorm(t).replace(/[^a-z0-9\s]/g,' ').trim().split(/\s+/).map(x=>{if(SP_KW.has(x)||spPlayer(x,nms)>=0)return x;return spFuzzyKw(x)||x}),has=(...a)=>a.some(x=>w.includes(x));
   const NO=has('nein','nee','stopp','stop','falsch','nicht'),YES=has('ja','jawohl','jo','jep','genau','richtig','korrekt','stimmt','okay','ok','passt');
   if(VS.confirm){
     if(YES&&!NO){VS.confirm=false;vsSave();return}
@@ -2540,7 +2568,7 @@ async function waStep(n){
 }
 
 /* ---------- Logos, Info, Hilfe, Suche ---------- */
-const APP_NAME='Skat-LOGGER',APP_TAG='Spielverlauf aufschreiben + Statistik + mehr',APP_VERSION='1.29.17',APP_BUILD='2026-10-23',APP_UPDATED='2026-11-23';
+const APP_NAME='Skat-LOGGER',APP_TAG='Spielverlauf aufschreiben + Statistik + mehr',APP_VERSION='1.29.18',APP_BUILD='2026-10-23',APP_UPDATED='2026-11-23';
 const LOGOS=[
   {n:'Kartenfächer',svg:`<svg viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI Symbol,Arial,sans-serif"><rect width="128" height="128" rx="28" fill="#17382a"/><text x="64" y="31" text-anchor="middle" font-family="Georgia,serif" font-size="21" font-weight="700" fill="#f6f1e3" letter-spacing="3">SKAT</text><text x="64" y="118" text-anchor="middle" font-family="Georgia,serif" font-size="19" font-weight="700" fill="#e8b923" letter-spacing="4">LOG</text><g transform="translate(12.8 16) scale(0.8)"><g transform="rotate(-24 64 104)"><rect x="40" y="30" width="48" height="68" rx="6" fill="#fff" stroke="#cfc8b4" stroke-width="1.5"/><text x="47" y="50" font-size="15" fill="#c0392b">♦</text><text x="64" y="80" font-size="32" text-anchor="middle" fill="#c0392b">♦</text></g><g transform="rotate(24 64 104)"><rect x="40" y="30" width="48" height="68" rx="6" fill="#fff" stroke="#cfc8b4" stroke-width="1.5"/><text x="47" y="50" font-size="15" fill="#c0392b">♥</text><text x="64" y="80" font-size="32" text-anchor="middle" fill="#c0392b">♥</text></g><g><rect x="40" y="30" width="48" height="68" rx="6" fill="#fff" stroke="#cfc8b4" stroke-width="1.5"/><text x="47" y="50" font-size="15" fill="#1d2a24">♠</text><text x="64" y="80" font-size="32" text-anchor="middle" fill="#1d2a24">♠</text></g></g></svg>`},
 ];
