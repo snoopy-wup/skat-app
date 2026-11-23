@@ -52,7 +52,7 @@ tr.row{cursor:pointer}
 .seg button.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
 .seg button:disabled{opacity:.35;cursor:not-allowed}
 .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.fab{position:fixed;right:16px;bottom:16px;box-shadow:0 4px 14px #0004;padding:14px 20px;font-size:17px}
+.fabs{position:fixed;right:16px;bottom:16px;display:flex;gap:8px;align-items:stretch}.fab{box-shadow:0 4px 14px #0004;padding:14px 20px;font-size:17px}.fab.vsmic{padding:14px 16px}.vsmic.bad{animation:vspulse 1.2s infinite}@keyframes vspulse{50%{opacity:.7}}
 .modal{position:fixed;inset:0;background:#0007;display:flex;align-items:flex-end;justify-content:center;z-index:20}
 .sheet{background:var(--bg);width:100%;max-width:620px;max-height:94vh;overflow:auto;border-radius:18px 18px 0 0;padding:16px}
 @media(min-width:700px){.modal{align-items:center}.sheet{border-radius:18px}}
@@ -214,7 +214,7 @@ textarea,input[type=time]{background:var(--card);color:var(--ink);border:1px sol
   .statwrap th,.statwrap td{padding:6px 3px}
   .statwrap td:first-child,.statwrap th:first-child{min-width:92px;padding-left:6px}
   .sheet table th.pc,.sheet table td.pc{min-width:50px}
-  .fab{right:12px;bottom:12px;padding:12px 16px;font-size:16px}
+  .fabs{right:12px;bottom:12px}.fab{padding:12px 16px;font-size:16px}.fab.vsmic{padding:12px 14px}
   .seg button{padding:10px 12px;min-height:40px}
   .btn{min-height:40px}
   .btn.sm{min-height:34px}
@@ -618,7 +618,7 @@ function board(){
   <div class="card"><table class="gt" style="--np:${n}"><thead><tr class="h1"><th>#</th><th>Spiel</th>${hh.join('')}<th class="num">Spielwert</th></tr>
   <tr class="h2"><th></th><th>Summe verlorene Punkte</th>${tt.join('')}<th class="num" title="Summe aller Spielwerte">Σ ${svSum}</th></tr></thead>
   <tbody>${rows||`<tr><td colspan="${n+3}" class="muted">Noch kein Spiel eingetragen.</td></tr>`}</tbody></table></div>
-  ${(()=>{const li=S.hands.length-1;return li>=0&&S.hands[li].open?`<button class="btn fab" onclick="openForm(${li})">Ergebnis eintragen</button>`:`<button class="btn fab" onclick="openForm(null)">+ Spiel anlegen</button>`})()}`;
+  ${(()=>{const li=S.hands.length-1;const mic=SP_SR&&!androidApp()?`<button class="btn fab vsmic ${VS.on?'bad':'sec'}" onclick="vsStart()" title="Spiel per Sprache eintragen (Mikrofon an/aus)" aria-label="Spracheingabe">${VS.on?'⏹':'🎤'}</button>`:'';return `<div class="fabs">${mic}`+(li>=0&&S.hands[li].open?`<button class="btn fab" onclick="openForm(${li})">Ergebnis eintragen</button>`:`<button class="btn fab" onclick="openForm(null)">+ Spiel anlegen</button>`)+'</div>'})()}`;
 }
 function wertTxt(r){
   const h=r.h,c=r.c;
@@ -675,7 +675,7 @@ function openForm(i){
     F.ouvertFree=true}
   drawForm();
 }
-function closeModal(){if(typeof micStop==='function')micStop();document.getElementById('modal').innerHTML='';F=null;SHEETSTACK=[];SETONLY=false}
+function closeModal(){if(typeof micStop==='function')micStop();if(typeof VS!=='undefined'&&VS.on)vsStop();document.getElementById('modal').innerHTML='';F=null;SHEETSTACK=[];SETONLY=false}
 /* ---------- Navigation: ← zurück (oben links), ✕ Anwendung schließen (oben rechts) ---------- */
 let SHEETSTACK=[]; // zuvor geöffnete Fenster (z. B. Gesamtansicht → Statistik → zurück zur Gesamtansicht)
 function sheetBack(){const p=SHEETSTACK.pop();if(p)document.getElementById('modal').innerHTML=p;else closeModal()}
@@ -1160,12 +1160,112 @@ function spBox(){
   const can=!!SP_SR&&!androidApp();
   return `<div class="spbox"><label for="spTxt">🎤 Spracheingabe – füllt die Maske aus, du prüfst und speicherst selbst</label>
   <div style="display:flex;gap:6px;align-items:center"><input type="text" id="spTxt" value="${esc(SP.txt)}" placeholder="z. B. Anna Grand mit 2 gewonnen 72 Augen" oninput="SP.txt=this.value" onkeydown="if(event.key==='Enter'){event.preventDefault();spGo()}" autocomplete="off" autocapitalize="none" spellcheck="false" style="flex:1;min-width:0">
-  ${can?`<button class="btn ${SP.on?'bad':'sec'}" onclick="spMic()" title="${SP.on?'Aufnahme beenden':'Sprechen'}" aria-label="Spracheingabe">${SP.on?'⏹':'🎤'}</button>`:''}<button class="btn" onclick="spGo()">Übernehmen</button></div>
+  ${can?`<button class="btn vsmic ${VS.on?'bad':'sec'}" onclick="vsStart()" title="${VS.on?'Mikrofon ausschalten':'Mikrofon einschalten und sprechen'}" aria-label="Spracheingabe">${VS.on?'⏹':'🎤'}</button>`:''}<button class="btn" onclick="spGo()">Übernehmen</button></div>
   ${SP.msg?`<div class="muted" style="margin-top:4px">${esc(SP.msg)}</div>`:''}
   <details><summary class="muted">Beispiele${can?'':' (Mikrofon-Taste der Tastatur zum Diktieren nutzen)'}</summary><div class="muted">
   „Anna Grand mit zwei gereizt bis 36 gewonnen 72 Augen“<br>„Bernd Kreuz ohne drei Hand verloren“<br>„Anna Herz Kontra von Chris, Re“<br>„Ramsch Anna 45 Bernd 30 Chris 25“<br>„Alle gepasst“ · „Bockrunde“<br>Die Angaben ergänzen sich: mehrere Sätze nacheinander sind möglich.</div></details></div>`;
 }
 
+
+/* ---------- Sprachsteuerung: Mikrofon per Knopf an, Spiel anlegen und mit Rückfrage speichern, danach aus ---------- */
+const VS={on:false,rec:null,confirm:false,speaking:false,last:0};
+const VS_IDLE=60000; // so lange ohne Eingabe, dann schaltet sich das Mikrofon von selbst aus
+const spErrText=c=>({'not-allowed':'Mikrofon nicht erlaubt (Schloss-Symbol neben der Adresse).','service-not-allowed':'Spracherkennung nicht erlaubt (Edge/Windows: „Online-Spracherkennung“ einschalten).','network':'Keine Verbindung zum Spracherkennungs-Dienst (Online-Spracherkennung in Windows an?).','audio-capture':'Kein Mikrofon gefunden.','language-not-supported':'Deutsch wird nicht unterstützt.'})[c]||('Spracherkennung fehlgeschlagen ('+c+').');
+function vsUI(){
+  document.querySelectorAll('.vsmic').forEach(b=>{b.classList.toggle('bad',VS.on);b.classList.toggle('sec',!VS.on);b.textContent=VS.on?'⏹':'🎤'});
+}
+function vsSpeak(t,after){
+  if(!window.speechSynthesis||typeof SpeechSynthesisUtterance==='undefined'){if(after)after();return}
+  try{
+    speechSynthesis.cancel();
+    const u=new SpeechSynthesisUtterance(t);u.lang='de-DE';
+    VS.speaking=true;if(VS.rec){try{VS.rec.abort()}catch(e){}}
+    const done=()=>{VS.speaking=false;if(after)after();if(VS.on)setTimeout(vsListen,200)};
+    u.onend=done;u.onerror=done;speechSynthesis.speak(u);
+  }catch(e){VS.speaking=false;if(after)after()}
+}
+function vsStop(msg){
+  VS.on=false;VS.confirm=false;VS.speaking=false;
+  if(VS.rec){try{VS.rec.abort()}catch(e){}VS.rec=null}
+  try{window.speechSynthesis&&speechSynthesis.cancel()}catch(e){}
+  vsUI();if(msg)toast(msg,3500);
+  if(F&&document.getElementById('spTxt'))drawForm();
+}
+function vsStart(){
+  if(VS.on){vsStop('Mikrofon aus');return}
+  if(!SP_SR||androidApp()){toast('Spracherkennung ist hier nicht verfügbar – siehe ⚙ Einstellungen → Spracheingabe.',5000);return}
+  if(!F){const li=S.hands.length-1;if(!S.started)return;openForm(li>=0&&S.hands[li].open?li:null)}
+  VS.on=true;VS.confirm=false;VS.last=Date.now();SP.msg='Mikrofon ist an – sprich dein Spiel, am Ende „speichern“. Zum Verwerfen „abbrechen“.';
+  vsUI();if(F)drawForm();vsListen();
+}
+function vsListen(){
+  if(!VS.on||VS.speaking||VS.rec)return;
+  const r=new SP_SR();r.lang='de-DE';r.interimResults=false;r.continuous=false;r.maxAlternatives=1;VS.rec=r;
+  let fatal=false;
+  r.onresult=e=>{const t=e.results[e.results.length-1][0].transcript;if(t&&t.trim())vsHear(t.trim())};
+  r.onerror=e=>{if(e.error==='no-speech'||e.error==='aborted')return;fatal=true;vsStop(spErrText(e.error))};
+  r.onend=()=>{if(VS.rec===r)VS.rec=null;if(!VS.on||fatal)return;
+    if(Date.now()-VS.last>VS_IDLE){vsStop('Mikrofon automatisch aus (längere Zeit keine Eingabe).');return}
+    if(!VS.speaking)setTimeout(vsListen,150)};
+  try{r.start()}catch(e){VS.rec=null;vsStop('Mikrofon lässt sich nicht starten.')}
+}
+function vsSummary(){
+  const isR=F.type==='ramsch',p=[TYPES[F.type].n],nm=i=>S.players[i];
+  if(!isR){
+    if(F.declarer!=null)p.push('Alleinspieler '+nm(F.declarer));
+    if(F.reiz)p.push('gereizt bis '+F.reiz);
+    if(F.type!=='null')p.push(F.mo+' '+F.n);
+    if(F.hand)p.push('Hand');
+    if(F.ouvert)p.push('Ouvert');
+    if((F.contra||[]).length)p.push('Kontra von '+F.contra.map(nm).join(' und '));
+    const hasA=F.augenSp!==''&&F.augenSp!=null;
+    if(F.outcomeSet||hasA)p.push(OUTN[F.outcome].toLowerCase()+(hasA?' mit '+F.augenSp+' Augen':''));
+    else p.push('noch ohne Ergebnis');
+  }else{
+    if(F.passe)p.push('alle gepasst');
+    const a=ramschAugen(ctx.play)||F.augen;
+    const L=ctx.play.filter(i=>a[i]!==''&&a[i]!=null).map(i=>nm(i)+' '+a[i]);
+    p.push(L.length?L.join(', '):'noch keine Augen');
+  }
+  return p.join(', ');
+}
+function vsCanSave(){
+  const isR=F.type==='ramsch';
+  if(!isR&&F.declarer==null)return {ok:false,why:'Der Alleinspieler fehlt.'};
+  const hasRes=isR?!!ramschAugen(ctx.play):(!!F.outcomeSet||(F.augenSp!==''&&F.augenSp!=null));
+  const openEdit=editIdx!=null&&!!F.open;
+  return {ok:true,keep:(editIdx==null||openEdit)&&!hasRes,hasRes};
+}
+function vsAsk(){
+  const c=vsCanSave();
+  if(!c.ok){SP.msg='⚠ '+c.why+' Bitte ergänzen.';drawForm();vsSpeak(c.why);return}
+  VS.confirm=true;
+  const t=vsSummary()+(c.keep?'. Ohne Ergebnis zwischenspeichern?':'. Speichern?');
+  SP.msg='❓ '+t+' Sag „ja“ oder „nein“.';drawForm();vsSpeak(t);
+}
+function vsSave(){
+  const c=vsCanSave();if(!c.ok){vsAsk();return}
+  saveHand(c.keep);
+  if(!F){vsStop();toast('✓ Gespeichert',3000);vsSpeak('Gespeichert.')}
+  else{SP.msg='⚠ Nicht gespeichert (siehe Meldung).';drawForm()}
+}
+function vsHear(t){
+  VS.last=Date.now();SP.txt=t;
+  if(!F){vsStop();return}
+  const w=spNorm(t).replace(/[^a-z0-9\s]/g,' ').trim().split(/\s+/),has=(...a)=>a.some(x=>w.includes(x));
+  const NO=has('nein','nee','stopp','stop','falsch','nicht'),YES=has('ja','jawohl','jo','jep','genau','richtig','korrekt','stimmt','okay','ok','passt');
+  if(VS.confirm){
+    if(YES&&!NO){VS.confirm=false;vsSave();return}
+    if(has('abbrechen','abbruch')){vsStop('Abgebrochen');closeModal();render();return}
+    if(NO&&w.length<=3){VS.confirm=false;SP.msg='Nicht gespeichert – sprich weiter oder korrigiere.';drawForm();vsSpeak('Okay, weiter.');return}
+    VS.confirm=false; // etwas anderes gesagt = Korrektur
+  }
+  if(has('abbrechen','abbruch')&&w.length<=3){vsStop('Abgebrochen');closeModal();render();return}
+  spApply(t);
+  SP.msg='„'+t+'“ → '+SP.msg;
+  if(has('speichern','abspeichern','fertig')){vsAsk();return}
+  drawForm();
+}
 /* ---------- Einstellungen ---------- */
 let SETONLY=false; // true: ⚙ aus der Leiste zeigt nur die Ordnerwahl für Import und Export
 function openFolderSettings(){SETONLY=true;openSettings()}
@@ -2359,7 +2459,7 @@ async function waStep(n){
 }
 
 /* ---------- Logos, Info, Hilfe, Suche ---------- */
-const APP_NAME='Skat-LOGGER',APP_TAG='Spielverlauf aufschreiben + Statistik + mehr',APP_VERSION='1.28.5',APP_BUILD='2026-10-23';
+const APP_NAME='Skat-LOGGER',APP_TAG='Spielverlauf aufschreiben + Statistik + mehr',APP_VERSION='1.29.0',APP_BUILD='2026-10-23';
 const LOGOS=[
   {n:'Kartenfächer',svg:`<svg viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI Symbol,Arial,sans-serif"><rect width="128" height="128" rx="28" fill="#17382a"/><text x="64" y="31" text-anchor="middle" font-family="Georgia,serif" font-size="21" font-weight="700" fill="#f6f1e3" letter-spacing="3">SKAT</text><text x="64" y="118" text-anchor="middle" font-family="Georgia,serif" font-size="19" font-weight="700" fill="#e8b923" letter-spacing="4">LOG</text><g transform="translate(12.8 16) scale(0.8)"><g transform="rotate(-24 64 104)"><rect x="40" y="30" width="48" height="68" rx="6" fill="#fff" stroke="#cfc8b4" stroke-width="1.5"/><text x="47" y="50" font-size="15" fill="#c0392b">♦</text><text x="64" y="80" font-size="32" text-anchor="middle" fill="#c0392b">♦</text></g><g transform="rotate(24 64 104)"><rect x="40" y="30" width="48" height="68" rx="6" fill="#fff" stroke="#cfc8b4" stroke-width="1.5"/><text x="47" y="50" font-size="15" fill="#c0392b">♥</text><text x="64" y="80" font-size="32" text-anchor="middle" fill="#c0392b">♥</text></g><g><rect x="40" y="30" width="48" height="68" rx="6" fill="#fff" stroke="#cfc8b4" stroke-width="1.5"/><text x="47" y="50" font-size="15" fill="#1d2a24">♠</text><text x="64" y="80" font-size="32" text-anchor="middle" fill="#1d2a24">♠</text></g></g></svg>`},
 ];
