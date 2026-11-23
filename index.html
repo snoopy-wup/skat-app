@@ -925,8 +925,8 @@ const SP_U=new Map(Object.entries({ein:1,eins:1,eine:1,zwei:2,zwo:2,drei:3,vier:
 const SP_T=new Map(Object.entries({zwanzig:20,dreissig:30,vierzig:40,funfzig:50,sechzig:60,siebzig:70,achtzig:80,neunzig:90}));
 const SP_TYPE={karo:'karo',herz:'herz',pik:'pik',pick:'pik',kreuz:'kreuz',grand:'grand',null:'null',ramsch:'ramsch'};
 const SP_SKIP=new Set(['von','vom','und','sowie','gesagt','sagt','sagte','hat','durch','dann']);
-const SP_FILL=new Set(['verliert','hat','mit','bekommt','punkte','augen','gesamt','mal','verlor','macht']);
-const SP_KW=new Set([...Object.keys(SP_TYPE),'stiche','stich','keine','keinen','kein','geschlagen','erhalten','erhalt','andere','anderen','gegner','die','der','den','haben','habe','contra','konter','gesagt','sagt','sagte','vom','durch','dann','kontra','re','rekontra','hirsch','geweih','gereizt','reizt','reizen','reiz','bis','mit','ohne','hand','ouvert','offen','schneider','schwarz','angesagt','ansage','schiebe','geschoben','schieben','spitze','gewonnen','gewinnt','gewann','verloren','verliert','verlor','augen','bock','bockrunde','gepasst','eingepasst','passe','passen','passt','jungfrau','durchmarsch','von','und','sowie','spielt','alleinspieler','hat','auf','punkte','bekommt','gesamt','mal','macht','ein','eine','eins']);
+const SP_FILL=new Set(['verliert','hat','mit','bekommt','punkte','punkten','punkt','augen','gesamt','mal','verlor','verloren','macht']);
+const SP_KW=new Set([...Object.keys(SP_TYPE),'punkten','punkt','punkte','stiche','stich','keine','keinen','kein','geschlagen','erhalten','erhalt','andere','anderen','gegner','die','der','den','haben','habe','contra','konter','gesagt','sagt','sagte','vom','durch','dann','kontra','re','rekontra','hirsch','geweih','gereizt','reizt','reizen','reiz','bis','mit','ohne','hand','ouvert','offen','schneider','schwarz','angesagt','ansage','schiebe','geschoben','schieben','spitze','gewonnen','gewinnt','gewann','verloren','verliert','verlor','augen','bock','bockrunde','gepasst','eingepasst','passe','passen','passt','jungfrau','durchmarsch','von','und','sowie','spielt','alleinspieler','hat','auf','punkte','bekommt','gesamt','mal','macht','ein','eine','eins']);
 const spNorm=t=>String(t).toLowerCase().replace(/ä/g,'a').replace(/ö/g,'o').replace(/ü/g,'u').replace(/ß/g,'ss');
 function spNumWord(w){
   if(/^\d+$/.test(w))return +w;
@@ -995,15 +995,16 @@ function spParse(text){
       if(r.reiz==null){j=k+1;c=0;while(T[j]&&c<4){if(n(j)!=null){r.reiz=n(j);usedN.add(j);break}if(!['bis','mit','auf','von','ueber'].includes(s(j)))break;j++;c++}}
     }
     else if(eff!=='ramsch'&&(w==='mit'||w==='ohne')){
-      if(!['bis','auf'].includes(s(k-1))&&n(k+1)!=null&&s(k+2)!=='augen'&&!usedN.has(k+1)){r.mo=w;r.n=n(k+1);usedN.add(k+1)}
+      if(!['bis','auf'].includes(s(k-1))&&n(k+1)!=null&&!['augen','punkte','punkten','punkt'].includes(s(k+2))&&!usedN.has(k+1)){r.mo=w;r.n=n(k+1);usedN.add(k+1)}
     }
   });
   if(eff!=='ramsch'){
-    T.forEach((t,k)=>{if(t.n!=null&&!usedN.has(k)&&t.n<=120&&(s(k+1)==='augen'||s(k-1)==='augen'))r.augenSp=t.n});
+    T.forEach((t,k)=>{if(t.n!=null&&!usedN.has(k)&&t.n<=120&&(['augen','punkte','punkten','punkt'].includes(s(k+1))||s(k-1)==='augen'))r.augenSp=t.n});
     if(r.augenSp==null&&r.won==null){let bare=null;T.forEach((t,k)=>{if(t.n!=null&&!usedN.has(k)&&t.n<=120&&!['punkte','punkt','buben','bube','mal','spiel','spiele','uhr'].includes(s(k+1)))bare=t.n});if(bare!=null){r.augenSp=bare;r.bareAug=true}} // nur eine Zahl gesagt = Augen
     let k=T.findIndex((t,k)=>P[k]>=0&&!used.has(k)&&ctx.play.includes(P[k]));if(k<0)k=T.findIndex((t,k)=>P[k]>=0&&!used.has(k));if(k>=0)r.declarer=P[k]; // mitspielende Namen haben Vorrang vor dem aussetzenden Geber
   }else{
     T.forEach((t,k)=>{if(P[k]>=0&&!used.has(k)){let j=k+1;while(T[j]&&SP_FILL.has(s(j)))j++;if(T[j]&&n(j)!=null&&!usedN.has(j)&&n(j)<=120){r.aug[P[k]]=n(j);usedN.add(j)}}});
+    T.forEach((t,k)=>{if(t.n!=null&&!usedN.has(k)&&t.n<=120&&['punkte','punkten','punkt','augen'].includes(s(k+1))){let j=k+2;while(T[j]&&SP_FILL.has(s(j)))j++;if(T[j]&&P[j]>=0&&!used.has(j)&&r.aug[P[j]]==null){r.aug[P[j]]=t.n;usedN.add(k);used.add(j)}}});
   }
   return r;
 }
@@ -1041,7 +1042,8 @@ function spApply(text){
       else if(r.stage>=1)bad.push('Kontra: von wem? (Alleinspieler und Name nennen)');
     }
     // Ergebnis
-    if(r.augenSp!=null&&!isN){augenIn(r.augenSp);if(r.schw)setSchwarz(true);ok.push('Augen '+r.augenSp+' : '+(120-r.augenSp)+' ('+(F.outcome[0]==='W'?'gewonnen':'verloren')+')'+(r.bareAug?' – Zahl als Augen gewertet':''));
+    if(r.augenSp!=null&&!isN){let av=r.augenSp,inv=false;if(r.won!=null&&(av>=61)!==r.won&&((120-av)>=61)===r.won){av=120-av;inv=true} // „Karsten hat mit 61 verloren“: die 61 haben die Gegner
+      augenIn(av);if(r.schw)setSchwarz(true);ok.push('Augen '+av+' : '+(120-av)+' ('+(F.outcome[0]==='W'?'gewonnen':'verloren')+')'+(r.bareAug?' – Zahl als Augen gewertet':'')+(inv?' – '+r.augenSp+' als Augen der Gegner verstanden':''));
       if(r.won!=null&&(F.outcome[0]==='W')!==r.won)bad.push('Augen und „'+(r.won?'gewonnen':'verloren')+'“ passen nicht zusammen – es gelten die Augen')}
     else if(r.won!=null){setRes(r.won);if(!isN&&r.schw){setSw(true)}else if(!isN&&r.schn){setSn(true)}ok.push((r.won?'gewonnen':'verloren')+(!isN&&r.schw?', schwarz':!isN&&r.schn?', Schneider':''))}
   }else{
@@ -1304,13 +1306,19 @@ function vsCanSave(){
   const openEdit=editIdx!=null&&!!F.open;
   const allowKeep=editIdx==null||openEdit;return {ok:true,keep:allowKeep&&(VS.keep||!hasRes),hasRes};
 }
+// Ramsch: welche Augen fehlen noch (Summe muss 120 sein, ein Spieler darf leer bleiben)
+function ramschFehlt(){
+  const leer=ctx.play.filter(i=>F.augen[i]===''||F.augen[i]==null),sum=ctx.play.reduce((a,i)=>a+(+F.augen[i]||0),0);
+  if(leer.length>1)return 'Im Ramsch fehlen noch die Augen von '+leer.map(i=>S.players[i]).join(' und ')+'. Sage die Augen je Spieler, ein Spieler darf leer bleiben (Summe 120).';
+  return 'Die Augen im Ramsch ergeben '+sum+', es müssen 120 sein. Bitte korrigieren.';
+}
 function vsAsk(close){
   const c=vsCanSave();
   if(!c.ok){SP.msg='⚠ '+c.why+' Bitte ergänzen.';drawForm();vsSpeak(c.why);return}
-  if(close&&!c.hasRes&&!VS.keep){const m='Zum Abschließen fehlt das Ergebnis. Sag gewonnen oder verloren, oder die Augen.';SP.msg='⚠ '+m;drawForm();vsSpeak(m);return}
+  if(close&&!c.hasRes&&!VS.keep){const m=F.type==='ramsch'?ramschFehlt():'Zum Abschließen fehlt das Ergebnis. Sag gewonnen oder verloren, oder die Augen.';SP.msg='⚠ '+m;drawForm();vsSpeak(m);return}
   if(c.keep&&VS.keep){F.outcomeSet=false;F.augenSp=null;F.outcome='W';F.sixty=false;F.augen={};F.jungfrau=false;F.durchmarsch=null} // Ergebnis weglassen
   VS.confirm=true;
-  const open=editIdx!=null&&!!F.open;const t=vsSummary()+(c.keep?(VS.keep?'. Ohne Ergebnis zwischenspeichern?':'. Es fehlt noch das Ergebnis. Ohne Ergebnis zwischenspeichern? Oder sag jetzt das Ergebnis.'):(open?'. Ergebnis eintragen und Spiel abschließen?':'. Speichern?'));
+  const open=editIdx!=null&&!!F.open;const t=vsSummary()+(c.keep?(VS.keep?'. Ohne Ergebnis zwischenspeichern?':(F.type==='ramsch'?'. '+ramschFehlt()+' Oder ohne Ergebnis zwischenspeichern?':'. Es fehlt noch das Ergebnis. Ohne Ergebnis zwischenspeichern? Oder sag jetzt das Ergebnis.')):(open?'. Ergebnis eintragen und Spiel abschließen?':'. Speichern?'));
   SP.msg='❓ '+t+' Sag „ja“ oder „nein“.';drawForm();vsSpeak(t+' Sage ja oder nein.');
 }
 function vsSave(){
@@ -2532,7 +2540,7 @@ async function waStep(n){
 }
 
 /* ---------- Logos, Info, Hilfe, Suche ---------- */
-const APP_NAME='Skat-LOGGER',APP_TAG='Spielverlauf aufschreiben + Statistik + mehr',APP_VERSION='1.29.14',APP_BUILD='2026-10-23',APP_UPDATED='2026-11-23';
+const APP_NAME='Skat-LOGGER',APP_TAG='Spielverlauf aufschreiben + Statistik + mehr',APP_VERSION='1.29.16',APP_BUILD='2026-10-23',APP_UPDATED='2026-11-23';
 const LOGOS=[
   {n:'Kartenfächer',svg:`<svg viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI Symbol,Arial,sans-serif"><rect width="128" height="128" rx="28" fill="#17382a"/><text x="64" y="31" text-anchor="middle" font-family="Georgia,serif" font-size="21" font-weight="700" fill="#f6f1e3" letter-spacing="3">SKAT</text><text x="64" y="118" text-anchor="middle" font-family="Georgia,serif" font-size="19" font-weight="700" fill="#e8b923" letter-spacing="4">LOG</text><g transform="translate(12.8 16) scale(0.8)"><g transform="rotate(-24 64 104)"><rect x="40" y="30" width="48" height="68" rx="6" fill="#fff" stroke="#cfc8b4" stroke-width="1.5"/><text x="47" y="50" font-size="15" fill="#c0392b">♦</text><text x="64" y="80" font-size="32" text-anchor="middle" fill="#c0392b">♦</text></g><g transform="rotate(24 64 104)"><rect x="40" y="30" width="48" height="68" rx="6" fill="#fff" stroke="#cfc8b4" stroke-width="1.5"/><text x="47" y="50" font-size="15" fill="#c0392b">♥</text><text x="64" y="80" font-size="32" text-anchor="middle" fill="#c0392b">♥</text></g><g><rect x="40" y="30" width="48" height="68" rx="6" fill="#fff" stroke="#cfc8b4" stroke-width="1.5"/><text x="47" y="50" font-size="15" fill="#1d2a24">♠</text><text x="64" y="80" font-size="32" text-anchor="middle" fill="#1d2a24">♠</text></g></g></svg>`},
 ];
