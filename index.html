@@ -618,7 +618,7 @@ function board(){
   <div class="card"><table class="gt" style="--np:${n}"><thead><tr class="h1"><th>#</th><th>Spiel</th>${hh.join('')}<th class="num">Spielwert</th></tr>
   <tr class="h2"><th></th><th>Summe verlorene Punkte</th>${tt.join('')}<th class="num" title="Summe aller Spielwerte">Σ ${svSum}</th></tr></thead>
   <tbody>${rows||`<tr><td colspan="${n+3}" class="muted">Noch kein Spiel eingetragen.</td></tr>`}</tbody></table></div>
-  ${(()=>{const li=S.hands.length-1;const mic=SP_SR&&!androidApp()?`<button class="btn fab vsmic ${VS.on?'bad':'sec'}" onclick="vsStart()" title="Spiel per Sprache eintragen (Mikrofon an/aus)" aria-label="Spracheingabe">${VS.on?'⏹':'🎤'}</button>`:'';return `<div class="fabs">${mic}`+(li>=0&&S.hands[li].open?`<button class="btn fab" onclick="openForm(${li})">Ergebnis eintragen</button>`:`<button class="btn fab" onclick="openForm(null)">+ Spiel anlegen</button>`)+'</div>'})()}`;
+  ${(()=>{const li=S.hands.length-1;const mic=SP_SR&&!androidApp()?`<button class="btn fab vsmic ${VS.on?'bad':''}" onclick="vsStart()" title="Spiel per Sprache eintragen (Mikrofon an/aus)" aria-label="Spracheingabe">${VS.on?'⏹':'🎤'}</button>`:'';return `<div class="fabs">${mic}`+(li>=0&&S.hands[li].open?`<button class="btn fab" onclick="openForm(${li})">Ergebnis eintragen</button>`:`<button class="btn fab" onclick="openForm(null)">+ Spiel anlegen</button>`)+'</div>'})()}`;
 }
 function wertTxt(r){
   const h=r.h,c=r.c;
@@ -1160,7 +1160,7 @@ function spBox(){
   const can=!!SP_SR&&!androidApp();
   return `<div class="spbox"><label for="spTxt">🎤 Spracheingabe – füllt die Maske aus, du prüfst und speicherst selbst</label>
   <div style="display:flex;gap:6px;align-items:center"><input type="text" id="spTxt" value="${esc(SP.txt)}" placeholder="z. B. Anna Grand mit 2 gewonnen 72 Augen" oninput="SP.txt=this.value" onkeydown="if(event.key==='Enter'){event.preventDefault();spGo()}" autocomplete="off" autocapitalize="none" spellcheck="false" style="flex:1;min-width:0">
-  ${can?`<button class="btn vsmic ${VS.on?'bad':'sec'}" onclick="vsStart()" title="${VS.on?'Mikrofon ausschalten':'Mikrofon einschalten und sprechen'}" aria-label="Spracheingabe">${VS.on?'⏹':'🎤'}</button>`:''}<button class="btn" onclick="spGo()">Übernehmen</button></div>
+  ${can?`<button class="btn vsmic ${VS.on?'bad':''}" onclick="vsStart()" title="${VS.on?'Mikrofon ausschalten':'Mikrofon einschalten und sprechen'}" aria-label="Spracheingabe">${VS.on?'⏹':'🎤'}</button>`:''}<button class="btn" onclick="spGo()">Übernehmen</button></div>
   ${SP.msg?`<div class="muted" style="margin-top:4px">${esc(SP.msg)}</div>`:''}
   <details><summary class="muted">Beispiele${can?'':' (Mikrofon-Taste der Tastatur zum Diktieren nutzen)'}</summary><div class="muted">
   „Anna Grand mit zwei gereizt bis 36 gewonnen 72 Augen“<br>„Bernd Kreuz ohne drei Hand verloren“<br>„Anna Herz Kontra von Chris, Re“<br>„Ramsch Anna 45 Bernd 30 Chris 25“<br>„Alle gepasst“ · „Bockrunde“<br>Die Angaben ergänzen sich: mehrere Sätze nacheinander sind möglich.</div></details></div>`;
@@ -1171,7 +1171,7 @@ function spBox(){
 const VS={on:false,rec:null,confirm:false,speaking:false,last:0,buf:'',base:null};
 const spErrText=c=>({'not-allowed':'Mikrofon nicht erlaubt (Schloss-Symbol neben der Adresse).','service-not-allowed':'Spracherkennung nicht erlaubt (Edge/Windows: „Online-Spracherkennung“ einschalten).','network':'Keine Verbindung zum Spracherkennungs-Dienst (Online-Spracherkennung in Windows an?).','audio-capture':'Kein Mikrofon gefunden.','language-not-supported':'Deutsch wird nicht unterstützt.'})[c]||('Spracherkennung fehlgeschlagen ('+c+').');
 function vsUI(){
-  document.querySelectorAll('.vsmic').forEach(b=>{b.classList.toggle('bad',VS.on);b.classList.toggle('sec',!VS.on);b.textContent=VS.on?'⏹':'🎤'});
+  document.querySelectorAll('.vsmic').forEach(b=>{b.classList.toggle('bad',VS.on);b.textContent=VS.on?'⏹':'🎤'});
 }
 function vsSpeak(t,after){
   if(!window.speechSynthesis||typeof SpeechSynthesisUtterance==='undefined'){if(after)after();return}
@@ -2459,7 +2459,7 @@ async function waStep(n){
 }
 
 /* ---------- Logos, Info, Hilfe, Suche ---------- */
-const APP_NAME='Skat-LOGGER',APP_TAG='Spielverlauf aufschreiben + Statistik + mehr',APP_VERSION='1.29.1',APP_BUILD='2026-10-23';
+const APP_NAME='Skat-LOGGER',APP_TAG='Spielverlauf aufschreiben + Statistik + mehr',APP_VERSION='1.29.2',APP_BUILD='2026-10-23';
 const LOGOS=[
   {n:'Kartenfächer',svg:`<svg viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI Symbol,Arial,sans-serif"><rect width="128" height="128" rx="28" fill="#17382a"/><text x="64" y="31" text-anchor="middle" font-family="Georgia,serif" font-size="21" font-weight="700" fill="#f6f1e3" letter-spacing="3">SKAT</text><text x="64" y="118" text-anchor="middle" font-family="Georgia,serif" font-size="19" font-weight="700" fill="#e8b923" letter-spacing="4">LOG</text><g transform="translate(12.8 16) scale(0.8)"><g transform="rotate(-24 64 104)"><rect x="40" y="30" width="48" height="68" rx="6" fill="#fff" stroke="#cfc8b4" stroke-width="1.5"/><text x="47" y="50" font-size="15" fill="#c0392b">♦</text><text x="64" y="80" font-size="32" text-anchor="middle" fill="#c0392b">♦</text></g><g transform="rotate(24 64 104)"><rect x="40" y="30" width="48" height="68" rx="6" fill="#fff" stroke="#cfc8b4" stroke-width="1.5"/><text x="47" y="50" font-size="15" fill="#c0392b">♥</text><text x="64" y="80" font-size="32" text-anchor="middle" fill="#c0392b">♥</text></g><g><rect x="40" y="30" width="48" height="68" rx="6" fill="#fff" stroke="#cfc8b4" stroke-width="1.5"/><text x="47" y="50" font-size="15" fill="#1d2a24">♠</text><text x="64" y="80" font-size="32" text-anchor="middle" fill="#1d2a24">♠</text></g></g></svg>`},
 ];
