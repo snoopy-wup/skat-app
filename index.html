@@ -926,7 +926,7 @@ const SP_T=new Map(Object.entries({zwanzig:20,dreissig:30,vierzig:40,funfzig:50,
 const SP_TYPE={karo:'karo',herz:'herz',pik:'pik',pick:'pik',kreuz:'kreuz',grand:'grand',null:'null',ramsch:'ramsch'};
 const SP_SKIP=new Set(['von','vom','und','sowie','gesagt','sagt','sagte','hat','durch','dann']);
 const SP_FILL=new Set(['verliert','hat','mit','bekommt','punkte','punkten','punkt','augen','gesamt','mal','verlor','verloren','macht']);
-const SP_KW=new Set([...Object.keys(SP_TYPE),'punkten','punkt','punkte','stiche','stich','keine','keinen','kein','geschlagen','erhalten','erhalt','andere','anderen','gegner','die','der','den','haben','habe','contra','konter','gesagt','sagt','sagte','vom','durch','dann','kontra','re','rekontra','hirsch','geweih','gereizt','reizt','reizen','reiz','bis','mit','ohne','hand','ouvert','offen','schneider','schwarz','angesagt','ansage','schiebe','geschoben','schieben','spitze','gewonnen','gewinnt','gewann','verloren','verliert','verlor','augen','bock','bockrunde','gepasst','eingepasst','passe','passen','passt','jungfrau','durchmarsch','von','und','sowie','spielt','alleinspieler','hat','auf','punkte','bekommt','gesamt','mal','macht','ein','eine','eins']);
+const SP_KW=new Set([...Object.keys(SP_TYPE),'jungens','jungen','jungs','buben','bube','bauern','bauer','einen','einem','er','sie','es','ergebnis','ergebnisse','punkten','punkt','punkte','stiche','stich','keine','keinen','kein','geschlagen','erhalten','erhalt','andere','anderen','gegner','die','der','den','haben','habe','contra','konter','gesagt','sagt','sagte','vom','durch','dann','kontra','re','rekontra','hirsch','geweih','gereizt','reizt','reizen','reiz','bis','mit','ohne','hand','ouvert','offen','schneider','schwarz','angesagt','ansage','schiebe','geschoben','schieben','spitze','gewonnen','gewinnt','gewann','verloren','verliert','verlor','augen','bock','bockrunde','gepasst','eingepasst','passe','passen','passt','jungfrau','durchmarsch','von','und','sowie','spielt','alleinspieler','hat','auf','punkte','bekommt','gesamt','mal','macht','ein','eine','eins']);
 const spNorm=t=>String(t).toLowerCase().replace(/ä/g,'a').replace(/ö/g,'o').replace(/ü/g,'u').replace(/ß/g,'ss');
 function spNumWord(w){
   if(/^\d+$/.test(w))return +w;
@@ -992,6 +992,7 @@ function spParse(text){
     else if(w==='ouvert'||w==='offen')r.ouvert=true;
     else if(w==='spitze')r.spitze=true;
     else if(w==='stiche'||w==='stich'){const q=n(k-1);if(q===0||['keine','keinen','kein'].includes(s(k-1)))r.schw=true;if(q!=null)usedN.add(k-1)} // „die anderen haben 0 Stiche“ = Schwarz, keine Augen
+    else if(['jungens','jungen','jungs','buben','bube','bauern','bauer','bubens'].includes(w)){if(n(k-1)!=null&&!usedN.has(k-1)){r.n=n(k-1);if(!r.mo)r.mo=s(k-2)==='ohne'?'ohne':'mit';usedN.add(k-1)}} // „er hat 2 Jungens“
     else if(w==='bock'||w==='bockrunde')r.bock=true;
     else if(['gepasst','eingepasst','passe','passen','passt'].includes(w))r.passe=true;
     else if(['gewonnen','gewinnt','gewann'].includes(w))r.won=true;
@@ -1320,9 +1321,10 @@ function vsSummary(){
     if(hasRes&&!(VS.keep&&(editIdx==null||F.open))){
       const mal=F.malPlayer!=null&&F.malPlayer!=='',lev=mal?0:(F.levelOverride!=null?F.levelOverride:ctx.auto);
       const c=calc(isR?{...F,open:false,augen:ramschAugen(ctx.play)||F.augen}:{...F,open:false},lev,ctx.play,ctx.seat);
-      const L=Object.entries(c.pts).filter(([k,v])=>v).map(([k,v])=>nm(+k)+' bekommt '+v+(v===1?' Punkt':' Punkte'));
+      const L=Object.entries(c.pts).filter(([k,v])=>v).map(([k,v])=>nm(+k)+' '+v);
       if(!isR&&c.value)p.splice(p.length,0,'Spielwert '+c.value);
-      p.push(L.length?'Punkte: '+L.join(', '):'keine Punkte');
+      if(!isR&&c.over)p.splice(p.length-(c.value?1:0),0,'ACHTUNG überreizt: gespielt nur '+((c.base&&c.mult)?c.base*c.mult:c.value)+', gereizt bis '+F.reiz+' – das Spiel gilt als verloren');
+      p.push(L.length?'Verlorene Punkte: '+L.join(', '):'keine verlorenen Punkte');
     }
   }catch(e){}
   return p.join('; ');
@@ -2568,7 +2570,7 @@ async function waStep(n){
 }
 
 /* ---------- Logos, Info, Hilfe, Suche ---------- */
-const APP_NAME='Skat-LOGGER',APP_TAG='Spielverlauf aufschreiben + Statistik + mehr',APP_VERSION='1.29.18',APP_BUILD='2026-10-23',APP_UPDATED='2026-11-23';
+const APP_NAME='Skat-LOGGER',APP_TAG='Spielverlauf aufschreiben + Statistik + mehr',APP_VERSION='1.29.19',APP_BUILD='2026-10-23',APP_UPDATED='2026-11-23';
 const LOGOS=[
   {n:'Kartenfächer',svg:`<svg viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI Symbol,Arial,sans-serif"><rect width="128" height="128" rx="28" fill="#17382a"/><text x="64" y="31" text-anchor="middle" font-family="Georgia,serif" font-size="21" font-weight="700" fill="#f6f1e3" letter-spacing="3">SKAT</text><text x="64" y="118" text-anchor="middle" font-family="Georgia,serif" font-size="19" font-weight="700" fill="#e8b923" letter-spacing="4">LOG</text><g transform="translate(12.8 16) scale(0.8)"><g transform="rotate(-24 64 104)"><rect x="40" y="30" width="48" height="68" rx="6" fill="#fff" stroke="#cfc8b4" stroke-width="1.5"/><text x="47" y="50" font-size="15" fill="#c0392b">♦</text><text x="64" y="80" font-size="32" text-anchor="middle" fill="#c0392b">♦</text></g><g transform="rotate(24 64 104)"><rect x="40" y="30" width="48" height="68" rx="6" fill="#fff" stroke="#cfc8b4" stroke-width="1.5"/><text x="47" y="50" font-size="15" fill="#c0392b">♥</text><text x="64" y="80" font-size="32" text-anchor="middle" fill="#c0392b">♥</text></g><g><rect x="40" y="30" width="48" height="68" rx="6" fill="#fff" stroke="#cfc8b4" stroke-width="1.5"/><text x="47" y="50" font-size="15" fill="#1d2a24">♠</text><text x="64" y="80" font-size="32" text-anchor="middle" fill="#1d2a24">♠</text></g></g></svg>`},
 ];
